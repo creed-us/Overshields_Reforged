@@ -2,7 +2,9 @@
 
 Overshields Reforged began as a fork of the [Overshields](https://github.com/enthh/overshields) addon by enthh, but turned into a rewrite.
 
-Overshields Reforged adds information about shielding on Blizzard unit frames.
+Overshields Reforged adds information about shielding on Blizzard unit frames. Overshields Reforged displays the default UI's absorb shield overlay as an extra bar that overflows the standard health bars on Blizzard unit frames, which allows you to make more informed decisions on who to shield and when.
+
+There are also a few options: Glow alpha (shield absorb bar), tick alpha (indicates overabsorb), and whether to show the overabsorb tick when a unit is not at full life.
 
 Works with Blizzard's default Player, Target, Focus, Party, and Raid frames.
 
