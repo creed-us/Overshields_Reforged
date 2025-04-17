@@ -14,6 +14,10 @@ Works with Blizzard's default Player, Target, Focus, Party, and Raid frames.
 
 ## Installation
 
+### Addon Manager
+
+Install from [CurseForge](https://www.curseforge.com/wow/addons/overshields-reforged).
+
 ### Manually
 
 Download the [latest release](https://github.com/creed-us/Overshields_Reforged/releases/latest) and extract the `.zip` to your AddOns folder.
