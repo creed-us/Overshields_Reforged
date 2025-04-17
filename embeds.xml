@@ -4,4 +4,5 @@
 	<Script file="Libs/AceConfig-3.0/AceConfig-3.0.lua"/>
 	<Script file="Libs/AceDB-3.0/AceDB-3.0.lua"/>
 	<Script file="Libs/AceDBOptions-3.0/AceDBOptions-3.0.lua"/>
+	<Script file="Libs/LibSharedMedia-3.0/LibSharedMedia-3.0.lua"/>
 </Ui>
