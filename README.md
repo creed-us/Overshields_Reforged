@@ -6,9 +6,11 @@ Overshields Reforged adds information about shielding on Blizzard unit and raid 
 
 Works with Blizzard's default Player, Target, Focus, Party, and Raid frames.
 
-![Overshields Reforged in party and raid](./screenshot.png)
+![Overshields Reforged in party and raid](./group_1.jpg)
 
-![Overshields Reforged on ](./target.png)
+![Overshields Reforged on individual units (not at full life)](./target_1.jpg)
+
+![Overshields Reforged on individual units (at full life)](./target_1.jpg)
 
 ## Installation
 
