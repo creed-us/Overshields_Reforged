@@ -3,9 +3,11 @@ name: Release
 on:
     push:
         tags:
-            - "v*.*.*"
-            - "!**-alpha**"
-            - "!**-beta**"
+            - "**"
+
+env:
+    CF_API_KEY: ${{ secrets.CF_API_KEY }}
+    GITHUB_OAUTH: ${{ secrets.GITHUB_TOKEN }}
 
 jobs:
     build:
