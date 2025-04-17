@@ -1,4 +1,5 @@
 local _, ns = ...
+local LSM = LibStub("LibSharedMedia-3.0") -- Load LibSharedMedia-3.0
 local ABSORB_GLOW_TICK_OFFSET = -7
 
 ns.HandleCompactUnitFrame_Update = function(frame)
