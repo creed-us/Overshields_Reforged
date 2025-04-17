@@ -1,0 +1,12 @@
+package-as: Overshields_Reforged
+
+ignore:
+  - .github/*
+  - .git/*
+  - .gitignore
+  - .gitattributes
+  - .vscode/*
+  - README.md
+  - group_1.png
+  - target_1.png
+  - target_2.png
