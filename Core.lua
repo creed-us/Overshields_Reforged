@@ -60,7 +60,7 @@ function OvershieldsReforged.UnitFrameHealPredictionBars_Update(frame)
 		return
 	end
 
-	local healthTex     = healthBar:GetStatusBarTexture()
+	local healthTexture = healthBar:GetStatusBarTexture()
 	local currentHealth = healthBar:GetValue()
 	local _, maxHealth  = healthBar:GetMinMaxValues()
 	if currentHealth <= 0 or maxHealth <= 0 then
@@ -77,36 +77,36 @@ function OvershieldsReforged.UnitFrameHealPredictionBars_Update(frame)
 
 	local missingHealth = maxHealth - currentHealth
 	local effectiveHealth = currentHealth + totalAbsorb
-
-	if currentHealth < maxHealth and effectiveHealth <= maxHealth then
-		absorbGlowTick:Hide()
-		return
-	end
-
-	if currentHealth < maxHealth then
+	local overAbsorb = effectiveHealth > maxHealth
+	if missingHealth > 0 and overAbsorb then
 		absorbGlowTick:ClearAllPoints()
 		absorbGlowTick:SetPoint("TOPLEFT", healthBar, "TOPRIGHT", ABSORB_GLOW_TICK_OFFSET, 0)
 		absorbGlowTick:SetPoint("BOTTOMLEFT", healthBar, "BOTTOMRIGHT", ABSORB_GLOW_TICK_OFFSET, 0)
 		absorbGlowTick:SetAlpha(db.overshieldTickAlpha)
-		absorbGlowTick:Show()
+		if db.showTickWhenNotFullHealth then
+			absorbGlowTick:Show()
+		else
+			absorbGlowTick:Hide()
+		end
 		return
 	end
 
 	local showAbsorb = math.min(totalAbsorb, maxHealth)
 	local offsetX    = (maxHealth / effectiveHealth) - 1
-	absorbBar:UpdateFillPosition(healthTex, showAbsorb, offsetX)
+	absorbBar:UpdateFillPosition(healthTexture, showAbsorb, offsetX)
 	absorbBar:Show()
 
-	if effectiveHealth > maxHealth then
-		local mask = absorbBar.FillMask
-		absorbGlowTick:ClearAllPoints()
-		absorbGlowTick:SetPoint("TOPLEFT", mask, "TOPLEFT", ABSORB_GLOW_TICK_OFFSET, 0)
-		absorbGlowTick:SetPoint("BOTTOMLEFT", mask, "BOTTOMLEFT", ABSORB_GLOW_TICK_OFFSET, 0)
-		absorbGlowTick:SetAlpha(db.overshieldTickAlpha)
-		absorbGlowTick:Show()
-	else
+	if not overAbsorb then
 		absorbGlowTick:Hide()
+		return
 	end
+
+	local mask = absorbBar.FillMask
+	absorbGlowTick:ClearAllPoints()
+	absorbGlowTick:SetPoint("TOPLEFT", mask, "TOPLEFT", ABSORB_GLOW_TICK_OFFSET, 0)
+	absorbGlowTick:SetPoint("BOTTOMLEFT", mask, "BOTTOMLEFT", ABSORB_GLOW_TICK_OFFSET, 0)
+	absorbGlowTick:SetAlpha(db.overshieldTickAlpha)
+	absorbGlowTick:Show()
 end
 
 -- compact unit frames
@@ -140,7 +140,8 @@ function OvershieldsReforged.CompactUnitFrame_UpdateHealPrediction(frame)
 	end
 
 	local missingHealth = maxHealth - currentHealth
-	if totalAbsorb > maxHealth then totalAbsorb = maxHealth end
+	local effectiveHealth = currentHealth + totalAbsorb
+	local overAbsorb = effectiveHealth > maxHealth
 
 	local showAbsorb
 	if currentHealth < maxHealth then
@@ -171,12 +172,15 @@ function OvershieldsReforged.CompactUnitFrame_UpdateHealPrediction(frame)
 		if missingHealth > 0 then
 			absorbGlowTick:SetPoint("TOPLEFT", healthBar, "TOPRIGHT", ABSORB_GLOW_TICK_OFFSET, 0)
 			absorbGlowTick:SetPoint("BOTTOMLEFT", healthBar, "BOTTOMRIGHT", ABSORB_GLOW_TICK_OFFSET, 0)
+			if not db.showTickWhenNotFullHealth then
+				absorbGlowTick:Hide()
+			end
 		else
 			absorbGlowTick:SetPoint("TOPLEFT", absorbOverlay, "TOPLEFT", ABSORB_GLOW_TICK_OFFSET, 0)
 			absorbGlowTick:SetPoint("BOTTOMLEFT", absorbOverlay, "BOTTOMLEFT", ABSORB_GLOW_TICK_OFFSET, 0)
+			absorbGlowTick:Show()
 		end
 		absorbGlowTick:SetAlpha(db.overshieldTickAlpha)
-		absorbGlowTick:Show()
 	else
 		absorbGlowTick:Hide()
 	end

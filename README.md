@@ -2,7 +2,7 @@
 
 Overshields Reforged began as a fork of the [Overshields](https://github.com/enthh/overshields) addon by enthh, but turned into a rewrite.
 
-Overshields Reforged adds information about shielding on Blizzard unit and raid frames
+Overshields Reforged adds information about shielding on Blizzard unit frames.
 
 Works with Blizzard's default Player, Target, Focus, Party, and Raid frames.
 

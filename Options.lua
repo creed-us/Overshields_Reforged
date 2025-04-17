@@ -1,22 +1,17 @@
--- SavedVariables: OvershieldsDB
--- Defines defaults & builds the Blizzard Options panel
-
 local ADDON_NAME = ...
 
--- Default values (merged in Core.lua)
 OvershieldsReforged.defaults = {
-	overshieldTickAlpha    = 0.6, -- edge‑of‑bar tick glow alpha
-	overshieldOverlayAlpha = 0.6, -- full‑bar overlay alpha
+	overshieldTickAlpha       = 0.6, -- edge‑of‑bar tick glow alpha
+	overshieldOverlayAlpha    = 0.6, -- full‑bar overlay alpha
+	showTickWhenNotFullHealth = true, -- show tick when unit is not at full health
 }
 
--- Helper to register our panel
 local function RegisterCanvas(frame)
 	local cat = Settings.RegisterCanvasLayoutCategory(frame, frame.name, frame.name)
 	cat.ID = frame.name
 	Settings.RegisterAddOnCategory(cat)
 end
 
--- Slider factory (mirrors CreateCheckbox pattern)
 function OvershieldsReforged:CreateSlider(option, label, parent)
 	local s = CreateFrame("Slider", nil, parent, "OptionsSliderTemplate")
 	s.Text:SetText(label)
@@ -45,7 +40,29 @@ function OvershieldsReforged:CreateSlider(option, label, parent)
 	return s
 end
 
--- Build the “Overshields” options panel
+function OvershieldsReforged:CreateCheckbox(option, label, parent)
+	local cb = CreateFrame("CheckButton", nil, parent, "InterfaceOptionsCheckButtonTemplate")
+	cb.Text:SetText(label)
+
+	local function Update(value)
+		self.db[option] = value
+		cb:SetChecked(value)
+	end
+
+	-- Initialize and live update
+	Update(self.db[option])
+	cb:SetScript("OnClick", function()
+		Update(cb:GetChecked())
+	end)
+
+	-- Reset callback
+	EventRegistry:RegisterCallback(ADDON_NAME .. ".OnReset", function()
+		Update(self.defaults[option])
+	end, cb)
+
+	return cb
+end
+
 function OvershieldsReforged:InitializeOptions()
 	self.panel_main = CreateFrame("Frame")
 	self.panel_main.name = "OvershieldsReforged"
@@ -62,9 +79,14 @@ function OvershieldsReforged:InitializeOptions()
 	local overlay = self:CreateSlider("overshieldOverlayAlpha", "Overshield Overlay Alpha", self.panel_main)
 	overlay:SetPoint("TOPLEFT", tick, "BOTTOMLEFT", 0, -30)
 
+	-- Show tick when not full health checkbox
+	local showTickCheckbox = self:CreateCheckbox("showTickWhenNotFullHealth", "Show Tick When Not Full Health",
+		self.panel_main)
+	showTickCheckbox:SetPoint("TOPLEFT", overlay, "BOTTOMLEFT", 0, -30)
+
 	-- Reset button
 	local btn = CreateFrame("Button", nil, self.panel_main, "UIPanelButtonTemplate")
-	btn:SetPoint("TOPLEFT", overlay, "BOTTOMLEFT", 0, -40)
+	btn:SetPoint("TOPLEFT", showTickCheckbox, "BOTTOMLEFT", 0, -40)
 	btn:SetText(RESET)
 	btn:SetWidth(100)
 	btn:SetScript("OnClick", function()
