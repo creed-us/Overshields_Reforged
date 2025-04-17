@@ -1,8 +1,8 @@
 local _, ns = ...
-local absorbGlowTickOffset = ns.absorbGlowTickOffset
+local ABSORB_GLOW_TICK_OFFSET = -7
 
 ns.HandleUnitFrameUpdate = function(frame)
-	local db = OvershieldsReforged.db
+	local db = OvershieldsReforged.db.profile
 	if not frame then return end
 
 	local absorbBar      = frame.totalAbsorbBar
@@ -35,9 +35,11 @@ ns.HandleUnitFrameUpdate = function(frame)
 	local overAbsorb = effectiveHealth > maxHealth
 	if missingHealth > 0 and overAbsorb then
 		absorbGlowTick:ClearAllPoints()
-		absorbGlowTick:SetPoint("TOPLEFT", healthBar, "TOPRIGHT", absorbGlowTickOffset, 0)
-		absorbGlowTick:SetPoint("BOTTOMLEFT", healthBar, "BOTTOMRIGHT", absorbGlowTickOffset, 0)
-		absorbGlowTick:SetAlpha(db.overshieldTickAlpha)
+		absorbGlowTick:SetPoint("TOPLEFT", healthBar, "TOPRIGHT", ABSORB_GLOW_TICK_OFFSET, 0)
+		absorbGlowTick:SetPoint("BOTTOMLEFT", healthBar, "BOTTOMRIGHT", ABSORB_GLOW_TICK_OFFSET, 0)
+		local color = db.overabsorbTickColor
+		absorbGlowTick:SetVertexColor(color.r, color.g, color.b, color.a)
+		absorbGlowTick:SetBlendMode(db.overabsorbTickBlendMode) -- Apply blend mode
 		if db.showTickWhenNotFullHealth then
 			absorbGlowTick:Show()
 		else
@@ -58,8 +60,10 @@ ns.HandleUnitFrameUpdate = function(frame)
 
 	local mask = absorbBar.FillMask
 	absorbGlowTick:ClearAllPoints()
-	absorbGlowTick:SetPoint("TOPLEFT", mask, "TOPLEFT", absorbGlowTickOffset, 0)
-	absorbGlowTick:SetPoint("BOTTOMLEFT", mask, "BOTTOMLEFT", absorbGlowTickOffset, 0)
-	absorbGlowTick:SetAlpha(db.overshieldTickAlpha)
+	absorbGlowTick:SetPoint("TOPLEFT", mask, "TOPLEFT", ABSORB_GLOW_TICK_OFFSET, 0)
+	absorbGlowTick:SetPoint("BOTTOMLEFT", mask, "BOTTOMLEFT", ABSORB_GLOW_TICK_OFFSET, 0)
+	local color = db.overabsorbTickColor
+	absorbGlowTick:SetVertexColor(color.r, color.g, color.b, color.a)
+	absorbGlowTick:SetBlendMode(db.overabsorbTickBlendMode) -- Apply blend mode
 	absorbGlowTick:Show()
 end

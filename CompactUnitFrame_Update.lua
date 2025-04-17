@@ -1,8 +1,8 @@
 local _, ns = ...
-local absorbGlowTickOffset = ns.absorbGlowTickOffset
+local ABSORB_GLOW_TICK_OFFSET = -7
 
 ns.HandleCompactUnitFrame_Update = function(frame)
-	local db = OvershieldsReforged.db
+	local db = OvershieldsReforged.db.profile
 	if not frame then return end
 
 	local absorbOverlay  = frame.totalAbsorbOverlay
@@ -52,7 +52,9 @@ ns.HandleCompactUnitFrame_Update = function(frame)
 		absorbOverlay:SetWidth(absorbOverlayWidth)
 		absorbOverlay:SetTexCoord(0, absorbOverlayWidth / absorbOverlay.tileSize, 0,
 			healthBarHeight / absorbOverlay.tileSize)
-		absorbOverlay:SetAlpha(db.overshieldOverlayAlpha)
+
+		-- Use alpha from absorbOverlayColor
+		absorbOverlay:SetAlpha(db.absorbOverlayColor.a)
 
 		-- Apply custom color and blend mode to absorbOverlay
 		local color = db.absorbOverlayColor
@@ -68,17 +70,19 @@ ns.HandleCompactUnitFrame_Update = function(frame)
 	if totalAbsorb > missingHealth then
 		absorbGlowTick:ClearAllPoints()
 		if missingHealth > 0 then
-			absorbGlowTick:SetPoint("TOPLEFT", healthBar, "TOPRIGHT", absorbGlowTickOffset, 0)
-			absorbGlowTick:SetPoint("BOTTOMLEFT", healthBar, "BOTTOMRIGHT", absorbGlowTickOffset, 0)
+			absorbGlowTick:SetPoint("TOPLEFT", healthBar, "TOPRIGHT", ABSORB_GLOW_TICK_OFFSET, 0)
+			absorbGlowTick:SetPoint("BOTTOMLEFT", healthBar, "BOTTOMRIGHT", ABSORB_GLOW_TICK_OFFSET, 0)
 			if not db.showTickWhenNotFullHealth then
 				absorbGlowTick:Hide()
 			end
 		else
-			absorbGlowTick:SetPoint("TOPLEFT", absorbOverlay, "TOPLEFT", absorbGlowTickOffset, 0)
-			absorbGlowTick:SetPoint("BOTTOMLEFT", absorbOverlay, "BOTTOMLEFT", absorbGlowTickOffset, 0)
+			absorbGlowTick:SetPoint("TOPLEFT", absorbOverlay, "TOPLEFT", ABSORB_GLOW_TICK_OFFSET, 0)
+			absorbGlowTick:SetPoint("BOTTOMLEFT", absorbOverlay, "BOTTOMLEFT", ABSORB_GLOW_TICK_OFFSET, 0)
 			absorbGlowTick:Show()
 		end
-		absorbGlowTick:SetAlpha(db.overshieldTickAlpha)
+		local color = db.overabsorbTickColor
+		absorbGlowTick:SetVertexColor(color.r, color.g, color.b, color.a)
+		absorbGlowTick:SetBlendMode(db.overabsorbTickBlendMode) -- Apply blend mode
 	else
 		absorbGlowTick:Hide()
 	end

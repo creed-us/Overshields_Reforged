@@ -7,8 +7,12 @@
 ## X-Curse-Project-ID: 1245082
 ## SavedVariables: OvershieldsReforgedDB
 
+## OptionalDeps: Ace3
+## X-Embeds: Ace3
+
+## Include libraries
+embeds.xml
 
 Core.lua
-Options.lua
 UnitFrame_Update.lua
 CompactUnitFrame_Update.lua
