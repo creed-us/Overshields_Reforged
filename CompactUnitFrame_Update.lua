@@ -48,11 +48,18 @@ ns.HandleCompactUnitFrame_Update = function(frame)
 		absorbOverlay:SetPoint("TOPRIGHT", healthBar, "TOPRIGHT", 0, 0)
 		absorbOverlay:SetPoint("BOTTOMRIGHT", healthBar, "BOTTOMRIGHT", 0, 0)
 
-		local absorbOverlayWidth = (showAbsorb / maxHealth) * healthBarWidth
+		local absorbOverlayWidth = math.min((showAbsorb / maxHealth) * healthBarWidth, healthBarWidth)
 		absorbOverlay:SetWidth(absorbOverlayWidth)
 		absorbOverlay:SetTexCoord(0, absorbOverlayWidth / absorbOverlay.tileSize, 0,
 			healthBarHeight / absorbOverlay.tileSize)
 		absorbOverlay:SetAlpha(db.overshieldOverlayAlpha)
+
+		-- Apply custom color and blend mode to absorbOverlay
+		local color = db.absorbOverlayColor
+		absorbOverlay:SetDesaturated(true)
+		absorbOverlay:SetVertexColor(color.r, color.g, color.b, color.a)
+		absorbOverlay:SetBlendMode(db.absorbOverlayBlendMode)
+
 		absorbOverlay:Show()
 	else
 		absorbOverlay:Hide()
