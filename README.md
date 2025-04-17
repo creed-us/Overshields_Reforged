@@ -16,8 +16,8 @@ Works with Blizzard's default Player, Target, Focus, Party, and Raid frames.
 
 ### Manually
 
-Download the [latest release](https://github.com/creed-us/overshields_reforged/releases/latest) and extract the `.zip` to your AddOns folder.
+Download the [latest release](https://github.com/creed-us/Overshields_Reforged/releases/latest) and extract the `.zip` to your AddOns folder.
 
 ## License
 
-Overshields is released under the [MIT License.](https://github.com/creed-us/overshields_reforged/blob/main/LICENSE)
+Overshields is released under the [MIT License.](https://github.com/creed-us/Overshields_Reforged/blob/main/LICENSE)
