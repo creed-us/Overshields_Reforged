@@ -4,7 +4,7 @@
 ## Author: Mysticae-Proudmoore
 ## Version: @project-version@
 ## IconTexture: Interface\ICONS\inv_shield_06
-## X-Curse-Project-ID: 6432282
+## X-Curse-Project-ID: 1245082
 ## SavedVariables: OvershieldsReforgedDB
 
 
