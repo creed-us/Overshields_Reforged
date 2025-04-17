@@ -172,7 +172,9 @@ function OvershieldsReforged.CompactUnitFrame_UpdateHealPrediction(frame)
 		if missingHealth > 0 then
 			absorbGlowTick:SetPoint("TOPLEFT", healthBar, "TOPRIGHT", ABSORB_GLOW_TICK_OFFSET, 0)
 			absorbGlowTick:SetPoint("BOTTOMLEFT", healthBar, "BOTTOMRIGHT", ABSORB_GLOW_TICK_OFFSET, 0)
-			if not db.showTickWhenNotFullHealth then absorbGlowTick:Hide() end
+			if not db.showTickWhenNotFullHealth then
+				absorbGlowTick:Hide()
+			end
 		else
 			absorbGlowTick:SetPoint("TOPLEFT", absorbOverlay, "TOPLEFT", ABSORB_GLOW_TICK_OFFSET, 0)
 			absorbGlowTick:SetPoint("BOTTOMLEFT", absorbOverlay, "BOTTOMLEFT", ABSORB_GLOW_TICK_OFFSET, 0)
