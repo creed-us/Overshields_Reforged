@@ -184,7 +184,7 @@ function OvershieldsReforged.CompactUnitFrame_UpdateHealPrediction(frame)
 	end
 end
 
--- slash command to open the options panel
+-- slash command to open the options
 SLASH_OVERSHIELDSR1 = "/overshieldsreforged"
 SLASH_OVERSHIELDSR2 = "/osr"
 SlashCmdList["OVERSHIELDSR"] = function()
