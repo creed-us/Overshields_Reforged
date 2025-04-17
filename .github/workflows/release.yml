@@ -1,25 +1,21 @@
 name: Release
 
+# triggers when pushing a tag
 on:
-    push:
-        tags:
-            - "**"
+  push:
+    tags:
+      - '**'
 
 env:
-    CF_API_KEY: ${{ secrets.CF_API_KEY }}
-    GITHUB_OAUTH: ${{ secrets.GITHUB_TOKEN }}
+  CF_API_KEY: ${{ secrets.CF_API_KEY }}
+  GITHUB_OAUTH: ${{ secrets.GITHUB_TOKEN }}
 
 jobs:
-    build:
-        runs-on: ubuntu-latest
+  release: # "release" is a job, you can name it anything you want
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # reads history for commit changelog
 
-        steps:
-            - uses: actions/checkout@v4
-              with:
-                  fetch-depth: 0
-
-            - name: Create Package
-              uses: BigWigsMods/packager@v2
-              env:
-                  CF_API_KEY: ${{ secrets.CF_API_KEY }}
-                  GITHUB_OAUTH: ${{ secrets.GITHUB_TOKEN }}
+      - uses: BigWigsMods/packager@v2
