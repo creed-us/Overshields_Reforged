@@ -2,9 +2,10 @@ name: Release
 
 # triggers when pushing a tag
 on:
+  workflow_dispatch:
   push:
     tags:
-      - '**'
+      - '*'
 
 env:
   CF_API_KEY: ${{ secrets.CF_API_KEY }}
