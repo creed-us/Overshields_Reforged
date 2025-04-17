@@ -2,9 +2,9 @@
 ## Title: Overshields Reforged
 ## Notes: Simple addon to improve the default UI's damage prevention bars (like those shown for Power Word: Shield) so they always tell how much prevention is left, even when at full HP.
 ## Author: Mysticae-Proudmoore
-## Version: 1.0.0
+## Version: @project-version@
 ## IconTexture: Interface\ICONS\inv_shield_06
-## X-Curse-Project-ID: 000000
+## X-Curse-Project-ID: 6432282
 ## SavedVariables: OvershieldsReforgedDB
 
 
