@@ -8,11 +8,10 @@ There are also a few options: Overshield overlay alpha (the striped absorb shiel
 
 Works with Blizzard's default Player, Target, Focus, Party, and Raid frames.
 
-![Overshields Reforged in party and raid](./group_1.jpg)
-
 ![Overshields Reforged on individual units (not at full life)](./target_1.jpg)
-
 ![Overshields Reforged on individual units (at full life)](./target_2.jpg)
+![Overshields Reforged in party and raid](./group_1.jpg)
+![Overshields Reforged settings in the addon options panel](./options.jpg)
 
 ## Installation
 
