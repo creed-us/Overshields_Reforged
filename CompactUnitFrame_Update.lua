@@ -3,6 +3,7 @@ local ABSORB_GLOW_TICK_OFFSET = -7
 
 ns.HandleCompactUnitFrame_Update = function(frame)
 	local db = OvershieldsReforged.db.profile
+	if not db then return end
 	if not frame then return end
 
 	local absorbOverlay  = frame.totalAbsorbOverlay
