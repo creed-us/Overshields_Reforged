@@ -38,7 +38,7 @@ ns.HandleUnitFrameUpdate = function(frame)
 		absorbGlowTick:ClearAllPoints()
 		absorbGlowTick:SetPoint("TOPLEFT", healthBar, "TOPRIGHT", ABSORB_GLOW_TICK_OFFSET, 0)
 		absorbGlowTick:SetPoint("BOTTOMLEFT", healthBar, "BOTTOMRIGHT", ABSORB_GLOW_TICK_OFFSET, 0)
-		absorbGlowTick:SetAlpha(db.overabsorbTickColor.a) -- Use alpha from options
+		absorbGlowTick:SetAlpha(db.overabsorbTickColor.a)
 		if db.showTickWhenNotFullHealth then
 			absorbGlowTick:Show()
 		else
@@ -61,10 +61,10 @@ ns.HandleUnitFrameUpdate = function(frame)
 	absorbGlowTick:ClearAllPoints()
 	absorbGlowTick:SetPoint("TOPLEFT", mask, "TOPLEFT", ABSORB_GLOW_TICK_OFFSET, 0)
 	absorbGlowTick:SetPoint("BOTTOMLEFT", mask, "BOTTOMLEFT", ABSORB_GLOW_TICK_OFFSET, 0)
-	absorbGlowTick:SetAlpha(db.overabsorbTickColor.a)                                             -- Use alpha from options
+	absorbGlowTick:SetAlpha(db.overabsorbTickColor.a)
 	absorbGlowTick:SetVertexColor(db.overabsorbTickColor.r, db.overabsorbTickColor.g, db.overabsorbTickColor.b,
-		db.overabsorbTickColor.a)                                                                 -- Use color from options
-	absorbGlowTick:SetBlendMode(db.overabsorbTickBlendMode)                                       -- Use blend mode from options
-	absorbGlowTick:SetTexture(db.overabsorbTickTexture or "Interface\\RaidFrame\\Shield-Overshield") -- Use texture from options
+		db.overabsorbTickColor.a)
+	absorbGlowTick:SetBlendMode(db.overabsorbTickBlendMode)
+	absorbGlowTick:SetTexture(db.overabsorbTickTexture or "Interface\\RaidFrame\\Shield-Overshield")
 	absorbGlowTick:Show()
 end

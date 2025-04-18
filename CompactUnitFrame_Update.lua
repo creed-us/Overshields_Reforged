@@ -63,7 +63,7 @@ ns.HandleCompactUnitFrame_Update = function(frame)
 		absorbOverlay:SetWidth(absorbWidth)
 
 		-- Apply the texture and ensure proper tiling
-		local tileSize = absorbOverlay.tileSize or 128 -- Default tile size
+		local tileSize = absorbOverlay.tileSize or 128
 		local tileCount = absorbWidth / tileSize
 		absorbOverlay:SetTexCoord(0, tileCount, 0, 1)
 
@@ -78,9 +78,10 @@ ns.HandleCompactUnitFrame_Update = function(frame)
 
 		local overlayTexture = db.overlayTexture or "Interface\\RaidFrame\\Shield-Overlay"
 		if overlayTexture ~= "Interface\\RaidFrame\\Shield-Overlay" then
-			absorbOverlay:SetTexture(overlayTexture) -- Apply selected or default overlay texture
+			absorbOverlay:SetTexture(overlayTexture)
 		end
 
+		-- TODO: Fix the tiling issue with the overlay texture
 		-- Enable tiling for "Shield-Overlay"
 		--absorbOverlay:SetHorizTile(true)
 		--absorbOverlay:SetVertTile(false)
@@ -105,10 +106,10 @@ ns.HandleCompactUnitFrame_Update = function(frame)
 		end
 		local color = db.overabsorbTickColor
 		absorbGlowTick:SetVertexColor(color.r, color.g, color.b, color.a)
-		absorbGlowTick:SetBlendMode(db.overabsorbTickBlendMode) -- Apply blend mode
+		absorbGlowTick:SetBlendMode(db.overabsorbTickBlendMode)
 
 		local tickTexture = db.overabsorbTickTexture or "Interface\\RaidFrame\\Shield-Overshield"
-		absorbGlowTick:SetTexture(tickTexture) -- Apply selected or default tick texture
+		absorbGlowTick:SetTexture(tickTexture)
 	else
 		absorbGlowTick:Hide()
 	end
