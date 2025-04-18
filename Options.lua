@@ -1,193 +1,195 @@
-local ADDON_NAME = ...
+local LSM = LibStub("LibSharedMedia-3.0")
+local AceConfig = LibStub("AceConfig-3.0")
+local AceConfigDialog = LibStub("AceConfigDialog-3.0")
+local AceDB = LibStub("AceDB-3.0")
 
-OvershieldsReforged.defaults = {
-	overshieldTickAlpha       = 0.6,                         -- edge‑of‑bar tick glow alpha
-	overshieldOverlayAlpha    = 0.6,                         -- full‑bar overlay alpha
-	showTickWhenNotFullHealth = true,                        -- show tick when unit is not at full health
-	absorbOverlayColor        = { r = 0, g = 0, b = 1, a = 1 }, -- default color
-	absorbOverlayBlendMode    = "BLEND",                     -- default blend mode
-}
+OvershieldsReforged = OvershieldsReforged or {}
 
-local function RegisterCanvas(frame)
-	local cat = Settings.RegisterCanvasLayoutCategory(frame, frame.name, frame.name)
-	cat.ID = frame.name
-	Settings.RegisterAddOnCategory(cat)
+function OvershieldsReforged:InitializeDatabase()
+	self.db = AceDB:New("OvershieldsReforgedDB", {
+		profile = {
+			showTickWhenNotFullHealth = true,
+			absorbOverlayColor = { r = 0, g = 0, b = 1, a = 1 },      -- Default blue
+			absorbOverlayBlendMode = "BLEND",                         -- Default blend mode
+			overabsorbTickColor = { r = 1, g = 1, b = 1, a = 1 },     -- Default white
+			overabsorbTickBlendMode = "ADD",                          -- Default blend mode
+			overabsorbTickTexture = "Interface\\RaidFrame\\Shield-Overshield", -- Default absorb glow tick texture
+			overlayTexture = "Interface\\RaidFrame\\Shield-Overlay",  -- Default absorb overlay texture
+		},
+	})
 end
 
-function OvershieldsReforged:CreateSlider(option, label, parent)
-	local s = CreateFrame("Slider", nil, parent, "OptionsSliderTemplate")
-	s.Text:SetText(label)
-	s.Low:SetText("0.00")
-	s.High:SetText("1.00")
-	s:SetMinMaxValues(0, 1)
-	s:SetValueStep(0.05)
-	s:SetObeyStepOnDrag(true)
-	s:SetWidth(200)
+function OvershieldsReforged:SetupOptions()
+	local function TickTextureDropdownValues(defaultTexture)
+		local values = { [defaultTexture] = "|T" .. defaultTexture .. ":16:16|t Default" } -- Add "Default" option
 
-	local function Update(v)
-		self.db[option] = v
-		s:SetValue(v)
-		s.Text:SetText(string.format("%s: %.2f", label, v))
-	end
+		-- Add specific spark textures
+		values["Interface\\RaidFrame\\Shield-Overshield"] =
+		"|TInterface\\RaidFrame\\Shield-Overshield:16:16|t Shield-Overshield"
+		values["Interface\\CastingBar\\UI-CastingBar-Spark"] =
+		"|TInterface\\CastingBar\\UI-CastingBar-Spark:16:16|t CastingBar-Spark"
+		values["Interface\\Cooldown\\star4"] = "|TInterface\\Cooldown\\star4:16:16|t Star4"
+		values["Interface\\Cooldown\\starburst"] = "|TInterface\\Cooldown\\starburst:16:16|t Starburst"
+		values["Interface\\Artifacts\\Blizzard_Spark"] = "|TInterface\\Artifacts\\Blizzard_Spark:16:16|t Blizzard Spark"
+		values["Interface\\Garrison\\GarrMission_EncounterBar-Spark"] =
+		"|TInterface\\Garrison\\GarrMission_EncounterBar-Spark:16:16|t GarrMission Spark"
+		values["Interface\\InsanityBar\\Insanity-Spark"] =
+		"|TInterface\\InsanityBar\\Insanity-Spark:16:16|t Insanity Spark"
+		values["Interface\\Legionfall\\Legionfall_BarSpark"] =
+		"|TInterface\\Legionfall\\Legionfall_BarSpark:16:16|t Legionfall Spark"
+		values["Interface\\XPBarAnim\\XPBarAnim-OrangeSpark"] =
+		"|TInterface\\XPBarAnim\\XPBarAnim-OrangeSpark:16:16|t XPBar Orange Spark"
+		values["Interface\\BonusObjective\\bonusobjective-bar-spark"] =
+		"|TInterface\\BonusObjective\\bonusobjective-bar-spark:16:16|t Bonus Objective Spark"
+		values["Interface\\HonorFrame\\honorsystem-bar-spark"] =
+		"|TInterface\\HonorFrame\\honorsystem-bar-spark:16:16|t Honor System Spark"
 
-	-- init & live update
-	Update(self.db[option])
-	s:HookScript("OnValueChanged", function(_, v) Update(v) end)
-
-	-- reset callback
-	EventRegistry:RegisterCallback(ADDON_NAME .. ".OnReset", function()
-		Update(self.defaults[option])
-	end, s)
-
-	return s
-end
-
-function OvershieldsReforged:CreateCheckbox(option, label, parent)
-	local cb = CreateFrame("CheckButton", nil, parent, "InterfaceOptionsCheckButtonTemplate")
-	cb.Text:SetText(label)
-
-	local function Update(value)
-		self.db[option] = value
-		cb:SetChecked(value)
-	end
-
-	-- Initialize and live update
-	Update(self.db[option])
-	cb:SetScript("OnClick", function()
-		Update(cb:GetChecked())
-	end)
-
-	-- Reset callback
-	EventRegistry:RegisterCallback(ADDON_NAME .. ".OnReset", function()
-		Update(self.defaults[option])
-	end, cb)
-
-	return cb
-end
-
-local function ShowColorPicker(option, label, parent)
-	local btn = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
-	btn:SetText(label)
-	btn:SetWidth(200)
-
-	local function UpdateColor(r, g, b, a)
-		OvershieldsReforged.db[option] = { r = r, g = g, b = b, a = a }
-		btn:SetText(string.format("%s: %.2f, %.2f, %.2f", label, r, g, b))
-	end
-
-	btn:SetScript("OnClick", function()
-		local color = OvershieldsReforged.db[option]
-		local options = {
-			swatchFunc = function()
-				local r, g, b = ColorPickerFrame:GetColorRGB()
-				local a = ColorPickerFrame:GetColorAlpha()
-				UpdateColor(r, g, b, a)
-			end,
-			opacityFunc = function()
-				local r, g, b = ColorPickerFrame:GetColorRGB()
-				local a = ColorPickerFrame:GetColorAlpha()
-				UpdateColor(r, g, b, a)
-			end,
-			cancelFunc = function(previousValues)
-				UpdateColor(previousValues.r, previousValues.g, previousValues.b, previousValues.a)
-			end,
-			hasOpacity = true,
-			opacity = color.a,
-			r = color.r,
-			g = color.g,
-			b = color.b,
-		}
-		ColorPickerFrame:SetupColorPickerAndShow(options)
-	end)
-
-	-- Initialize button text
-	local color = OvershieldsReforged.db[option]
-	btn:SetText(string.format("%s: %.2f, %.2f, %.2f", label, color.r, color.g, color.b))
-
-	-- Reset callback
-	EventRegistry:RegisterCallback(ADDON_NAME .. ".OnReset", function()
-		local default = OvershieldsReforged.defaults[option]
-		UpdateColor(default.r, default.g, default.b, default.a)
-	end, btn)
-
-	return btn
-end
-
-function OvershieldsReforged:CreateDropdown(option, label, parent, values)
-	local dropdown = CreateFrame("Frame", nil, parent, "UIDropDownMenuTemplate")
-	local text = parent:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-	text:SetText(label)
-	text:SetPoint("LEFT", dropdown, "RIGHT", -10, 0)
-
-	UIDropDownMenu_SetWidth(dropdown, 150)
-	UIDropDownMenu_Initialize(dropdown, function(self, level)
-		for _, value in ipairs(values) do
-			local info = UIDropDownMenu_CreateInfo()
-			info.text = value
-			info.value = value
-			info.func = function()
-				OvershieldsReforged.db[option] = value
-				UIDropDownMenu_SetText(dropdown, value)
+		-- Dynamically add spark textures from LibSharedMedia
+		for name, path in pairs(LSM:HashTable("statusbar")) do
+			if name:lower():find("spark") then
+				values[path] = string.format("|T%s:16:16|t %s", path, name)
 			end
-			info.checked = (OvershieldsReforged.db[option] == value)
-			UIDropDownMenu_AddButton(info, level)
 		end
-	end)
 
-	UIDropDownMenu_SetText(dropdown, OvershieldsReforged.db[option])
+		return values
+	end
 
-	-- Reset callback
-	EventRegistry:RegisterCallback(ADDON_NAME .. ".OnReset", function()
-		local default = OvershieldsReforged.defaults[option]
-		OvershieldsReforged.db[option] = default
-		UIDropDownMenu_SetText(dropdown, default)
-	end, dropdown)
+	local function OverlayTextureDropdownValues(defaultTexture)
+		local textures = LSM:HashTable("statusbar")
+		local values = { [defaultTexture] = "|T" .. defaultTexture .. ":16:16|t Default" } -- Add "Default" option
 
-	return dropdown
+		-- Add RaidFrame overlay textures
+		values["Interface\\RaidFrame\\Shield-Overlay"] = "|TInterface\\RaidFrame\\Shield-Overlay:16:16|t Shield-Overlay"
+
+		for name, path in pairs(textures) do
+			values[path] = string.format("|T%s:16:16|t %s", path, name) -- Add texture preview
+		end
+		return values
+	end
+
+	local options = {
+		type = "group",
+		name = "Overshields Reforged",
+		args = {
+			overabsorbTickGroup = {
+				type = "group",
+				name = "Overabsorb Tick",
+				order = 0,
+				inline = true,
+				args = {
+					showTickWhenNotFullHealth = {
+						type = "toggle",
+						name = "Always Show",
+						desc = "Show the overabsorb tick even when the unit is not at full health.",
+						order = 0,
+						get = function() return self.db.profile.showTickWhenNotFullHealth end,
+						set = function(_, value) self.db.profile.showTickWhenNotFullHealth = value end,
+					},
+					overabsorbTickColor = {
+						type = "color",
+						name = "Overabsorb Tick Color",
+						order = 1,
+						hasAlpha = true,
+						get = function()
+							local c = self.db.profile.overabsorbTickColor
+							return c.r, c.g, c.b, c.a
+						end,
+						set = function(_, r, g, b, a)
+							self.db.profile.overabsorbTickColor = { r = r, g = g, b = b, a = a }
+						end,
+					},
+					overabsorbTickBlendMode = {
+						type = "select",
+						name = "Overabsorb Tick Blend Mode",
+						order = 2,
+						values = { DISABLE = "DISABLE", BLEND = "BLEND", ALPHAKEY = "ALPHAKEY", ADD = "ADD", MOD = "MOD" },
+						get = function() return self.db.profile.overabsorbTickBlendMode end,
+						set = function(_, value) self.db.profile.overabsorbTickBlendMode = value end,
+					},
+				},
+			},
+			absorbOverlayGroup = {
+				type = "group",
+				name = "Absorb Overlay",
+				order = 1,
+				inline = true,
+				args = {
+					absorbOverlayColor = {
+						type = "color",
+						name = "Absorb Overlay Color",
+						order = 0,
+						hasAlpha = true,
+						get = function()
+							local c = self.db.profile.absorbOverlayColor
+							return c.r, c.g, c.b, c.a
+						end,
+						set = function(_, r, g, b, a)
+							self.db.profile.absorbOverlayColor = { r = r, g = g, b = b, a = a }
+						end,
+					},
+					absorbOverlayBlendMode = {
+						type = "select",
+						name = "Absorb Overlay Blend Mode",
+						order = 1,
+						values = { DISABLE = "DISABLE", BLEND = "BLEND", ALPHAKEY = "ALPHAKEY", ADD = "ADD", MOD = "MOD" },
+						get = function() return self.db.profile.absorbOverlayBlendMode end,
+						set = function(_, value) self.db.profile.absorbOverlayBlendMode = value end,
+					},
+				},
+			},
+			textures = {
+				type = "group",
+				name = "Textures",
+				order = 2,
+				inline = true,
+				args = {
+					overabsorbTickTexture = {
+						type = "select",
+						name = "Tick Texture",
+						order = 0,
+						desc = "Select the texture for the overabsorb tick.",
+						values = function() return TickTextureDropdownValues("Interface\\RaidFrame\\Shield-Overshield") end,
+						get = function()
+							return self.db.profile.overabsorbTickTexture or "Interface\\RaidFrame\\Shield-Overshield"
+						end,
+						set = function(_, value)
+							self.db.profile.overabsorbTickTexture = value == "Interface\\RaidFrame\\Shield-Overshield" and
+								nil or value
+						end,
+					},
+					overlayTexture = {
+						type = "select",
+						name = "Overlay Texture",
+						order = 1,
+						desc = "Select the texture for the overlay.",
+						values = function() return OverlayTextureDropdownValues("Interface\\RaidFrame\\Shield-Overlay") end,
+						get = function()
+							return self.db.profile.overlayTexture or "Interface\\RaidFrame\\Shield-Overlay"
+						end,
+						set = function(_, value)
+							self.db.profile.overlayTexture = value == "Interface\\RaidFrame\\Shield-Overlay" and nil or
+								value
+						end,
+					},
+					resetTextures = {
+						type = "execute",
+						name = "Reset Textures",
+						order = 2,
+						desc = "Reset textures to default.",
+						func = function()
+							self.db.profile.overabsorbTickTexture = nil
+							self.db.profile.overlayTexture = nil
+						end,
+					},
+				},
+			},
+		},
+	}
+
+	AceConfig:RegisterOptionsTable("Overshields Reforged", options)
+	AceConfigDialog:AddToBlizOptions("Overshields Reforged", "Overshields Reforged")
 end
 
-function OvershieldsReforged:InitializeOptions()
-	self.panel_main = CreateFrame("Frame")
-	self.panel_main.name = "OvershieldsReforged"
-
-	local title = self.panel_main:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-	title:SetPoint("TOPLEFT", 16, -16)
-	title:SetText("Overshields Reforged Options")
-
-	-- Tick alpha slider
-	local tick = self:CreateSlider("overshieldTickAlpha", "Overshield Tick Alpha", self.panel_main)
-	tick:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -30)
-
-	-- Overlay alpha slider
-	local overlay = self:CreateSlider("overshieldOverlayAlpha", "Overshield Overlay Alpha", self.panel_main)
-	overlay:SetPoint("TOPLEFT", tick, "BOTTOMLEFT", 0, -30)
-
-	-- Show tick when not full health checkbox
-	local showTickCheckbox = self:CreateCheckbox("showTickWhenNotFullHealth", "Show Tick When Not Full Health",
-		self.panel_main)
-	showTickCheckbox:SetPoint("TOPLEFT", overlay, "BOTTOMLEFT", 0, -30)
-
-	-- Absorb overlay color picker
-	local colorPicker = ShowColorPicker("absorbOverlayColor", "Absorb Overlay Color", self.panel_main)
-	colorPicker:SetPoint("TOPLEFT", showTickCheckbox, "BOTTOMLEFT", 0, -30)
-
-	-- Absorb overlay blend mode dropdown
-	local blendModeDropdown = self:CreateDropdown("absorbOverlayBlendMode", "Absorb Overlay Blend Mode", self.panel_main,
-		{
-			"DISABLE", "BLEND", "ALPHAKEY", "ADD", "MOD"
-		})
-	blendModeDropdown:SetPoint("TOPLEFT", colorPicker, "BOTTOMLEFT", 0, -30)
-
-	-- Reset button
-	local btn = CreateFrame("Button", nil, self.panel_main, "UIPanelButtonTemplate")
-	btn:SetPoint("TOPLEFT", blendModeDropdown, "BOTTOMLEFT", 0, -40)
-	btn:SetText(RESET)
-	btn:SetWidth(100)
-	btn:SetScript("OnClick", function()
-		OvershieldsReforgedDB = CopyTable(OvershieldsReforged.defaults)
-		self.db               = OvershieldsReforgedDB
-		EventRegistry:TriggerEvent(ADDON_NAME .. ".OnReset")
-	end)
-
-	RegisterCanvas(self.panel_main)
+function OvershieldsReforged:OpenOptions()
+	Settings.OpenToCategory("Overshields Reforged")
 end

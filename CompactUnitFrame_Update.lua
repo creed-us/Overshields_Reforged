@@ -1,8 +1,9 @@
 local _, ns = ...
-local absorbGlowTickOffset = ns.absorbGlowTickOffset
+local LSM = LibStub("LibSharedMedia-3.0") -- Load LibSharedMedia-3.0
+local ABSORB_GLOW_TICK_OFFSET = -7
 
 ns.HandleCompactUnitFrame_Update = function(frame)
-	local db = OvershieldsReforged.db
+	local db = OvershieldsReforged.db.profile
 	if not frame then return end
 
 	local absorbOverlay  = frame.totalAbsorbOverlay
@@ -45,20 +46,44 @@ ns.HandleCompactUnitFrame_Update = function(frame)
 	if showAbsorb > 0 then
 		absorbOverlay:SetParent(healthBar)
 		absorbOverlay:ClearAllPoints()
-		absorbOverlay:SetPoint("TOPRIGHT", healthBar, "TOPRIGHT", 0, 0)
-		absorbOverlay:SetPoint("BOTTOMRIGHT", healthBar, "BOTTOMRIGHT", 0, 0)
 
-		local absorbOverlayWidth = math.min((showAbsorb / maxHealth) * healthBarWidth, healthBarWidth)
-		absorbOverlay:SetWidth(absorbOverlayWidth)
-		absorbOverlay:SetTexCoord(0, absorbOverlayWidth / absorbOverlay.tileSize, 0,
-			healthBarHeight / absorbOverlay.tileSize)
-		absorbOverlay:SetAlpha(db.overshieldOverlayAlpha)
+		-- Anchor the overlay to the right side of the health bar
+		if missingHealth > 0 then
+			-- Grow to the right of the health bar, respecting missing health
+			absorbOverlay:SetPoint("TOPRIGHT", healthBar, "TOPRIGHT", 0, 0)
+			absorbOverlay:SetPoint("BOTTOMRIGHT", healthBar, "BOTTOMRIGHT", 0, 0)
+		else
+			-- Grow left from the right edge of the health bar
+			absorbOverlay:SetPoint("TOPRIGHT", healthBar, "TOPRIGHT", 0, 0)
+			absorbOverlay:SetPoint("BOTTOMRIGHT", healthBar, "BOTTOMRIGHT", 0, 0)
+		end
+
+		-- Calculate the width of the absorb overlay as a fraction of the health bar width
+		local absorbWidth = math.min((showAbsorb / maxHealth) * healthBarWidth, healthBarWidth)
+		absorbOverlay:SetWidth(absorbWidth)
+
+		-- Apply the texture and ensure proper tiling
+		local tileSize = absorbOverlay.tileSize or 128 -- Default tile size
+		local tileCount = absorbWidth / tileSize
+		absorbOverlay:SetTexCoord(0, tileCount, 0, 1)
+
+		-- Use alpha from absorbOverlayColor
+		absorbOverlay:SetAlpha(db.absorbOverlayColor.a)
 
 		-- Apply custom color and blend mode to absorbOverlay
 		local color = db.absorbOverlayColor
 		absorbOverlay:SetDesaturated(true)
 		absorbOverlay:SetVertexColor(color.r, color.g, color.b, color.a)
 		absorbOverlay:SetBlendMode(db.absorbOverlayBlendMode)
+
+		local overlayTexture = db.overlayTexture or "Interface\\RaidFrame\\Shield-Overlay"
+		if overlayTexture ~= "Interface\\RaidFrame\\Shield-Overlay" then
+			absorbOverlay:SetTexture(overlayTexture) -- Apply selected or default overlay texture
+		end
+
+		-- Enable tiling for "Shield-Overlay"
+		--absorbOverlay:SetHorizTile(true)
+		--absorbOverlay:SetVertTile(false)
 
 		absorbOverlay:Show()
 	else
@@ -68,17 +93,22 @@ ns.HandleCompactUnitFrame_Update = function(frame)
 	if totalAbsorb > missingHealth then
 		absorbGlowTick:ClearAllPoints()
 		if missingHealth > 0 then
-			absorbGlowTick:SetPoint("TOPLEFT", healthBar, "TOPRIGHT", absorbGlowTickOffset, 0)
-			absorbGlowTick:SetPoint("BOTTOMLEFT", healthBar, "BOTTOMRIGHT", absorbGlowTickOffset, 0)
+			absorbGlowTick:SetPoint("TOPLEFT", healthBar, "TOPRIGHT", ABSORB_GLOW_TICK_OFFSET, 0)
+			absorbGlowTick:SetPoint("BOTTOMLEFT", healthBar, "BOTTOMRIGHT", ABSORB_GLOW_TICK_OFFSET, 0)
 			if not db.showTickWhenNotFullHealth then
 				absorbGlowTick:Hide()
 			end
 		else
-			absorbGlowTick:SetPoint("TOPLEFT", absorbOverlay, "TOPLEFT", absorbGlowTickOffset, 0)
-			absorbGlowTick:SetPoint("BOTTOMLEFT", absorbOverlay, "BOTTOMLEFT", absorbGlowTickOffset, 0)
+			absorbGlowTick:SetPoint("TOPLEFT", absorbOverlay, "TOPLEFT", ABSORB_GLOW_TICK_OFFSET, 0)
+			absorbGlowTick:SetPoint("BOTTOMLEFT", absorbOverlay, "BOTTOMLEFT", ABSORB_GLOW_TICK_OFFSET, 0)
 			absorbGlowTick:Show()
 		end
-		absorbGlowTick:SetAlpha(db.overshieldTickAlpha)
+		local color = db.overabsorbTickColor
+		absorbGlowTick:SetVertexColor(color.r, color.g, color.b, color.a)
+		absorbGlowTick:SetBlendMode(db.overabsorbTickBlendMode) -- Apply blend mode
+
+		local tickTexture = db.overabsorbTickTexture or "Interface\\RaidFrame\\Shield-Overshield"
+		absorbGlowTick:SetTexture(tickTexture) -- Apply selected or default tick texture
 	else
 		absorbGlowTick:Hide()
 	end

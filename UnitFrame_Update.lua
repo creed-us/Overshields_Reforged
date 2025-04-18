@@ -1,8 +1,9 @@
 local _, ns = ...
-local absorbGlowTickOffset = ns.absorbGlowTickOffset
+local LSM = LibStub("LibSharedMedia-3.0") -- Load LibSharedMedia-3.0
+local ABSORB_GLOW_TICK_OFFSET = -7
 
 ns.HandleUnitFrameUpdate = function(frame)
-	local db = OvershieldsReforged.db
+	local db = OvershieldsReforged.db.profile
 	if not frame then return end
 
 	local absorbBar      = frame.totalAbsorbBar
@@ -35,9 +36,9 @@ ns.HandleUnitFrameUpdate = function(frame)
 	local overAbsorb = effectiveHealth > maxHealth
 	if missingHealth > 0 and overAbsorb then
 		absorbGlowTick:ClearAllPoints()
-		absorbGlowTick:SetPoint("TOPLEFT", healthBar, "TOPRIGHT", absorbGlowTickOffset, 0)
-		absorbGlowTick:SetPoint("BOTTOMLEFT", healthBar, "BOTTOMRIGHT", absorbGlowTickOffset, 0)
-		absorbGlowTick:SetAlpha(db.overshieldTickAlpha)
+		absorbGlowTick:SetPoint("TOPLEFT", healthBar, "TOPRIGHT", ABSORB_GLOW_TICK_OFFSET, 0)
+		absorbGlowTick:SetPoint("BOTTOMLEFT", healthBar, "BOTTOMRIGHT", ABSORB_GLOW_TICK_OFFSET, 0)
+		absorbGlowTick:SetAlpha(db.overabsorbTickColor.a) -- Use alpha from options
 		if db.showTickWhenNotFullHealth then
 			absorbGlowTick:Show()
 		else
@@ -58,8 +59,12 @@ ns.HandleUnitFrameUpdate = function(frame)
 
 	local mask = absorbBar.FillMask
 	absorbGlowTick:ClearAllPoints()
-	absorbGlowTick:SetPoint("TOPLEFT", mask, "TOPLEFT", absorbGlowTickOffset, 0)
-	absorbGlowTick:SetPoint("BOTTOMLEFT", mask, "BOTTOMLEFT", absorbGlowTickOffset, 0)
-	absorbGlowTick:SetAlpha(db.overshieldTickAlpha)
+	absorbGlowTick:SetPoint("TOPLEFT", mask, "TOPLEFT", ABSORB_GLOW_TICK_OFFSET, 0)
+	absorbGlowTick:SetPoint("BOTTOMLEFT", mask, "BOTTOMLEFT", ABSORB_GLOW_TICK_OFFSET, 0)
+	absorbGlowTick:SetAlpha(db.overabsorbTickColor.a)                                             -- Use alpha from options
+	absorbGlowTick:SetVertexColor(db.overabsorbTickColor.r, db.overabsorbTickColor.g, db.overabsorbTickColor.b,
+		db.overabsorbTickColor.a)                                                                 -- Use color from options
+	absorbGlowTick:SetBlendMode(db.overabsorbTickBlendMode)                                       -- Use blend mode from options
+	absorbGlowTick:SetTexture(db.overabsorbTickTexture or "Interface\\RaidFrame\\Shield-Overshield") -- Use texture from options
 	absorbGlowTick:Show()
 end
