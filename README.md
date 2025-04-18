@@ -13,6 +13,10 @@ Works with Blizzard's default Player, Target, Focus, Party, and Raid frames.
 ![Overshields Reforged in party and raid](./group_1.jpg)
 ![Overshields Reforged settings in the addon options panel](./options.jpg)
 
+## How to Use
+
+Run **/overshieldsreforged** or **/osr** in your chat or press **Esc** and go to **Options > AddOns > Overshields Reforged**.
+
 ## Installation
 
 ### Addon Manager
