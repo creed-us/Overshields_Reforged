@@ -17,9 +17,20 @@ function OvershieldsReforged:OnInitialize()
 	end)
 end
 
--- Slash command to open the options
+-- Slash command handler
 SLASH_OVERSHIELDSR1 = "/overshieldsreforged"
 SLASH_OVERSHIELDSR2 = "/osr"
-SlashCmdList["OVERSHIELDSR"] = function()
-	OvershieldsReforged:OpenOptions()
+SlashCmdList["OVERSHIELDSR"] = function(input)
+	local args = { strsplit(" ", input) }
+	local command = args[1] and args[1]:lower() or nil
+
+	if command == "version" or command == "v" then
+		print("Overshields Reforged version: " .. C_AddOns.GetAddOnMetadata(ADDON_NAME, "Version"))
+	elseif command == "options" or command == "o" then
+		OvershieldsReforged:OpenOptions()
+	else
+		print("Usage:")
+		print("/osr version (v) - Display the addon version.")
+		print("/osr options (o) - Open the addon options.")
+	end
 end
