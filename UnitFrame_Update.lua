@@ -3,8 +3,7 @@ local OVERSHIELD_TICK_OFFSET = -7
 
 ns.HandleUnitFrameUpdate = function(frame)
 	local db = OvershieldsReforged.db.profile
-	if not db then return end
-	if not frame then return end
+	if not db or not frame then return end
 
 	local shieldBar = frame.totalAbsorbBar
 	local overshieldTick = frame.overAbsorbGlow
@@ -12,9 +11,7 @@ ns.HandleUnitFrameUpdate = function(frame)
 	if (not shieldBar or shieldBar:IsForbidden())
 		or (not overshieldTick or overshieldTick:IsForbidden())
 		or (not healthBar or healthBar:IsForbidden())
-	then
-		return
-	end
+	then return end
 
 	local healthTexture = healthBar:GetStatusBarTexture()
 	local currentHealth = healthBar:GetValue()

@@ -3,8 +3,7 @@ local OVERSHIELD_TICK_OFFSET = -7
 
 ns.HandleCompactUnitFrame_Update = function(frame)
 	local db = OvershieldsReforged.db.profile
-	if not db then return end
-	if not frame then return end
+	if not db or not frame then return end
 
 	local shieldBar = frame.totalAbsorb
 	local shieldOverlay = frame.totalAbsorbOverlay
@@ -13,9 +12,7 @@ ns.HandleCompactUnitFrame_Update = function(frame)
 	if (not shieldOverlay or shieldOverlay:IsForbidden())
 		or (not overshieldTick or overshieldTick:IsForbidden())
 		or (not healthBar or healthBar:IsForbidden())
-	then
-		return
-	end
+	then return end
 
 	local currentHealth = healthBar:GetValue()
 	local _, maxHealth  = healthBar:GetMinMaxValues()
