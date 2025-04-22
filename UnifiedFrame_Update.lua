@@ -9,7 +9,8 @@ ns.HandleFrameUpdate = function(frame)
 	local shieldOverlay = frame.totalAbsorbOverlay
 	local overshieldTick = frame.overAbsorbGlow
 	local healthBar = frame.healthBar or frame.healthbar -- Handle both frame types
-	if (not shieldOverlay or shieldOverlay:IsForbidden())
+	if (not shieldBar or shieldBar:IsForbidden())
+		or (not shieldOverlay or shieldOverlay:IsForbidden())
 		or (not overshieldTick or overshieldTick:IsForbidden())
 		or (not healthBar or healthBar:IsForbidden())
 	then return end
@@ -20,6 +21,7 @@ ns.HandleFrameUpdate = function(frame)
 	local currentHealth = healthBar:GetValue()
 	local _, maxHealth = healthBar:GetMinMaxValues()
 	if currentHealth <= 0 or maxHealth <= 0 then
+		shieldBar:Hide()
 		shieldOverlay:Hide()
 		overshieldTick:Hide()
 		return
@@ -27,15 +29,30 @@ ns.HandleFrameUpdate = function(frame)
 
 	local totalShield = UnitGetTotalAbsorbs(unit) or 0
 	if totalShield <= 0 then
+		shieldBar:Hide()
 		shieldOverlay:Hide()
 		overshieldTick:Hide()
 		return
 	end
 
 	local missingHealth = maxHealth - currentHealth
+	local effectiveHealth = currentHealth + totalShield
+
+	-- Update shieldBar using UpdateFillPosition when the unit is at full health
+    if db.showShieldBarAtFullHealth and missingHealth <= 0 then
+        local healthTexture = healthBar:GetStatusBarTexture()
+        local showShield = math.min(totalShield, maxHealth)
+        local offsetX = (maxHealth / effectiveHealth) - 1
+        shieldBar:UpdateFillPosition(healthTexture, showShield, offsetX)
+        shieldBar:Show()
+    else
+        shieldBar:Hide()
+    end
+
 	local showShield = currentHealth < maxHealth and math.min(totalShield, missingHealth) or totalShield
 	local healthBarWidth, _ = healthBar:GetSize()
 
+	-- Update shieldOverlay
 	if showShield > 0 then
 		shieldOverlay:SetParent(healthBar)
 		shieldOverlay:ClearAllPoints()
@@ -71,6 +88,7 @@ ns.HandleFrameUpdate = function(frame)
 		shieldOverlay:Hide()
 	end
 
+	-- Update overshieldTick
 	if totalShield > missingHealth then
 		overshieldTick:ClearAllPoints()
 		-- Anchor the overshield tick based on missing health

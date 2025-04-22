@@ -214,6 +214,22 @@ function OvershieldsReforged:SetupOptions()
 						end,
 					},
 				},
+				shieldBarGroup = {
+					type = "group",
+					name = "Shield Bar",
+					order = 3,
+					inline = true,
+					args = {
+						showShieldBarAtFullHealth = {
+							type = "toggle",
+							name = "Show Shield Bar at Full Health",
+							desc = "Allow the shield bar to display over the health bar when the unit is at full health.",
+							order = 0,
+							get = function() return self.db.profile.showShieldBarAtFullHealth end,
+							set = function(_, value) self.db.profile.showShieldBarAtFullHealth = value end,
+						},
+					},
+				},
 			},
 		},
 	}
