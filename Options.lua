@@ -9,12 +9,12 @@ function OvershieldsReforged:InitializeDatabase()
 	self.db = AceDB:New("OvershieldsReforgedDB", {
 		profile = {
 			showTickWhenNotFullHealth = true,
-			absorbOverlayColor = { r = 0, g = 0, b = 1, a = 1 },      -- Default blue
-			absorbOverlayBlendMode = "BLEND",                         -- Default blend mode
-			overabsorbTickColor = { r = 1, g = 1, b = 1, a = 1 },     -- Default white
-			overabsorbTickBlendMode = "ADD",                          -- Default blend mode
-			overabsorbTickTexture = "Interface\\RaidFrame\\Shield-Overshield", -- Default absorb glow tick texture
-			overlayTexture = "Interface\\RaidFrame\\Shield-Overlay",  -- Default absorb overlay texture
+			shieldOverlayColor = { r = 0, g = 0, b = 1, a = 1 },      -- Default blue
+			shieldOverlayBlendMode = "BLEND",                         -- Default blend mode
+			overshieldTickColor = { r = 1, g = 1, b = 1, a = 1 },     -- Default white
+			overshieldTickBlendMode = "ADD",                          -- Default blend mode
+			overshieldTickTexture = "Interface\\RaidFrame\\Shield-Overshield", -- Default overshield tick texture
+			overlayTexture = "Interface\\RaidFrame\\Shield-Overlay",  -- Default shield overlay texture
 		},
 	})
 end
@@ -24,25 +24,17 @@ function OvershieldsReforged:SetupOptions()
 		local values = { [defaultTexture] = "|T" .. defaultTexture .. ":16:16|t Default" } -- Add "Default" option
 
 		-- Add specific spark textures
-		values["Interface\\RaidFrame\\Shield-Overshield"] =
-		"|TInterface\\RaidFrame\\Shield-Overshield:16:16|t Shield-Overshield"
-		values["Interface\\CastingBar\\UI-CastingBar-Spark"] =
-		"|TInterface\\CastingBar\\UI-CastingBar-Spark:16:16|t CastingBar-Spark"
+		values["Interface\\RaidFrame\\Shield-Overshield"] = "|TInterface\\RaidFrame\\Shield-Overshield:16:16|t Shield-Overshield"
+		values["Interface\\CastingBar\\UI-CastingBar-Spark"] = "|TInterface\\CastingBar\\UI-CastingBar-Spark:16:16|t CastingBar-Spark"
 		values["Interface\\Cooldown\\star4"] = "|TInterface\\Cooldown\\star4:16:16|t Star4"
 		values["Interface\\Cooldown\\starburst"] = "|TInterface\\Cooldown\\starburst:16:16|t Starburst"
 		values["Interface\\Artifacts\\Blizzard_Spark"] = "|TInterface\\Artifacts\\Blizzard_Spark:16:16|t Blizzard Spark"
-		values["Interface\\Garrison\\GarrMission_EncounterBar-Spark"] =
-		"|TInterface\\Garrison\\GarrMission_EncounterBar-Spark:16:16|t GarrMission Spark"
-		values["Interface\\InsanityBar\\Insanity-Spark"] =
-		"|TInterface\\InsanityBar\\Insanity-Spark:16:16|t Insanity Spark"
-		values["Interface\\Legionfall\\Legionfall_BarSpark"] =
-		"|TInterface\\Legionfall\\Legionfall_BarSpark:16:16|t Legionfall Spark"
-		values["Interface\\XPBarAnim\\XPBarAnim-OrangeSpark"] =
-		"|TInterface\\XPBarAnim\\XPBarAnim-OrangeSpark:16:16|t XPBar Orange Spark"
-		values["Interface\\BonusObjective\\bonusobjective-bar-spark"] =
-		"|TInterface\\BonusObjective\\bonusobjective-bar-spark:16:16|t Bonus Objective Spark"
-		values["Interface\\HonorFrame\\honorsystem-bar-spark"] =
-		"|TInterface\\HonorFrame\\honorsystem-bar-spark:16:16|t Honor System Spark"
+		values["Interface\\Garrison\\GarrMission_EncounterBar-Spark"] = "|TInterface\\Garrison\\GarrMission_EncounterBar-Spark:16:16|t GarrMission Spark"
+		values["Interface\\InsanityBar\\Insanity-Spark"] = "|TInterface\\InsanityBar\\Insanity-Spark:16:16|t Insanity Spark"
+		values["Interface\\Legionfall\\Legionfall_BarSpark"] = "|TInterface\\Legionfall\\Legionfall_BarSpark:16:16|t Legionfall Spark"
+		values["Interface\\XPBarAnim\\XPBarAnim-OrangeSpark"] = "|TInterface\\XPBarAnim\\XPBarAnim-OrangeSpark:16:16|t XPBar Orange Spark"
+		values["Interface\\BonusObjective\\bonusobjective-bar-spark"] = "|TInterface\\BonusObjective\\bonusobjective-bar-spark:16:16|t Bonus Objective Spark"
+		values["Interface\\HonorFrame\\honorsystem-bar-spark"] = "|TInterface\\HonorFrame\\honorsystem-bar-spark:16:16|t Honor System Spark"
 
 		-- Dynamically add spark textures from LibSharedMedia
 		for name, path in pairs(LSM:HashTable("statusbar")) do
@@ -85,90 +77,90 @@ function OvershieldsReforged:SetupOptions()
 		type = "group",
 		name = "Overshields Reforged",
 		args = {
-			overabsorbTickGroup = {
+			overshieldTickGroup = {
 				type = "group",
-				name = "Overabsorb Tick",
+				name = "Overshield Tick",
 				order = 0,
 				inline = true,
 				args = {
 					showTickWhenNotFullHealth = {
 						type = "toggle",
 						name = "Always Show",
-						desc = "Show the overabsorb tick even when the unit is not at full health.",
+						desc = "Show the overshield tick even when the unit is not at full health.",
 						order = 0,
 						get = function() return self.db.profile.showTickWhenNotFullHealth end,
 						set = function(_, value) self.db.profile.showTickWhenNotFullHealth = value end,
 					},
-					overabsorbTickColor = {
+					overshieldTickColor = {
 						type = "color",
-						name = "Overabsorb Tick Color",
+						name = "Overshield Tick Color",
 						order = 1,
 						hasAlpha = true,
 						get = function()
-							local c = self.db.profile.overabsorbTickColor
+							local c = self.db.profile.overshieldTickColor
 							return c.r, c.g, c.b, c.a
 						end,
 						set = function(_, r, g, b, a)
-							self.db.profile.overabsorbTickColor = { r = r, g = g, b = b, a = a }
+							self.db.profile.overshieldTickColor = { r = r, g = g, b = b, a = a }
 						end,
 					},
-					overabsorbTickBlendMode = {
+					overshieldTickBlendMode = {
 						type = "select",
-						name = "Overabsorb Tick Blend Mode",
+						name = "Overshield Tick Blend Mode",
 						order = 2,
 						values = { DISABLE = "DISABLE", BLEND = "BLEND", ALPHAKEY = "ALPHAKEY", ADD = "ADD", MOD = "MOD" },
-						get = function() return self.db.profile.overabsorbTickBlendMode end,
-						set = function(_, value) self.db.profile.overabsorbTickBlendMode = value end,
+						get = function() return self.db.profile.overshieldTickBlendMode end,
+						set = function(_, value) self.db.profile.overshieldTickBlendMode = value end,
 					},
-					resetOverabsorbTick = {
+					resetOvershieldTick = {
 						type = "execute",
 						name = "|TInterface\\Buttons\\UI-RefreshButton:16:16|t Reset",
-						desc = "Reset Overabsorb Tick settings to default.",
+						desc = "Reset Overshield Tick settings to default.",
 						order = 3,
 						func = function()
 							self.db.profile.showTickWhenNotFullHealth = true
-							self.db.profile.overabsorbTickColor = { r = 1, g = 1, b = 1, a = 1 }
-							self.db.profile.overabsorbTickBlendMode = "ADD"
-							self.db.profile.overabsorbTickTexture = "Interface\\RaidFrame\\Shield-Overshield"
+							self.db.profile.overshieldTickColor = { r = 1, g = 1, b = 1, a = 1 }
+							self.db.profile.overshieldTickBlendMode = "ADD"
+							self.db.profile.overshieldTickTexture = "Interface\\RaidFrame\\Shield-Overshield"
 						end,
 					},
 				},
 			},
-			absorbOverlayGroup = {
+			shieldOverlayGroup = {
 				type = "group",
-				name = "Absorb Overlay",
+				name = "Shield Overlay",
 				order = 1,
 				inline = true,
 				args = {
-					absorbOverlayColor = {
+					shieldOverlayColor = {
 						type = "color",
-						name = "Absorb Overlay Color",
+						name = "Shield Overlay Color",
 						order = 0,
 						hasAlpha = true,
 						get = function()
-							local c = self.db.profile.absorbOverlayColor
+							local c = self.db.profile.shieldOverlayColor
 							return c.r, c.g, c.b, c.a
 						end,
 						set = function(_, r, g, b, a)
-							self.db.profile.absorbOverlayColor = { r = r, g = g, b = b, a = a }
+							self.db.profile.shieldOverlayColor = { r = r, g = g, b = b, a = a }
 						end,
 					},
-					absorbOverlayBlendMode = {
+					shieldOverlayBlendMode = {
 						type = "select",
-						name = "Absorb Overlay Blend Mode",
+						name = "Shield Overlay Blend Mode",
 						order = 1,
 						values = { DISABLE = "DISABLE", BLEND = "BLEND", ALPHAKEY = "ALPHAKEY", ADD = "ADD", MOD = "MOD" },
-						get = function() return self.db.profile.absorbOverlayBlendMode end,
-						set = function(_, value) self.db.profile.absorbOverlayBlendMode = value end,
+						get = function() return self.db.profile.shieldOverlayBlendMode end,
+						set = function(_, value) self.db.profile.shieldOverlayBlendMode = value end,
 					},
-					resetAbsorbOverlay = {
+					resetShieldOverlay = {
 						type = "execute",
 						name = "|TInterface\\Buttons\\UI-RefreshButton:16:16|t Reset",
-						desc = "Reset Absorb Overlay settings to default.",
+						desc = "Reset Shield Overlay settings to default.",
 						order = 2,
 						func = function()
-							self.db.profile.absorbOverlayColor = { r = 0, g = 0, b = 1, a = 1 }
-							self.db.profile.absorbOverlayBlendMode = "BLEND"
+							self.db.profile.shieldOverlayColor = { r = 0, g = 0, b = 1, a = 1 }
+							self.db.profile.shieldOverlayBlendMode = "BLEND"
 							self.db.profile.overlayTexture = "Interface\\RaidFrame\\Shield-Overlay"
 						end,
 					},
@@ -180,17 +172,17 @@ function OvershieldsReforged:SetupOptions()
 				order = 2,
 				inline = true,
 				args = {
-					overabsorbTickTexture = {
+					overshieldTickTexture = {
 						type = "select",
 						name = "Tick Texture",
 						order = 0,
-						desc = "Select the texture for the overabsorb tick.",
+						desc = "Select the texture for the overshield tick.",
 						values = function() return TickTextureDropdownValues("Interface\\RaidFrame\\Shield-Overshield") end,
 						get = function()
-							return self.db.profile.overabsorbTickTexture or "Interface\\RaidFrame\\Shield-Overshield"
+							return self.db.profile.overshieldTickTexture or "Interface\\RaidFrame\\Shield-Overshield"
 						end,
 						set = function(_, value)
-							self.db.profile.overabsorbTickTexture = value == "Interface\\RaidFrame\\Shield-Overshield" and
+							self.db.profile.overshieldTickTexture = value == "Interface\\RaidFrame\\Shield-Overshield" and
 								nil or value
 							ReloadUIWithConfirmation()
 						end,
@@ -216,7 +208,7 @@ function OvershieldsReforged:SetupOptions()
 						desc = "Reset all texture settings to default.",
 						order = 3,
 						func = function()
-							self.db.profile.overabsorbTickTexture = nil
+							self.db.profile.overshieldTickTexture = nil
 							self.db.profile.overlayTexture = nil
 							ReloadUIWithConfirmation()
 						end,

@@ -1,16 +1,16 @@
 local _, ns = ...
-local ABSORB_GLOW_TICK_OFFSET = -7
+local OVERSHIELD_TICK_OFFSET = -7
 
 ns.HandleUnitFrameUpdate = function(frame)
 	local db = OvershieldsReforged.db.profile
 	if not db then return end
 	if not frame then return end
 
-	local absorbBar      = frame.totalAbsorbBar
-	local absorbGlowTick = frame.overAbsorbGlow
-	local healthBar      = frame.healthbar
-	if (not absorbBar or absorbBar:IsForbidden())
-		or (not absorbGlowTick or absorbGlowTick:IsForbidden())
+	local shieldBar = frame.totalAbsorbBar
+	local overshieldTick = frame.overAbsorbGlow
+	local healthBar = frame.healthbar
+	if (not shieldBar or shieldBar:IsForbidden())
+		or (not overshieldTick or overshieldTick:IsForbidden())
 		or (not healthBar or healthBar:IsForbidden())
 	then
 		return
@@ -18,53 +18,52 @@ ns.HandleUnitFrameUpdate = function(frame)
 
 	local healthTexture = healthBar:GetStatusBarTexture()
 	local currentHealth = healthBar:GetValue()
-	local _, maxHealth  = healthBar:GetMinMaxValues()
+	local _, maxHealth = healthBar:GetMinMaxValues()
 	if currentHealth <= 0 or maxHealth <= 0 then
-		absorbGlowTick:Hide()
+		overshieldTick:Hide()
 		return
 	end
 
-	local totalAbsorb = UnitGetTotalAbsorbs(frame.unit) or 0
-	if totalAbsorb <= 0 then
-		absorbBar:Hide()
-		absorbGlowTick:Hide()
+	local totalShield = UnitGetTotalAbsorbs(frame.unit) or 0
+	if totalShield <= 0 then
+		shieldBar:Hide()
+		overshieldTick:Hide()
 		return
 	end
 
 	local missingHealth = maxHealth - currentHealth
-	local effectiveHealth = currentHealth + totalAbsorb
-	local overAbsorb = effectiveHealth > maxHealth
-	if missingHealth > 0 and overAbsorb then
-		absorbGlowTick:ClearAllPoints()
-		absorbGlowTick:SetPoint("TOPLEFT", healthBar, "TOPRIGHT", ABSORB_GLOW_TICK_OFFSET, 0)
-		absorbGlowTick:SetPoint("BOTTOMLEFT", healthBar, "BOTTOMRIGHT", ABSORB_GLOW_TICK_OFFSET, 0)
-		absorbGlowTick:SetAlpha(db.overabsorbTickColor.a)
+	local effectiveHealth = currentHealth + totalShield
+	local hasOvershield = effectiveHealth > maxHealth
+	if missingHealth > 0 and hasOvershield then
+		overshieldTick:ClearAllPoints()
+		overshieldTick:SetPoint("TOPLEFT", healthBar, "TOPRIGHT", OVERSHIELD_TICK_OFFSET, 0)
+		overshieldTick:SetPoint("BOTTOMLEFT", healthBar, "BOTTOMRIGHT", OVERSHIELD_TICK_OFFSET, 0)
+		overshieldTick:SetAlpha(db.overshieldTickColor.a)
 		if db.showTickWhenNotFullHealth then
-			absorbGlowTick:Show()
+			overshieldTick:Show()
 		else
-			absorbGlowTick:Hide()
+			overshieldTick:Hide()
 		end
 		return
 	end
 
-	local showAbsorb = math.min(totalAbsorb, maxHealth)
-	local offsetX    = (maxHealth / effectiveHealth) - 1
-	absorbBar:UpdateFillPosition(healthTexture, showAbsorb, offsetX)
-	absorbBar:Show()
+	local showShield = math.min(totalShield, maxHealth)
+	local offsetX = (maxHealth / effectiveHealth) - 1
+	shieldBar:UpdateFillPosition(healthTexture, showShield, offsetX)
+	shieldBar:Show()
 
-	if not overAbsorb then
-		absorbGlowTick:Hide()
+	if not hasOvershield then
+		overshieldTick:Hide()
 		return
 	end
 
-	local mask = absorbBar.FillMask
-	absorbGlowTick:ClearAllPoints()
-	absorbGlowTick:SetPoint("TOPLEFT", mask, "TOPLEFT", ABSORB_GLOW_TICK_OFFSET, 0)
-	absorbGlowTick:SetPoint("BOTTOMLEFT", mask, "BOTTOMLEFT", ABSORB_GLOW_TICK_OFFSET, 0)
-	absorbGlowTick:SetAlpha(db.overabsorbTickColor.a)
-	absorbGlowTick:SetVertexColor(db.overabsorbTickColor.r, db.overabsorbTickColor.g, db.overabsorbTickColor.b,
-		db.overabsorbTickColor.a)
-	absorbGlowTick:SetBlendMode(db.overabsorbTickBlendMode)
-	absorbGlowTick:SetTexture(db.overabsorbTickTexture or "Interface\\RaidFrame\\Shield-Overshield")
-	absorbGlowTick:Show()
+	local mask = shieldBar.FillMask
+	overshieldTick:ClearAllPoints()
+	overshieldTick:SetPoint("TOPLEFT", mask, "TOPLEFT", OVERSHIELD_TICK_OFFSET, 0)
+	overshieldTick:SetPoint("BOTTOMLEFT", mask, "BOTTOMLEFT", OVERSHIELD_TICK_OFFSET, 0)
+	overshieldTick:SetAlpha(db.overshieldTickColor.a)
+	overshieldTick:SetVertexColor(db.overshieldTickColor.r, db.overshieldTickColor.g, db.overshieldTickColor.b, db.overshieldTickColor.a)
+	overshieldTick:SetBlendMode(db.overshieldTickBlendMode)
+	overshieldTick:SetTexture(db.overshieldTickTexture or "Interface\\RaidFrame\\Shield-Overshield")
+	overshieldTick:Show()
 end

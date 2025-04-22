@@ -1,16 +1,17 @@
 local _, ns = ...
-local ABSORB_GLOW_TICK_OFFSET = -7
+local OVERSHIELD_TICK_OFFSET = -7
 
 ns.HandleCompactUnitFrame_Update = function(frame)
 	local db = OvershieldsReforged.db.profile
 	if not db then return end
 	if not frame then return end
 
-	local absorbOverlay  = frame.totalAbsorbOverlay
-	local absorbGlowTick = frame.overAbsorbGlow
-	local healthBar      = frame.healthBar
-	if (not absorbOverlay or absorbOverlay:IsForbidden())
-		or (not absorbGlowTick or absorbGlowTick:IsForbidden())
+	local shieldBar = frame.totalAbsorb
+	local shieldOverlay = frame.totalAbsorbOverlay
+	local overshieldTick = frame.overAbsorbGlow
+	local healthBar = frame.healthBar
+	if (not shieldOverlay or shieldOverlay:IsForbidden())
+		or (not overshieldTick or overshieldTick:IsForbidden())
 		or (not healthBar or healthBar:IsForbidden())
 	then
 		return
@@ -19,98 +20,92 @@ ns.HandleCompactUnitFrame_Update = function(frame)
 	local currentHealth = healthBar:GetValue()
 	local _, maxHealth  = healthBar:GetMinMaxValues()
 	if maxHealth <= 0 then
-		absorbOverlay:Hide()
-		absorbGlowTick:Hide()
+		shieldOverlay:Hide()
+		overshieldTick:Hide()
 		return
 	end
 
-	local totalAbsorb = UnitGetTotalAbsorbs(frame.displayedUnit) or 0
-	if totalAbsorb <= 0 then
-		absorbOverlay:Hide()
-		absorbGlowTick:Hide()
+	local totalShield = UnitGetTotalAbsorbs(frame.displayedUnit) or 0
+	if totalShield <= 0 then
+		shieldOverlay:Hide()
+		overshieldTick:Hide()
 		return
 	end
 
 	local missingHealth = maxHealth - currentHealth
-	local effectiveHealth = currentHealth + totalAbsorb
-	local overAbsorb = effectiveHealth > maxHealth
+	local effectiveHealth = currentHealth + totalShield
+	local hasOvershield = effectiveHealth > maxHealth
 
-	local showAbsorb
+	local showShield
 	if currentHealth < maxHealth then
-		showAbsorb = math.min(totalAbsorb, missingHealth)
+		showShield = math.min(totalShield, missingHealth)
 	else
-		showAbsorb = totalAbsorb
+		showShield = totalShield
 	end
 
 	local healthBarWidth, healthBarHeight = healthBar:GetSize()
-	if showAbsorb > 0 then
-		absorbOverlay:SetParent(healthBar)
-		absorbOverlay:ClearAllPoints()
+	if showShield > 0 then
+		shieldOverlay:SetParent(healthBar)
+		shieldOverlay:ClearAllPoints()
 
-		-- Anchor the overlay to the right side of the health bar
 		if missingHealth > 0 then
-			-- Grow to the right of the health bar, respecting missing health
-			absorbOverlay:SetPoint("TOPRIGHT", healthBar, "TOPRIGHT", 0, 0)
-			absorbOverlay:SetPoint("BOTTOMRIGHT", healthBar, "BOTTOMRIGHT", 0, 0)
+			-- Anchor the overlay to the shield bar instead of the health bar
+			shieldOverlay:SetPoint("TOPRIGHT", shieldBar, "TOPRIGHT", 0, 0)
+			shieldOverlay:SetPoint("BOTTOMRIGHT", shieldBar, "BOTTOMRIGHT", 0, 0)
 		else
-			-- Grow left from the right edge of the health bar
-			absorbOverlay:SetPoint("TOPRIGHT", healthBar, "TOPRIGHT", 0, 0)
-			absorbOverlay:SetPoint("BOTTOMRIGHT", healthBar, "BOTTOMRIGHT", 0, 0)
+			-- Anchor the overlay to the right edge of the health bar
+			shieldOverlay:SetPoint("TOPRIGHT", healthBar, "TOPRIGHT", 0, 0)
+			shieldOverlay:SetPoint("BOTTOMRIGHT", healthBar, "BOTTOMRIGHT", 0, 0)
 		end
 
-		-- Calculate the width of the absorb overlay as a fraction of the health bar width
-		local absorbWidth = math.min((showAbsorb / maxHealth) * healthBarWidth, healthBarWidth)
-		absorbOverlay:SetWidth(absorbWidth)
+		-- Calculate the width of the shield overlay as a fraction of the health bar width
+		local shieldWidth = math.min((showShield / maxHealth) * healthBarWidth, healthBarWidth)
+		shieldOverlay:SetWidth(shieldWidth)
 
 		-- Apply the texture and ensure proper tiling
-		local tileSize = absorbOverlay.tileSize or 128
-		local tileCount = absorbWidth / tileSize
-		absorbOverlay:SetTexCoord(0, tileCount, 0, 1)
+		local tileSize = shieldOverlay.tileSize or 128
+		local tileCount = shieldWidth / tileSize
+		shieldOverlay:SetTexCoord(0, tileCount, 0, 1)
 
-		-- Use alpha from absorbOverlayColor
-		absorbOverlay:SetAlpha(db.absorbOverlayColor.a)
+		-- Use alpha from shieldOverlayColor
+		shieldOverlay:SetAlpha(db.shieldOverlayColor.a)
 
-		-- Apply custom color and blend mode to absorbOverlay
-		local color = db.absorbOverlayColor
-		absorbOverlay:SetDesaturated(true)
-		absorbOverlay:SetVertexColor(color.r, color.g, color.b, color.a)
-		absorbOverlay:SetBlendMode(db.absorbOverlayBlendMode)
+		-- Apply custom color and blend mode to shieldOverlay
+		local color = db.shieldOverlayColor
+		shieldOverlay:SetDesaturated(true)
+		shieldOverlay:SetVertexColor(color.r, color.g, color.b, color.a)
+		shieldOverlay:SetBlendMode(db.shieldOverlayBlendMode)
 
 		local overlayTexture = db.overlayTexture or "Interface\\RaidFrame\\Shield-Overlay"
 		if overlayTexture ~= "Interface\\RaidFrame\\Shield-Overlay" then
-			absorbOverlay:SetTexture(overlayTexture)
+			shieldOverlay:SetTexture(overlayTexture)
 		end
 
-		-- TODO: Fix the tiling issue with the overlay texture
-		-- Enable tiling for "Shield-Overlay"
-		--absorbOverlay:SetHorizTile(true)
-		--absorbOverlay:SetVertTile(false)
-
-		absorbOverlay:Show()
+		shieldOverlay:Show()
 	else
-		absorbOverlay:Hide()
+		shieldOverlay:Hide()
 	end
 
-	if totalAbsorb > missingHealth then
-		absorbGlowTick:ClearAllPoints()
+	if totalShield > missingHealth then
+		overshieldTick:ClearAllPoints()
 		if missingHealth > 0 then
-			absorbGlowTick:SetPoint("TOPLEFT", healthBar, "TOPRIGHT", ABSORB_GLOW_TICK_OFFSET, 0)
-			absorbGlowTick:SetPoint("BOTTOMLEFT", healthBar, "BOTTOMRIGHT", ABSORB_GLOW_TICK_OFFSET, 0)
+			overshieldTick:SetPoint("TOPLEFT", healthBar, "TOPRIGHT", OVERSHIELD_TICK_OFFSET, 0)
+			overshieldTick:SetPoint("BOTTOMLEFT", healthBar, "BOTTOMRIGHT", OVERSHIELD_TICK_OFFSET, 0)
 			if not db.showTickWhenNotFullHealth then
-				absorbGlowTick:Hide()
+				overshieldTick:Hide()
 			end
 		else
-			absorbGlowTick:SetPoint("TOPLEFT", absorbOverlay, "TOPLEFT", ABSORB_GLOW_TICK_OFFSET, 0)
-			absorbGlowTick:SetPoint("BOTTOMLEFT", absorbOverlay, "BOTTOMLEFT", ABSORB_GLOW_TICK_OFFSET, 0)
-			absorbGlowTick:Show()
+			overshieldTick:SetPoint("TOPLEFT", shieldOverlay, "TOPLEFT", OVERSHIELD_TICK_OFFSET, 0)
+			overshieldTick:SetPoint("BOTTOMLEFT", shieldOverlay, "BOTTOMLEFT", OVERSHIELD_TICK_OFFSET, 0)
+			overshieldTick:Show()
 		end
-		local color = db.overabsorbTickColor
-		absorbGlowTick:SetVertexColor(color.r, color.g, color.b, color.a)
-		absorbGlowTick:SetBlendMode(db.overabsorbTickBlendMode)
+		local color = db.overshieldTickColor
+		overshieldTick:SetVertexColor(color.r, color.g, color.b, color.a)
+		overshieldTick:SetBlendMode(db.overshieldTickBlendMode)
 
-		local tickTexture = db.overabsorbTickTexture or "Interface\\RaidFrame\\Shield-Overshield"
-		absorbGlowTick:SetTexture(tickTexture)
+		local tickTexture = db.overshieldTickTexture or "Interface\\RaidFrame\\Shield-Overshield"
+		overshieldTick:SetTexture(tickTexture)
 	else
-		absorbGlowTick:Hide()
+		overshieldTick:Hide()
 	end
 end
