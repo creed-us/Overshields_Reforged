@@ -14,6 +14,9 @@ ns.HandleCompactUnitFrame_Update = function(frame)
 		or (not healthBar or healthBar:IsForbidden())
 	then return end
 
+	local unit = frame.displayedUnit or frame.unit
+	if not unit then return end
+
 	local currentHealth = healthBar:GetValue()
 	local _, maxHealth = healthBar:GetMinMaxValues()
 	if currentHealth <= 0 or maxHealth <= 0 then
@@ -22,7 +25,7 @@ ns.HandleCompactUnitFrame_Update = function(frame)
 		return
 	end
 
-	local totalShield = UnitGetTotalAbsorbs(frame.unit) or 0
+	local totalShield = UnitGetTotalAbsorbs(unit) or 0
 	if totalShield <= 0 then
 		shieldOverlay:Hide()
 		overshieldTick:Hide()
