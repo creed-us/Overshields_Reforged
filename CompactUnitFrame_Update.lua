@@ -22,7 +22,7 @@ ns.HandleCompactUnitFrame_Update = function(frame)
 		return
 	end
 
-	local totalShield = UnitGetTotalAbsorbs(frame.displayedUnit) or 0
+	local totalShield = UnitGetTotalAbsorbs(frame.unit) or 0
 	if totalShield <= 0 then
 		shieldOverlay:Hide()
 		overshieldTick:Hide()
