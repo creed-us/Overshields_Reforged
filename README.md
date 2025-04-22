@@ -43,6 +43,10 @@ Alternatively, you can enable it via this console command:
 /console predictedHealth 1
 ```
 
+### Does Overshields Reforged work with custom unit frame addons?
+
+Overshields Reforged is designed to work with the built-in Blizzard unit frames. Custom unit frame addons - such as HealBot, VuhDo, Cell - may not be affected by this addon. Functionality should not be expected, and support for custom unit frame addons will not be provided or fixed, as it goes beyond the scope of this addon, and many unit frame addons provide their own methods of modifying the display of shields and overshields.
+
 ## License
 
 Overshields is released under the [MIT License.](https://github.com/creed-us/Overshields_Reforged/blob/main/LICENSE)
