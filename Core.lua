@@ -18,10 +18,10 @@ function OvershieldsReforged:OnInitialize()
 
 	-- Hook Blizzard's heal-prediction functions
 	hooksecurefunc("UnitFrameHealPredictionBars_Update", function(frame)
-		ns.HandleUnitFrameUpdate(frame)
+		ns.HandleFrameUpdate(frame)
 	end)
 	hooksecurefunc("CompactUnitFrame_UpdateHealPrediction", function(frame)
-		ns.HandleCompactUnitFrame_Update(frame)
+		ns.HandleFrameUpdate(frame)
 	end)
 end
 
