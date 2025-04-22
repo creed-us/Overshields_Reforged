@@ -67,6 +67,20 @@ function OvershieldsReforged:SetupOptions()
 		return values
 	end
 
+	local function ReloadUIWithConfirmation()
+		StaticPopupDialogs["OVERSHIELDS_REFORGED_RELOADUI"] = {
+			text = "Texture changes require a UI reload. Reload now?",
+			button1 = ACCEPT,
+			button2 = CANCEL,
+			OnAccept = function() ReloadUI() end,
+			timeout = 0,
+			whileDead = true,
+			hideOnEscape = true,
+			preferredIndex = 3,
+		}
+		StaticPopup_Show("OVERSHIELDS_REFORGED_RELOADUI")
+	end
+
 	local options = {
 		type = "group",
 		name = "Overshields Reforged",
@@ -106,6 +120,18 @@ function OvershieldsReforged:SetupOptions()
 						get = function() return self.db.profile.overabsorbTickBlendMode end,
 						set = function(_, value) self.db.profile.overabsorbTickBlendMode = value end,
 					},
+					resetOverabsorbTick = {
+						type = "execute",
+						name = "|TInterface\\Buttons\\UI-RefreshButton:16:16|t Reset",
+						desc = "Reset Overabsorb Tick settings to default.",
+						order = 3,
+						func = function()
+							self.db.profile.showTickWhenNotFullHealth = true
+							self.db.profile.overabsorbTickColor = { r = 1, g = 1, b = 1, a = 1 }
+							self.db.profile.overabsorbTickBlendMode = "ADD"
+							self.db.profile.overabsorbTickTexture = "Interface\\RaidFrame\\Shield-Overshield"
+						end,
+					},
 				},
 			},
 			absorbOverlayGroup = {
@@ -135,6 +161,17 @@ function OvershieldsReforged:SetupOptions()
 						get = function() return self.db.profile.absorbOverlayBlendMode end,
 						set = function(_, value) self.db.profile.absorbOverlayBlendMode = value end,
 					},
+					resetAbsorbOverlay = {
+						type = "execute",
+						name = "|TInterface\\Buttons\\UI-RefreshButton:16:16|t Reset",
+						desc = "Reset Absorb Overlay settings to default.",
+						order = 2,
+						func = function()
+							self.db.profile.absorbOverlayColor = { r = 0, g = 0, b = 1, a = 1 }
+							self.db.profile.absorbOverlayBlendMode = "BLEND"
+							self.db.profile.overlayTexture = "Interface\\RaidFrame\\Shield-Overlay"
+						end,
+					},
 				},
 			},
 			textures = {
@@ -155,6 +192,7 @@ function OvershieldsReforged:SetupOptions()
 						set = function(_, value)
 							self.db.profile.overabsorbTickTexture = value == "Interface\\RaidFrame\\Shield-Overshield" and
 								nil or value
+							ReloadUIWithConfirmation()
 						end,
 					},
 					overlayTexture = {
@@ -169,16 +207,18 @@ function OvershieldsReforged:SetupOptions()
 						set = function(_, value)
 							self.db.profile.overlayTexture = value == "Interface\\RaidFrame\\Shield-Overlay" and nil or
 								value
+							ReloadUIWithConfirmation()
 						end,
 					},
 					resetTextures = {
 						type = "execute",
-						name = "Reset Textures",
-						order = 2,
-						desc = "Reset textures to default.",
+						name = "|TInterface\\Buttons\\UI-RefreshButton:16:16|t Reset",
+						desc = "Reset all texture settings to default.",
+						order = 3,
 						func = function()
 							self.db.profile.overabsorbTickTexture = nil
 							self.db.profile.overlayTexture = nil
+							ReloadUIWithConfirmation()
 						end,
 					},
 				},
