@@ -29,6 +29,20 @@ Install from [CurseForge](https://www.curseforge.com/wow/addons/overshields-refo
 
 Download the [latest release](https://github.com/creed-us/Overshields_Reforged/releases/latest) and extract the `.zip` to your AddOns folder.
 
+## FAQ
+
+### Why is Overshields Reforged not working?
+
+Overshields Reforged requires the "Display Incoming Heals" option to be enabled in order to function. This option allows the game to provide the necessary events for the addon to update the absorb shield overlays.
+
+To enable Display Incoming Heals: Press **Esc** and go to **Options > Interface > Raid Frames**. Check the box for **Display Incoming Heals**.
+
+Alternatively, you can enable it via this console command:
+
+```
+/console predictedHealth 1
+```
+
 ## License
 
 Overshields is released under the [MIT License.](https://github.com/creed-us/Overshields_Reforged/blob/main/LICENSE)
