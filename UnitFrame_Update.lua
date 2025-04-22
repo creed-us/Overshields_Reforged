@@ -17,6 +17,7 @@ ns.HandleUnitFrameUpdate = function(frame)
 	local currentHealth = healthBar:GetValue()
 	local _, maxHealth = healthBar:GetMinMaxValues()
 	if currentHealth <= 0 or maxHealth <= 0 then
+		shieldBar:Hide()
 		overshieldTick:Hide()
 		return
 	end
@@ -31,36 +32,27 @@ ns.HandleUnitFrameUpdate = function(frame)
 	local missingHealth = maxHealth - currentHealth
 	local effectiveHealth = currentHealth + totalShield
 	local hasOvershield = effectiveHealth > maxHealth
-	if missingHealth > 0 and hasOvershield then
-		overshieldTick:ClearAllPoints()
-		overshieldTick:SetPoint("TOPLEFT", healthBar, "TOPRIGHT", OVERSHIELD_TICK_OFFSET, 0)
-		overshieldTick:SetPoint("BOTTOMLEFT", healthBar, "BOTTOMRIGHT", OVERSHIELD_TICK_OFFSET, 0)
-		overshieldTick:SetAlpha(db.overshieldTickColor.a)
-		if db.showTickWhenNotFullHealth then
-			overshieldTick:Show()
-		else
-			overshieldTick:Hide()
-		end
-		return
-	end
 
 	local showShield = math.min(totalShield, maxHealth)
 	local offsetX = (maxHealth / effectiveHealth) - 1
 	shieldBar:UpdateFillPosition(healthTexture, showShield, offsetX)
 	shieldBar:Show()
 
-	if not hasOvershield then
-		overshieldTick:Hide()
-		return
-	end
-
-	local mask = shieldBar.FillMask
+	local color = db.overshieldTickColor
 	overshieldTick:ClearAllPoints()
-	overshieldTick:SetPoint("TOPLEFT", mask, "TOPLEFT", OVERSHIELD_TICK_OFFSET, 0)
-	overshieldTick:SetPoint("BOTTOMLEFT", mask, "BOTTOMLEFT", OVERSHIELD_TICK_OFFSET, 0)
-	overshieldTick:SetAlpha(db.overshieldTickColor.a)
-	overshieldTick:SetVertexColor(db.overshieldTickColor.r, db.overshieldTickColor.g, db.overshieldTickColor.b, db.overshieldTickColor.a)
-	overshieldTick:SetBlendMode(db.overshieldTickBlendMode)
-	overshieldTick:SetTexture(db.overshieldTickTexture or "Interface\\RaidFrame\\Shield-Overshield")
-	overshieldTick:Show()
+	overshieldTick:SetAlpha(color.a)
+
+	local shouldHideTick = missingHealth > 0 and not db.showTickWhenNotFullHealth
+	if hasOvershield and not shouldHideTick then
+		-- Set the anchor point based on missing health - right side if health is missing, left side if not
+		local anchor = missingHealth > 0 and healthBar or shieldBar.FillMask
+		overshieldTick:SetPoint("TOPLEFT", anchor, "TOPRIGHT", OVERSHIELD_TICK_OFFSET, 0)
+		overshieldTick:SetPoint("BOTTOMLEFT", anchor, "BOTTOMRIGHT", OVERSHIELD_TICK_OFFSET, 0)
+		overshieldTick:SetVertexColor(color.r, color.g, color.b, color.a)
+		overshieldTick:SetBlendMode(db.overshieldTickBlendMode)
+		overshieldTick:SetTexture(db.overshieldTickTexture or "Interface\\RaidFrame\\Shield-Overshield")
+		overshieldTick:Show()
+	else
+		overshieldTick:Hide()
+	end
 end

@@ -15,8 +15,8 @@ ns.HandleCompactUnitFrame_Update = function(frame)
 	then return end
 
 	local currentHealth = healthBar:GetValue()
-	local _, maxHealth  = healthBar:GetMinMaxValues()
-	if maxHealth <= 0 then
+	local _, maxHealth = healthBar:GetMinMaxValues()
+	if currentHealth <= 0 or maxHealth <= 0 then
 		shieldOverlay:Hide()
 		overshieldTick:Hide()
 		return
@@ -30,32 +30,17 @@ ns.HandleCompactUnitFrame_Update = function(frame)
 	end
 
 	local missingHealth = maxHealth - currentHealth
-	local effectiveHealth = currentHealth + totalShield
-	local hasOvershield = effectiveHealth > maxHealth
+	local showShield = currentHealth < maxHealth and math.min(totalShield, missingHealth) or totalShield
+	local healthBarWidth, _ = healthBar:GetSize()
 
-	local showShield
-	if currentHealth < maxHealth then
-		showShield = math.min(totalShield, missingHealth)
-	else
-		showShield = totalShield
-	end
-
-	local healthBarWidth, healthBarHeight = healthBar:GetSize()
 	if showShield > 0 then
 		shieldOverlay:SetParent(healthBar)
-		shieldOverlay:ClearAllPoints()
+        shieldOverlay:ClearAllPoints()
+		-- Anchor the overlay to the right of the shield bar if health is missing, otherwise to the right of the health bar
+		local anchor = missingHealth > 0 and shieldBar or healthBar
+		shieldOverlay:SetPoint("TOPRIGHT", anchor, "TOPRIGHT", 0, 0)
+		shieldOverlay:SetPoint("BOTTOMRIGHT", anchor, "BOTTOMRIGHT", 0, 0)
 
-		if missingHealth > 0 then
-			-- Anchor the overlay to the shield bar instead of the health bar
-			shieldOverlay:SetPoint("TOPRIGHT", shieldBar, "TOPRIGHT", 0, 0)
-			shieldOverlay:SetPoint("BOTTOMRIGHT", shieldBar, "BOTTOMRIGHT", 0, 0)
-		else
-			-- Anchor the overlay to the right edge of the health bar
-			shieldOverlay:SetPoint("TOPRIGHT", healthBar, "TOPRIGHT", 0, 0)
-			shieldOverlay:SetPoint("BOTTOMRIGHT", healthBar, "BOTTOMRIGHT", 0, 0)
-		end
-
-		-- Calculate the width of the shield overlay as a fraction of the health bar width
 		local shieldWidth = math.min((showShield / maxHealth) * healthBarWidth, healthBarWidth)
 		shieldOverlay:SetWidth(shieldWidth)
 
@@ -85,23 +70,22 @@ ns.HandleCompactUnitFrame_Update = function(frame)
 
 	if totalShield > missingHealth then
 		overshieldTick:ClearAllPoints()
-		if missingHealth > 0 then
-			overshieldTick:SetPoint("TOPLEFT", healthBar, "TOPRIGHT", OVERSHIELD_TICK_OFFSET, 0)
-			overshieldTick:SetPoint("BOTTOMLEFT", healthBar, "BOTTOMRIGHT", OVERSHIELD_TICK_OFFSET, 0)
-			if not db.showTickWhenNotFullHealth then
-				overshieldTick:Hide()
-			end
+		-- Anchor the overshield tick based on missing health - right side if health is missing, left side if not
+        local anchor = missingHealth > 0 and healthBar or shieldOverlay
+        local anchorTopSide = missingHealth > 0 and "TOPRIGHT" or "TOPLEFT"
+		local anchorBottomSide = missingHealth > 0 and "BOTTOMRIGHT" or "BOTTOMLEFT"
+		overshieldTick:SetPoint("TOPLEFT", anchor, anchorTopSide, OVERSHIELD_TICK_OFFSET, 0)
+		overshieldTick:SetPoint("BOTTOMLEFT", anchor, anchorBottomSide, OVERSHIELD_TICK_OFFSET, 0)
+
+		if missingHealth > 0 and not db.showTickWhenNotFullHealth then
+			overshieldTick:Hide()
 		else
-			overshieldTick:SetPoint("TOPLEFT", shieldOverlay, "TOPLEFT", OVERSHIELD_TICK_OFFSET, 0)
-			overshieldTick:SetPoint("BOTTOMLEFT", shieldOverlay, "BOTTOMLEFT", OVERSHIELD_TICK_OFFSET, 0)
+			local color = db.overshieldTickColor
+			overshieldTick:SetVertexColor(color.r, color.g, color.b, color.a)
+			overshieldTick:SetBlendMode(db.overshieldTickBlendMode)
+			overshieldTick:SetTexture(db.overshieldTickTexture or "Interface\\RaidFrame\\Shield-Overshield")
 			overshieldTick:Show()
 		end
-		local color = db.overshieldTickColor
-		overshieldTick:SetVertexColor(color.r, color.g, color.b, color.a)
-		overshieldTick:SetBlendMode(db.overshieldTickBlendMode)
-
-		local tickTexture = db.overshieldTickTexture or "Interface\\RaidFrame\\Shield-Overshield"
-		overshieldTick:SetTexture(tickTexture)
 	else
 		overshieldTick:Hide()
 	end
