@@ -15,7 +15,9 @@ Works with Blizzard's default Player, Target, Focus, Party, and Raid frames.
 
 ## How to Use
 
-Run **/overshieldsreforged** or **/osr** in your chat or press **Esc** and go to **Options > AddOns > Overshields Reforged**.
+Run **/overshieldsreforged options** or **/osr o** in your chat or press **Esc** and go to **Options > AddOns > Overshields Reforged**.
+
+Run **/overshieldsreforged version** or **/osr v** in your chat to check the installed version of Overshields Reforged.
 
 ## Installation
 
