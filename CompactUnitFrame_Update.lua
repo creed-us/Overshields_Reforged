@@ -73,9 +73,9 @@ ns.HandleCompactUnitFrame_Update = function(frame)
 		shieldOverlay:SetVertexColor(color.r, color.g, color.b, color.a)
 		shieldOverlay:SetBlendMode(db.shieldOverlayBlendMode)
 
-		local overlayTexture = db.overlayTexture or "Interface\\RaidFrame\\Shield-Overlay"
-		if overlayTexture ~= "Interface\\RaidFrame\\Shield-Overlay" then
-			shieldOverlay:SetTexture(overlayTexture)
+		local shieldOverlayTexture = db.shieldOverlayTexture or "Interface\\RaidFrame\\Shield-Overlay"
+		if shieldOverlayTexture ~= "Interface\\RaidFrame\\Shield-Overlay" then
+			shieldOverlay:SetTexture(shieldOverlayTexture)
 		end
 
 		shieldOverlay:Show()
