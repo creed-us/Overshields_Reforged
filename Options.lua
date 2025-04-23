@@ -9,68 +9,64 @@ function OvershieldsReforged:InitializeDatabase()
 	self.db = AceDB:New("OvershieldsReforgedDB", {
 		profile = {
 			showTickWhenNotFullHealth = true,
-			shieldOverlayColor = { r = 0, g = 0, b = 1, a = 1 },      -- Default blue
-			shieldOverlayBlendMode = "BLEND",                         -- Default blend mode
-			overshieldTickColor = { r = 1, g = 1, b = 1, a = 1 },     -- Default white
-			overshieldTickBlendMode = "ADD",                          -- Default blend mode
-			overshieldTickTexture = "Interface\\RaidFrame\\Shield-Overshield", -- Default overshield tick texture
-			overlayTexture = "Interface\\RaidFrame\\Shield-Overlay",  -- Default shield overlay texture
+			overshieldTickColor = { r = 1, g = 1, b = 1, a = 0.7 },
+			overshieldTickBlendMode = "ADD",
+			overshieldTickTexture = "Interface\\RaidFrame\\Shield-Overshield",
+			showShieldOverlayAtFullHealth = true,
+			shieldOverlayColor = { r = 0, g = 0, b = 1, a = 0.7 },
+			shieldOverlayBlendMode = "BLEND",
+			shieldOverlayTexture = "Interface\\RaidFrame\\Shield-Overlay",
+			showShieldBarAtFullHealth = false,
+			shieldBarColor = { r = 1, g = 1, b = 1, a = 1 },
+			shieldBarBlendMode = "ADD",
+			shieldBarTexture = "Interface\\RaidFrame\\Shield-Fill",
 		},
 	})
 end
 
 function OvershieldsReforged:SetupOptions()
-	local function TickTextureDropdownValues(defaultTexture)
-		local values = { [defaultTexture] = "|T" .. defaultTexture .. ":16:16|t Default" } -- Add "Default" option
-
-		-- Add specific spark textures
-		values["Interface\\RaidFrame\\Shield-Overshield"] = "|TInterface\\RaidFrame\\Shield-Overshield:16:16|t Shield-Overshield"
-		values["Interface\\CastingBar\\UI-CastingBar-Spark"] = "|TInterface\\CastingBar\\UI-CastingBar-Spark:16:16|t CastingBar-Spark"
-		values["Interface\\Cooldown\\star4"] = "|TInterface\\Cooldown\\star4:16:16|t Star4"
-		values["Interface\\Cooldown\\starburst"] = "|TInterface\\Cooldown\\starburst:16:16|t Starburst"
-		values["Interface\\Artifacts\\Blizzard_Spark"] = "|TInterface\\Artifacts\\Blizzard_Spark:16:16|t Blizzard Spark"
-		values["Interface\\Garrison\\GarrMission_EncounterBar-Spark"] = "|TInterface\\Garrison\\GarrMission_EncounterBar-Spark:16:16|t GarrMission Spark"
-		values["Interface\\InsanityBar\\Insanity-Spark"] = "|TInterface\\InsanityBar\\Insanity-Spark:16:16|t Insanity Spark"
-		values["Interface\\Legionfall\\Legionfall_BarSpark"] = "|TInterface\\Legionfall\\Legionfall_BarSpark:16:16|t Legionfall Spark"
-		values["Interface\\XPBarAnim\\XPBarAnim-OrangeSpark"] = "|TInterface\\XPBarAnim\\XPBarAnim-OrangeSpark:16:16|t XPBar Orange Spark"
-		values["Interface\\BonusObjective\\bonusobjective-bar-spark"] = "|TInterface\\BonusObjective\\bonusobjective-bar-spark:16:16|t Bonus Objective Spark"
-		values["Interface\\HonorFrame\\honorsystem-bar-spark"] = "|TInterface\\HonorFrame\\honorsystem-bar-spark:16:16|t Honor System Spark"
-
-		-- Dynamically add spark textures from LibSharedMedia
-		for name, path in pairs(LSM:HashTable("statusbar")) do
-			if name:lower():find("spark") then
-				values[path] = string.format("|T%s:16:16|t %s", path, name)
-			end
-		end
-
-		return values
-	end
-
-	local function OverlayTextureDropdownValues(defaultTexture)
-		local textures = LSM:HashTable("statusbar")
-		local values = { [defaultTexture] = "|T" .. defaultTexture .. ":16:16|t Default" } -- Add "Default" option
-
-		-- Add RaidFrame overlay textures
-		values["Interface\\RaidFrame\\Shield-Overlay"] = "|TInterface\\RaidFrame\\Shield-Overlay:16:16|t Shield-Overlay"
-
-		for name, path in pairs(textures) do
-			values[path] = string.format("|T%s:16:16|t %s", path, name) -- Add texture preview
-		end
-		return values
-	end
-
 	local function ReloadUIWithConfirmation()
 		StaticPopupDialogs["OVERSHIELDS_REFORGED_RELOADUI"] = {
-			text = "Texture changes require a UI reload. Reload now?",
+			text = "Changes require a UI reload. Reload now?",
 			button1 = ACCEPT,
 			button2 = CANCEL,
 			OnAccept = function() ReloadUI() end,
-			timeout = 0,
+			timeout = 30,
 			whileDead = true,
 			hideOnEscape = true,
 			preferredIndex = 3,
 		}
 		StaticPopup_Show("OVERSHIELDS_REFORGED_RELOADUI")
+	end
+
+	local function TickTextureDropdownValues()
+		local values = {
+			["Interface\\RaidFrame\\Shield-Overshield"] = "|TInterface\\RaidFrame\\Shield-Overshield:16:16|t Default",
+			["Interface\\CastingBar\\UI-CastingBar-Spark"] = "|TInterface\\CastingBar\\UI-CastingBar-Spark:16:16|t CastingBar-Spark",
+			["Interface\\Cooldown\\star4"] = "|TInterface\\Cooldown\\star4:16:16|t Star4",
+			["Interface\\Cooldown\\starburst"] = "|TInterface\\Cooldown\\starburst:16:16|t Starburst",
+			["Interface\\Artifacts\\Blizzard_Spark"] = "|TInterface\\Artifacts\\Blizzard_Spark:16:16|t Blizzard Spark",
+			["Interface\\Garrison\\GarrMission_EncounterBar-Spark"] = "|TInterface\\Garrison\\GarrMission_EncounterBar-Spark:16:16|t GarrMission Spark",
+			["Interface\\InsanityBar\\Insanity-Spark"] = "|TInterface\\InsanityBar\\Insanity-Spark:16:16|t Insanity Spark",
+			["Interface\\Legionfall\\Legionfall_BarSpark"] = "|TInterface\\Legionfall\\Legionfall_BarSpark:16:16|t Legionfall Spark",
+			["Interface\\XPBarAnim\\XPBarAnim-OrangeSpark"] = "|TInterface\\XPBarAnim\\XPBarAnim-OrangeSpark:16:16|t XPBar Orange Spark",
+			["Interface\\BonusObjective\\bonusobjective-bar-spark"] = "|TInterface\\BonusObjective\\bonusobjective-bar-spark:16:16|t Bonus Objective Spark",
+			["Interface\\HonorFrame\\honorsystem-bar-spark"] = "|TInterface\\HonorFrame\\honorsystem-bar-spark:16:16|t Honor System Spark",
+		}
+		for name, path in pairs(LSM:HashTable("statusbar")) do
+			if name:lower():find("spark") then
+				values[path] = string.format("|T%s:16:16|t %s", path, name)
+			end
+		end
+		return values
+	end
+
+	local function ShieldTextureDropdownValues(defaultTexture)
+		local values = { [defaultTexture] = "|T" .. defaultTexture .. ":16:16|t Default" }
+		for name, path in pairs(LSM:HashTable("statusbar")) do
+			values[path] = string.format("|T%s:16:16|t %s", path, name)
+		end
+		return values
 	end
 
 	local options = {
@@ -85,7 +81,7 @@ function OvershieldsReforged:SetupOptions()
 				args = {
 					showTickWhenNotFullHealth = {
 						type = "toggle",
-						name = "Always Show",
+						name = "Show When Missing Health",
 						desc = "Show the overshield tick even when the unit is not at full health.",
 						order = 0,
 						get = function() return self.db.profile.showTickWhenNotFullHealth end,
@@ -112,16 +108,25 @@ function OvershieldsReforged:SetupOptions()
 						get = function() return self.db.profile.overshieldTickBlendMode end,
 						set = function(_, value) self.db.profile.overshieldTickBlendMode = value end,
 					},
+					overshieldTickTexture = {
+						type = "select",
+						name = "Tick Texture",
+						order = 3,
+						values = TickTextureDropdownValues(),
+						get = function() return self.db.profile.overshieldTickTexture end,
+						set = function(_, value) self.db.profile.overshieldTickTexture = value end,
+					},
 					resetOvershieldTick = {
 						type = "execute",
 						name = "|TInterface\\Buttons\\UI-RefreshButton:16:16|t Reset",
 						desc = "Reset Overshield Tick settings to default.",
-						order = 3,
+						order = 4,
 						func = function()
 							self.db.profile.showTickWhenNotFullHealth = true
 							self.db.profile.overshieldTickColor = { r = 1, g = 1, b = 1, a = 1 }
 							self.db.profile.overshieldTickBlendMode = "ADD"
 							self.db.profile.overshieldTickTexture = "Interface\\RaidFrame\\Shield-Overshield"
+							ReloadUIWithConfirmation()
 						end,
 					},
 				},
@@ -132,10 +137,18 @@ function OvershieldsReforged:SetupOptions()
 				order = 1,
 				inline = true,
 				args = {
+					showShieldOverlayAtFullHealth = {
+						type = "toggle",
+						name = "Show When Overshielded",
+						desc = "Allow the shield overlay to display over the health bar when the unit is at full health.",
+						order = 0,
+						get = function() return self.db.profile.showShieldOverlayAtFullHealth end,
+						set = function(_, value) self.db.profile.showShieldOverlayAtFullHealth = value end,
+					},
 					shieldOverlayColor = {
 						type = "color",
 						name = "Shield Overlay Color",
-						order = 0,
+						order = 1,
 						hasAlpha = true,
 						get = function()
 							local c = self.db.profile.shieldOverlayColor
@@ -148,68 +161,87 @@ function OvershieldsReforged:SetupOptions()
 					shieldOverlayBlendMode = {
 						type = "select",
 						name = "Shield Overlay Blend Mode",
-						order = 1,
+						order = 2,
 						values = { DISABLE = "DISABLE", BLEND = "BLEND", ALPHAKEY = "ALPHAKEY", ADD = "ADD", MOD = "MOD" },
 						get = function() return self.db.profile.shieldOverlayBlendMode end,
 						set = function(_, value) self.db.profile.shieldOverlayBlendMode = value end,
+					},
+					shieldOverlayTexture = {
+						type = "select",
+						name = "Overlay Texture",
+						order = 3,
+						values = ShieldTextureDropdownValues("Interface\\RaidFrame\\Shield-Overlay"),
+						get = function() return self.db.profile.shieldOverlayTexture end,
+						set = function(_, value) self.db.profile.shieldOverlayTexture = value end,
 					},
 					resetShieldOverlay = {
 						type = "execute",
 						name = "|TInterface\\Buttons\\UI-RefreshButton:16:16|t Reset",
 						desc = "Reset Shield Overlay settings to default.",
-						order = 2,
+						order = 4,
 						func = function()
+							self.db.profile.showShieldOverlayAtFullHealth = true
 							self.db.profile.shieldOverlayColor = { r = 0, g = 0, b = 1, a = 1 }
 							self.db.profile.shieldOverlayBlendMode = "BLEND"
-							self.db.profile.overlayTexture = "Interface\\RaidFrame\\Shield-Overlay"
+							self.db.profile.shieldOverlayTexture = "Interface\\RaidFrame\\Shield-Overlay"
+							ReloadUIWithConfirmation()
 						end,
 					},
 				},
 			},
-			textures = {
+			shieldBarGroup = {
 				type = "group",
-				name = "Textures",
+				name = "Shield Bar",
 				order = 2,
 				inline = true,
 				args = {
-					overshieldTickTexture = {
-						type = "select",
-						name = "Tick Texture",
+					showShieldBarAtFullHealth = {
+						type = "toggle",
+						name = "Show at Full Health",
+						desc = "Allow the shield bar to display over the health bar when the unit is at full health.",
 						order = 0,
-						desc = "Select the texture for the overshield tick.",
-						values = function() return TickTextureDropdownValues("Interface\\RaidFrame\\Shield-Overshield") end,
-						get = function()
-							return self.db.profile.overshieldTickTexture or "Interface\\RaidFrame\\Shield-Overshield"
-						end,
-						set = function(_, value)
-							self.db.profile.overshieldTickTexture = value == "Interface\\RaidFrame\\Shield-Overshield" and
-								nil or value
-							ReloadUIWithConfirmation()
-						end,
+						get = function() return self.db.profile.showShieldBarAtFullHealth end,
+						set = function(_, value) self.db.profile.showShieldBarAtFullHealth = value end,
 					},
-					overlayTexture = {
-						type = "select",
-						name = "Overlay Texture",
+					shieldBarColor = {
+						type = "color",
+						name = "Shield Bar Color",
 						order = 1,
-						desc = "Select the texture for the overlay.",
-						values = function() return OverlayTextureDropdownValues("Interface\\RaidFrame\\Shield-Overlay") end,
+						hasAlpha = true,
 						get = function()
-							return self.db.profile.overlayTexture or "Interface\\RaidFrame\\Shield-Overlay"
+							local c = self.db.profile.shieldBarColor
+							return c.r, c.g, c.b, c.a
 						end,
-						set = function(_, value)
-							self.db.profile.overlayTexture = value == "Interface\\RaidFrame\\Shield-Overlay" and nil or
-								value
-							ReloadUIWithConfirmation()
+						set = function(_, r, g, b, a)
+							self.db.profile.shieldBarColor = { r = r, g = g, b = b, a = a }
 						end,
 					},
-					resetTextures = {
+					shieldBarBlendMode = {
+						type = "select",
+						name = "Shield Bar Blend Mode",
+						order = 2,
+						values = { DISABLE = "DISABLE", BLEND = "BLEND", ALPHAKEY = "ALPHAKEY", ADD = "ADD", MOD = "MOD" },
+						get = function() return self.db.profile.shieldBarBlendMode end,
+						set = function(_, value) self.db.profile.shieldBarBlendMode = value end,
+					},
+					shieldBarTexture = {
+						type = "select",
+						name = "Bar Texture",
+						order = 3,
+						values = ShieldTextureDropdownValues("Interface\\RaidFrame\\Shield-Fill"), -- Updated default texture
+						get = function() return self.db.profile.shieldBarTexture end,
+						set = function(_, value) self.db.profile.shieldBarTexture = value end,
+					},
+					resetShieldBar = {
 						type = "execute",
 						name = "|TInterface\\Buttons\\UI-RefreshButton:16:16|t Reset",
-						desc = "Reset all texture settings to default.",
-						order = 3,
+						desc = "Reset Shield Bar settings to default.",
+						order = 4,
 						func = function()
-							self.db.profile.overshieldTickTexture = nil
-							self.db.profile.overlayTexture = nil
+							self.db.profile.showShieldBarAtFullHealth = false
+							self.db.profile.shieldBarColor = { r = 1, g = 1, b = 1, a = 1 }
+							self.db.profile.shieldBarBlendMode = "ADD"
+							self.db.profile.shieldBarTexture = "Interface\\RaidFrame\\Shield-Fill"
 							ReloadUIWithConfirmation()
 						end,
 					},
