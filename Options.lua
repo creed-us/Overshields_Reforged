@@ -19,7 +19,7 @@ function OvershieldsReforged:InitializeDatabase()
 			showShieldBarAtFullHealth = false,
 			shieldBarColor = { r = 1, g = 1, b = 1, a = 1 },
 			shieldBarBlendMode = "ADD",
-			shieldBarTexture = "Interface\\RaidFrame\\Shield-Bar",
+			shieldBarTexture = "Interface\\RaidFrame\\Shield-Fill",
 		},
 	})
 end
@@ -228,7 +228,7 @@ function OvershieldsReforged:SetupOptions()
 						type = "select",
 						name = "Bar Texture",
 						order = 3,
-						values = ShieldTextureDropdownValues("Interface\\RaidFrame\\Shield-Bar"),
+						values = ShieldTextureDropdownValues("Interface\\RaidFrame\\Shield-Fill"), -- Updated default texture
 						get = function() return self.db.profile.shieldBarTexture end,
 						set = function(_, value) self.db.profile.shieldBarTexture = value end,
 					},
@@ -241,7 +241,7 @@ function OvershieldsReforged:SetupOptions()
 							self.db.profile.showShieldBarAtFullHealth = false
 							self.db.profile.shieldBarColor = { r = 1, g = 1, b = 1, a = 1 }
 							self.db.profile.shieldBarBlendMode = "ADD"
-							self.db.profile.shieldBarTexture = "Interface\\RaidFrame\\Shield-Bar"
+							self.db.profile.shieldBarTexture = "Interface\\RaidFrame\\Shield-Fill"
 							ReloadUIWithConfirmation()
 						end,
 					},
