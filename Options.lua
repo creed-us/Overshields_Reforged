@@ -9,11 +9,11 @@ function OvershieldsReforged:InitializeDatabase()
 	self.db = AceDB:New("OvershieldsReforgedDB", {
 		profile = {
 			showTickWhenNotFullHealth = true,
-			overshieldTickColor = { r = 1, g = 1, b = 1, a = 1 },
+			overshieldTickColor = { r = 1, g = 1, b = 1, a = 0.7 },
 			overshieldTickBlendMode = "ADD",
 			overshieldTickTexture = "Interface\\RaidFrame\\Shield-Overshield",
 			showShieldOverlayAtFullHealth = true,
-			shieldOverlayColor = { r = 0, g = 0, b = 1, a = 1 },
+			shieldOverlayColor = { r = 0, g = 0, b = 1, a = 0.7 },
 			shieldOverlayBlendMode = "BLEND",
 			shieldOverlayTexture = "Interface\\RaidFrame\\Shield-Overlay",
 			showShieldBarAtFullHealth = false,
