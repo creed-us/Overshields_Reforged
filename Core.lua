@@ -48,10 +48,26 @@ SlashCmdList["OVERSHIELDSR"] = function(input)
 	if command == "version" or command == "v" then
 		print("Overshields Reforged version: " .. C_AddOns.GetAddOnMetadata(ADDON_NAME, "Version"))
 	elseif command == "options" or command == "o" then
-		OvershieldsReforged:OpenOptions()
+        OvershieldsReforged:OpenOptions()
+	elseif command == "reset" or command == "r" then
+		StaticPopupDialogs["OVERSHIELDS_REFORGED_RESET"] = {
+			text = "This will reset all Overshields Reforged settings to default and reload the UI. Proceed?",
+			button1 = ACCEPT,
+			button2 = CANCEL,
+			OnAccept = function()
+				OvershieldsReforgedDB = nil
+				ReloadUI()
+			end,
+			timeout = 0,
+			whileDead = true,
+			hideOnEscape = true,
+			preferredIndex = 3,
+		}
+		StaticPopup_Show("OVERSHIELDS_REFORGED_RESET")
 	else
 		print("Usage:")
 		print("/osr version (v) - Display the addon version.")
 		print("/osr options (o) - Open the addon options.")
+		print("/osr reset (r) - Reset all settings to default and reload the UI.")
 	end
 end
