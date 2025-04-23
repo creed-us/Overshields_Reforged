@@ -15,5 +15,4 @@ embeds.xml
 
 Core.lua
 Options.lua
-UnitFrame_Update.lua
-CompactUnitFrame_Update.lua
+UnifiedFrame_Update.lua

@@ -38,16 +38,31 @@ ns.HandleFrameUpdate = function(frame)
 	local missingHealth = maxHealth - currentHealth
 	local effectiveHealth = currentHealth + totalShield
 
-	-- Update shieldBar using UpdateFillPosition when the unit is at full health
-    if db.showShieldBarAtFullHealth and missingHealth <= 0 then
-        local healthTexture = healthBar:GetStatusBarTexture()
-        local showShield = math.min(totalShield, maxHealth)
-        local offsetX = (maxHealth / effectiveHealth) - 1
-        shieldBar:UpdateFillPosition(healthTexture, showShield, offsetX)
-        shieldBar:Show()
-    else
-        shieldBar:Hide()
-    end
+	-- Update shieldBar manually when the unit is at full health
+	if missingHealth <= 0 then
+		if db.showShieldBarAtFullHealth then
+			local healthBarWidth = healthBar:GetWidth()
+			local shieldWidth = math.min((totalShield / maxHealth) * healthBarWidth, healthBarWidth)
+
+			shieldBar:SetParent(healthBar)
+			shieldBar:ClearAllPoints()
+			shieldBar:SetPoint("TOPRIGHT", healthBar, "TOPRIGHT", 0, 0)
+			shieldBar:SetPoint("BOTTOMRIGHT", healthBar, "BOTTOMRIGHT", 0, 0)
+			shieldBar:SetWidth(shieldWidth)
+
+			-- Apply custom color and blend mode to shieldBar
+			local color = db.shieldBarColor
+			shieldBar:SetVertexColor(color.r, color.g, color.b, color.a)
+			shieldBar:SetBlendMode(db.shieldBarBlendMode)
+
+			local barTexture = db.shieldBarTexture or "Interface\\RaidFrame\\Shield-Fill"
+			shieldBar:SetTexture(barTexture)
+
+			shieldBar:Show()
+		else
+			shieldBar:Hide()
+		end
+	end
 
 	local showShield = currentHealth < maxHealth and math.min(totalShield, missingHealth) or totalShield
 	local healthBarWidth, _ = healthBar:GetSize()
@@ -62,26 +77,23 @@ ns.HandleFrameUpdate = function(frame)
 		shieldOverlay:SetPoint("BOTTOMRIGHT", anchor, "BOTTOMRIGHT", 0, 0)
 
 		local shieldWidth = math.min((showShield / maxHealth) * healthBarWidth, healthBarWidth)
-		shieldOverlay:SetWidth(shieldWidth)
-
-		-- Apply the texture and ensure proper tiling
-		local tileSize = shieldOverlay.tileSize or 128
-		local tileCount = shieldWidth / tileSize
-		shieldOverlay:SetTexCoord(0, tileCount, 0, 1)
-
-		-- Use alpha from shieldOverlayColor
-		shieldOverlay:SetAlpha(db.shieldOverlayColor.a)
+        shieldOverlay:SetWidth(shieldWidth)
 
 		-- Apply custom color and blend mode to shieldOverlay
 		local color = db.shieldOverlayColor
 		shieldOverlay:SetDesaturated(true)
 		shieldOverlay:SetVertexColor(color.r, color.g, color.b, color.a)
+		shieldOverlay:SetAlpha(db.shieldOverlayColor.a)
 		shieldOverlay:SetBlendMode(db.shieldOverlayBlendMode)
 
-		local overlayTexture = db.overlayTexture or "Interface\\RaidFrame\\Shield-Overlay"
-		if overlayTexture ~= "Interface\\RaidFrame\\Shield-Overlay" then
-			shieldOverlay:SetTexture(overlayTexture)
-		end
+		-- Apply the texture and ensure proper tiling
+		local tileSize = shieldOverlay.tileSize or 128
+		local tileCount = shieldWidth / tileSize
+        shieldOverlay:SetTexCoord(0, tileCount, 0, 1)
+		local overlayTexture = db.shieldOverlayTexture or "Interface\\RaidFrame\\Shield-Overlay"
+        if overlayTexture ~= "Interface\\RaidFrame\\Shield-Overlay" then
+            shieldOverlay:SetTexture(overlayTexture)
+        end
 
 		shieldOverlay:Show()
 	else
