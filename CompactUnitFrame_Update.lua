@@ -46,6 +46,7 @@ ns.HandleCompactUnitFrame_Update = function(frame)
 	end
 
     local healthBarWidth, _ = healthBar:GetSize()
+	local healthFillBar = frame.healthBar:GetStatusBarTexture() -- Assuming the first child is the fill bar
 
 	-- Handle overshieldTick prior to shieldOverlay and shieldBar to ensure correct visibility
 	if hasOvershield then
@@ -101,8 +102,8 @@ ns.HandleCompactUnitFrame_Update = function(frame)
 	-- Set anchor points for shieldOverlay based on health bar state and config
 	if hasMissingHealth then
 		-- Anchor the overlay to the shield bar instead of the health bar
-		shieldOverlay:SetPoint("TOPLEFT", shieldBar, "TOPLEFT", 0, 0)
-		shieldOverlay:SetPoint("BOTTOMLEFT", shieldBar, "BOTTOMLEFT", 0, 0)
+		shieldOverlay:SetPoint("TOPLEFT", healthFillBar, "TOPRIGHT", 0, 0)
+		shieldOverlay:SetPoint("BOTTOMLEFT", healthFillBar, "BOTTOMRIGHT", 0, 0)
 		shieldOverlay:Show()
 	elseif db.showShieldOverlayAtFullHealth then
 		-- Anchor the overlay to the right edge of the health bar
@@ -122,12 +123,12 @@ ns.HandleCompactUnitFrame_Update = function(frame)
         shieldBar:SetTexture(shieldBarTexture)
     end
 	if hasMissingHealth then
-		shieldBar:SetPoint("TOPRIGHT", healthBar, "TOPRIGHT", 0, 0)
-		shieldBar:SetPoint("BOTTOMRIGHT", healthBar, "BOTTOMRIGHT", 0, 0)
+		-- Anchor the shieldBar to the healthFillBar for proper alignment
+		shieldBar:SetPoint("TOPLEFT", healthFillBar, "TOPRIGHT", 0, 0)
+		shieldBar:SetPoint("BOTTOMLEFT", healthFillBar, "BOTTOMRIGHT", 0, 0)
 		shieldBar:Show()
 	elseif db.showShieldBarAtFullHealth then
-		shieldBar:SetParent(healthBar)
-		shieldBar:ClearAllPoints()
+		-- Anchor the shieldBar to the healthFillBar for full health scenarios
 		shieldBar:SetPoint("TOPRIGHT", healthBar, "TOPRIGHT", 0, 0)
 		shieldBar:SetPoint("BOTTOMRIGHT", healthBar, "BOTTOMRIGHT", 0, 0)
 		shieldBar:Show()
