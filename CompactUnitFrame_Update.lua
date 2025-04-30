@@ -22,6 +22,7 @@ ns.HandleCompactUnitFrame_Update = function(frame)
 		or (not healthBar or healthBar:IsForbidden())
 	then return end
 
+    local healthFillBar = healthBar:GetStatusBarTexture()
     local totalShield   = UnitGetTotalAbsorbs(frame.displayedUnit) or 0
 	local currentHealth = healthBar:GetValue()
     local _, maxHealth  = healthBar:GetMinMaxValues()
@@ -45,8 +46,11 @@ ns.HandleCompactUnitFrame_Update = function(frame)
 		displayedShield = totalShield
 	end
 
+	-- Calculate the width of the shield overlay as a fraction of the health bar width
     local healthBarWidth, _ = healthBar:GetSize()
-	local healthFillBar = healthBar:GetStatusBarTexture()
+    local shieldWidth = math.min((displayedShield / maxHealth) * healthBarWidth, healthBarWidth)
+	shieldOverlay:SetWidth(shieldWidth)
+    shieldBar:SetWidth(shieldWidth)
 
 	-- Handle overshieldTick prior to shieldOverlay and shieldBar to ensure correct visibility
 	if hasOvershield then
@@ -78,10 +82,6 @@ ns.HandleCompactUnitFrame_Update = function(frame)
         return
     end
 
-	-- Calculate the width of the shield overlay as a fraction of the health bar width
-	local shieldWidth = math.min((displayedShield / maxHealth) * healthBarWidth, healthBarWidth)
-	shieldOverlay:SetWidth(shieldWidth)
-    shieldBar:SetWidth(shieldWidth)
 
 	-- Handle shieldOverlay visibility and positioning
 	shieldOverlay:SetParent(healthBar)
