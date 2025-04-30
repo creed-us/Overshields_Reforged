@@ -78,13 +78,14 @@ ns.HandleCompactUnitFrame_Update = function(frame)
         return
     end
 
-	-- Handle shieldOverlay visibility and positioning
-	shieldOverlay:SetParent(healthBar)
-	shieldOverlay:ClearAllPoints()
 	-- Calculate the width of the shield overlay as a fraction of the health bar width
 	local shieldWidth = math.min((displayedShield / maxHealth) * healthBarWidth, healthBarWidth)
 	shieldOverlay:SetWidth(shieldWidth)
-	shieldBar:SetWidth(shieldWidth)
+    shieldBar:SetWidth(shieldWidth)
+
+	-- Handle shieldOverlay visibility and positioning
+	shieldOverlay:SetParent(healthBar)
+	shieldOverlay:ClearAllPoints()
 	-- Apply the texture and ensure proper tiling
 	local tileSize = shieldOverlay.tileSize or 128
 	local tileCount = shieldWidth / tileSize
