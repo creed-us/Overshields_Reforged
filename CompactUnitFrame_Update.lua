@@ -1,6 +1,14 @@
 local _, ns = ...
 local OVERSHIELD_TICK_OFFSET = -7
 
+-- Securely hook into the base UI function to clear points before it sets them
+hooksecurefunc("CompactUnitFrameUtil_UpdateFillBar", function(frame, previousTexture, bar, amount, barOffsetXPercent)
+    -- Clear all points for custom bars before the base UI sets them
+    if bar == frame.totalAbsorb or bar == frame.totalAbsorbOverlay then
+        bar:ClearAllPoints()
+    end
+end)
+
 ns.HandleCompactUnitFrame_Update = function(frame)
 	local db = OvershieldsReforged.db.profile
 	if not db or not frame then return end
