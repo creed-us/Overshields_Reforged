@@ -81,7 +81,7 @@ function OvershieldsReforged:SetupOptions()
 				args = {
 					showTickWhenNotFullHealth = {
 						type = "toggle",
-						name = "Show When Missing Health",
+						name = "When Missing Health",
 						desc = "Show the overshield tick even when the unit is not at full health.",
 						order = 0,
 						get = function() return self.db.profile.showTickWhenNotFullHealth end,
@@ -139,7 +139,7 @@ function OvershieldsReforged:SetupOptions()
 				args = {
 					showShieldOverlayAtFullHealth = {
 						type = "toggle",
-						name = "Show When Overshielded",
+						name = "When Overshielded",
 						desc = "Allow the shield overlay to display over the health bar when the unit is at full health.",
 						order = 0,
 						get = function() return self.db.profile.showShieldOverlayAtFullHealth end,
@@ -197,7 +197,7 @@ function OvershieldsReforged:SetupOptions()
 				args = {
 					showShieldBarAtFullHealth = {
 						type = "toggle",
-						name = "Show at Full Health",
+						name = "When at Full Health",
 						desc = "Allow the shield bar to display over the health bar when the unit is at full health.",
 						order = 0,
 						get = function() return self.db.profile.showShieldBarAtFullHealth end,
