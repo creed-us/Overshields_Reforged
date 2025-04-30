@@ -46,7 +46,7 @@ ns.HandleCompactUnitFrame_Update = function(frame)
 	end
 
     local healthBarWidth, _ = healthBar:GetSize()
-	local healthFillBar = frame.healthBar:GetStatusBarTexture() -- Assuming the first child is the fill bar
+	local healthFillBar = frame.healthBar:GetStatusBarTexture()
 
 	-- Handle overshieldTick prior to shieldOverlay and shieldBar to ensure correct visibility
 	if hasOvershield then
