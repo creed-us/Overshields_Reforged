@@ -114,6 +114,7 @@ ns.HandleCompactUnitFrame_Update = function(frame)
 	end
 
 	-- Handle shieldBar visibility and positioning
+	shieldBar:ClearAllPoints()
 	-- Apply custom color/alpha, blend mode, and texture to shieldBar
 	local shieldBarColor = db.shieldBarColor
 	shieldBar:SetVertexColor(shieldBarColor.r, shieldBarColor.g, shieldBarColor.b, shieldBarColor.a)
@@ -123,6 +124,7 @@ ns.HandleCompactUnitFrame_Update = function(frame)
     if shieldBarTexture ~= "Interface\\RaidFrame\\Shield-Fill" then
         shieldBar:SetTexture(shieldBarTexture)
     end
+
 	if hasMissingHealth then
 		-- Anchor the shieldBar to the healthFillBar for proper alignment
 		shieldBar:SetPoint("TOPLEFT", healthFillBar, "TOPRIGHT", 0, 0)
