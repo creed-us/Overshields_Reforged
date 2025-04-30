@@ -23,7 +23,6 @@ ns.HandleCompactUnitFrame_Update = function(frame)
 	then return end
 
     local totalShield   = UnitGetTotalAbsorbs(frame.displayedUnit) or 0
-
 	local currentHealth = healthBar:GetValue()
     local _, maxHealth  = healthBar:GetMinMaxValues()
 
