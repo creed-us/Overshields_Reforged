@@ -26,63 +26,24 @@ ns.HandleCompactUnitFrame_Update = function(frame)
         return
     end
 
-	local missingHealth = maxHealth - currentHealth
+    local missingHealth = maxHealth - currentHealth
+	local hasMissingHealth = missingHealth > 0
 	local effectiveHealth = currentHealth + totalShield
 	local hasOvershield = effectiveHealth > maxHealth
 
-	local showShield
+	local displayedShield
 	if currentHealth < maxHealth then
-		showShield = math.min(totalShield, missingHealth)
+		displayedShield = math.min(totalShield, missingHealth)
 	else
-		showShield = totalShield
+		displayedShield = totalShield
 	end
 
-	local healthBarWidth, healthBarHeight = healthBar:GetSize()
-	if showShield > 0 then
-		shieldOverlay:SetParent(healthBar)
-		shieldOverlay:ClearAllPoints()
+    local healthBarWidth, _ = healthBar:GetSize()
 
-		if missingHealth > 0 then
-			-- Anchor the overlay to the shield bar instead of the health bar
-			shieldOverlay:SetPoint("TOPRIGHT", shieldBar, "TOPRIGHT", 0, 0)
-			shieldOverlay:SetPoint("BOTTOMRIGHT", shieldBar, "BOTTOMRIGHT", 0, 0)
-		else
-			-- Anchor the overlay to the right edge of the health bar
-			shieldOverlay:SetPoint("TOPRIGHT", healthBar, "TOPRIGHT", 0, 0)
-			shieldOverlay:SetPoint("BOTTOMRIGHT", healthBar, "BOTTOMRIGHT", 0, 0)
-		end
-
-		-- Calculate the width of the shield overlay as a fraction of the health bar width
-		local shieldWidth = math.min((showShield / maxHealth) * healthBarWidth, healthBarWidth)
-		shieldOverlay:SetWidth(shieldWidth)
-
-		-- Apply the texture and ensure proper tiling
-		local tileSize = shieldOverlay.tileSize or 128
-		local tileCount = shieldWidth / tileSize
-		shieldOverlay:SetTexCoord(0, tileCount, 0, 1)
-
-		-- Use alpha from shieldOverlayColor
-		shieldOverlay:SetAlpha(db.shieldOverlayColor.a)
-
-		-- Apply custom color and blend mode to shieldOverlay
-		local color = db.shieldOverlayColor
-		shieldOverlay:SetDesaturated(true)
-		shieldOverlay:SetVertexColor(color.r, color.g, color.b, color.a)
-		shieldOverlay:SetBlendMode(db.shieldOverlayBlendMode)
-
-		local shieldOverlayTexture = db.shieldOverlayTexture or "Interface\\RaidFrame\\Shield-Overlay"
-		if shieldOverlayTexture ~= "Interface\\RaidFrame\\Shield-Overlay" then
-			shieldOverlay:SetTexture(shieldOverlayTexture)
-		end
-
-		shieldOverlay:Show()
-	else
-		shieldOverlay:Hide()
-	end
-
-	if totalShield > missingHealth then
+	-- Handle overshieldTick prior to shieldOverlay and shieldBar to ensure correct visibility
+	if hasOvershield then
 		overshieldTick:ClearAllPoints()
-		if missingHealth > 0 then
+		if hasMissingHealth then
 			overshieldTick:SetPoint("TOPLEFT", healthBar, "TOPRIGHT", OVERSHIELD_TICK_OFFSET, 0)
 			overshieldTick:SetPoint("BOTTOMLEFT", healthBar, "BOTTOMRIGHT", OVERSHIELD_TICK_OFFSET, 0)
 			if not db.showTickWhenNotFullHealth then
@@ -101,5 +62,67 @@ ns.HandleCompactUnitFrame_Update = function(frame)
 		overshieldTick:SetTexture(tickTexture)
 	else
 		overshieldTick:Hide()
+	end
+
+    if displayedShield <= 0 then
+        shieldOverlay:Hide()
+        shieldBar:Hide()
+        return
+    end
+
+	-- Handle shieldOverlay visibility and positioning
+	shieldOverlay:SetParent(healthBar)
+	shieldOverlay:ClearAllPoints()
+	-- Calculate the width of the shield overlay as a fraction of the health bar width
+	local shieldWidth = math.min((displayedShield / maxHealth) * healthBarWidth, healthBarWidth)
+	shieldOverlay:SetWidth(shieldWidth)
+	shieldBar:SetWidth(shieldWidth)
+	-- Apply the texture and ensure proper tiling
+	local tileSize = shieldOverlay.tileSize or 128
+	local tileCount = shieldWidth / tileSize
+	shieldOverlay:SetTexCoord(0, tileCount, 0, 1)
+	-- Apply custom color/alpha, blend mode, and texture to shieldOverlay
+	local shieldOverlayColor = db.shieldOverlayColor
+	shieldOverlay:SetDesaturated(true)
+	shieldOverlay:SetVertexColor(shieldOverlayColor.r, shieldOverlayColor.g, shieldOverlayColor.b, shieldOverlayColor.a)
+	shieldOverlay:SetAlpha(shieldOverlayColor.a)
+	shieldOverlay:SetBlendMode(db.shieldOverlayBlendMode)
+	local shieldOverlayTexture = db.shieldOverlayTexture or "Interface\\RaidFrame\\Shield-Overlay"
+	if shieldOverlayTexture ~= "Interface\\RaidFrame\\Shield-Overlay" then
+		shieldOverlay:SetTexture(shieldOverlayTexture)
+	end
+	-- Set anchor points for shieldOverlay based on health bar state and config
+	if hasMissingHealth then
+		-- Anchor the overlay to the shield bar instead of the health bar
+		shieldOverlay:SetPoint("TOPLEFT", shieldBar, "TOPLEFT", 0, 0)
+		shieldOverlay:SetPoint("BOTTOMLEFT", shieldBar, "BOTTOMLEFT", 0, 0)
+		shieldOverlay:Show()
+	elseif db.showShieldOverlayAtFullHealth then
+		-- Anchor the overlay to the right edge of the health bar
+		shieldOverlay:SetPoint("TOPRIGHT", healthBar, "TOPRIGHT", 0, 0)
+		shieldOverlay:SetPoint("BOTTOMRIGHT", healthBar, "BOTTOMRIGHT", 0, 0)
+		shieldOverlay:Show()
+	end
+
+	-- Handle shieldBar visibility and positioning
+	-- Apply custom color/alpha, blend mode, and texture to shieldBar
+	local shieldBarColor = db.shieldBarColor
+	shieldBar:SetVertexColor(shieldBarColor.r, shieldBarColor.g, shieldBarColor.b, shieldBarColor.a)
+	shieldBar:SetAlpha(shieldBarColor.a)
+	shieldBar:SetBlendMode(db.shieldBarBlendMode)
+	local shieldBarTexture = db.shieldBarTexture or "Interface\\RaidFrame\\Shield-Fill"
+    if shieldBarTexture ~= "Interface\\RaidFrame\\Shield-Fill" then
+        shieldBar:SetTexture(shieldBarTexture)
+    end
+	if hasMissingHealth then
+		shieldBar:SetPoint("TOPRIGHT", healthBar, "TOPRIGHT", 0, 0)
+		shieldBar:SetPoint("BOTTOMRIGHT", healthBar, "BOTTOMRIGHT", 0, 0)
+		shieldBar:Show()
+	elseif db.showShieldBarAtFullHealth then
+		shieldBar:SetParent(healthBar)
+		shieldBar:ClearAllPoints()
+		shieldBar:SetPoint("TOPRIGHT", healthBar, "TOPRIGHT", 0, 0)
+		shieldBar:SetPoint("BOTTOMRIGHT", healthBar, "BOTTOMRIGHT", 0, 0)
+		shieldBar:Show()
 	end
 end
