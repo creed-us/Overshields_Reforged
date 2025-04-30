@@ -13,7 +13,7 @@ ns.HandleUnitFrameUpdate = function(frame)
 		or (not healthBar or healthBar:IsForbidden())
 	then return end
 
-	local healthTexture = healthBar:GetStatusBarTexture()
+	local healthFillBar = healthBar:GetStatusBarTexture()
 	local currentHealth = healthBar:GetValue()
 	local _, maxHealth = healthBar:GetMinMaxValues()
 	if currentHealth <= 0 or maxHealth <= 0 then
@@ -46,7 +46,7 @@ ns.HandleUnitFrameUpdate = function(frame)
 
 	local showShield = math.min(totalShield, maxHealth)
 	local offsetX = (maxHealth / effectiveHealth) - 1
-	shieldBar:UpdateFillPosition(healthTexture, showShield, offsetX)
+	shieldBar:UpdateFillPosition(healthFillBar, showShield, offsetX)
 	shieldBar:Show()
 
 	if not hasOvershield then
