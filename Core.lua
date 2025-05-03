@@ -3,13 +3,14 @@ local AceAddon = LibStub("AceAddon-3.0")
 
 OvershieldsReforged = AceAddon:NewAddon(ADDON_NAME, "AceEvent-3.0", "AceConsole-3.0")
 
+--[[TODO: find a way to check if the "Display Incoming Heals" option is enabled in the game settings that actually works
 local function CheckIncomingHealsOption()
 	local scriptErrorsEnabled = GetCVar("scriptErrors") == "1"
 	local showingPredictedHealth = GetCVar("predictedHealth") ~= "1"
 	if scriptErrorsEnabled and not showingPredictedHealth then
 		print("|cffff0000[Overshields Reforged]|r Warning: The 'Display Incoming Heals' option is disabled. This addon requires it to function properly. Please enable it in Game Menu > Options > Interface > Raid Frames > Display Incoming Heals. It is recommended to disable this addon if you do not want to see extra shield bars.")
 	end
-end
+end]]
 
 function OvershieldsReforged:OnInitialize()
 	-- Initialize database and options
@@ -25,10 +26,11 @@ function OvershieldsReforged:OnInitialize()
 	end)
 end
 
+--[[TODO: line 6 cont. (working incoming heal opt. check)
 function OvershieldsReforged:OnEnable()
 	-- Periodically check the "Display Incoming Heals" option
 	self.incomingHealsCheckTicker = C_Timer.NewTicker(30, CheckIncomingHealsOption)
-end
+end]]
 
 function OvershieldsReforged:OnDisable()
 	-- Cancel the periodic check when the addon is disabled
