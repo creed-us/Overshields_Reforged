@@ -22,21 +22,23 @@ ns.HandleCompactUnitFrame_Update = function(frame)
 	if (not shieldOverlay or shieldOverlay:IsForbidden())
 		or (not overshieldTick or overshieldTick:IsForbidden())
 		or (not healthBar or healthBar:IsForbidden())
-	then return end
+	then
+		return
+	end
 
-    local healthFillBar = healthBar:GetStatusBarTexture()
-    local totalShield   = UnitGetTotalAbsorbs(frame.displayedUnit) or 0
+	local healthFillBar = healthBar:GetStatusBarTexture()
+	local totalShield   = UnitGetTotalAbsorbs(frame.displayedUnit) or 0
 	local currentHealth = healthBar:GetValue()
-    local _, maxHealth  = healthBar:GetMinMaxValues()
+	local _, maxHealth  = healthBar:GetMinMaxValues()
 
-    if totalShield <= 0 or maxHealth <= 0 then
-        shieldOverlay:Hide()
-        shieldBar:Hide()
-        overshieldTick:Hide()
-        return
-    end
+	if totalShield <= 0 or maxHealth <= 0 then
+		shieldOverlay:Hide()
+		shieldBar:Hide()
+		overshieldTick:Hide()
+		return
+	end
 
-    local missingHealth = maxHealth - currentHealth
+	local missingHealth = maxHealth - currentHealth
 	local hasMissingHealth = missingHealth > 0
 	local effectiveHealth = currentHealth + totalShield
 	local hasOvershield = effectiveHealth > maxHealth
@@ -49,10 +51,10 @@ ns.HandleCompactUnitFrame_Update = function(frame)
 	end
 
 	-- Calculate the width of the shield overlay as a fraction of the health bar width
-    local healthBarWidth, _ = healthBar:GetSize()
-    local shieldWidth = math.min((displayedShield / maxHealth) * healthBarWidth, healthBarWidth)
+	local healthBarWidth, _ = healthBar:GetSize()
+	local shieldWidth = math.min((displayedShield / maxHealth) * healthBarWidth, healthBarWidth)
 	shieldOverlay:SetWidth(shieldWidth)
-    shieldBar:SetWidth(shieldWidth)
+	shieldBar:SetWidth(shieldWidth)
 
 	-- Handle overshieldTick prior to shieldOverlay and shieldBar to ensure correct visibility
 	if hasOvershield then
@@ -78,16 +80,16 @@ ns.HandleCompactUnitFrame_Update = function(frame)
 		overshieldTick:Hide()
 	end
 
-    if displayedShield <= 0 then
-        shieldOverlay:Hide()
-        shieldBar:Hide()
-        return
-    end
+	if displayedShield <= 0 then
+		shieldOverlay:Hide()
+		shieldBar:Hide()
+		return
+	end
 
 
 	-- Handle shieldOverlay visibility and positioning
-	shieldOverlay:SetParent(healthBar)
 	shieldOverlay:ClearAllPoints()
+	shieldOverlay:SetParent(healthBar)
 	-- Apply the texture and ensure proper tiling
 	local tileSize = shieldOverlay.tileSize or 128
 	local tileCount = shieldWidth / tileSize
@@ -123,9 +125,9 @@ ns.HandleCompactUnitFrame_Update = function(frame)
 	shieldBar:SetAlpha(shieldBarColor.a)
 	shieldBar:SetBlendMode(db.shieldBarBlendMode)
 	local shieldBarTexture = db.shieldBarTexture or "Interface\\RaidFrame\\Shield-Fill"
-    if shieldBarTexture ~= "Interface\\RaidFrame\\Shield-Fill" then
-        shieldBar:SetTexture(shieldBarTexture)
-    end
+	if shieldBarTexture ~= "Interface\\RaidFrame\\Shield-Fill" then
+		shieldBar:SetTexture(shieldBarTexture)
+	end
 
 	if hasMissingHealth then
 		-- Anchor the shieldBar to the healthFillBar for proper alignment
