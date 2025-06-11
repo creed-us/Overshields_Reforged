@@ -1,17 +1,17 @@
 local _, ns = ...
 local OVERSHIELD_TICK_OFFSET = -7
 
--- Securely hook into the base UI function to clear points before it sets them
+-- Hook into the base UI function to clear points before it sets them
 hooksecurefunc("CompactUnitFrameUtil_UpdateFillBar", function(frame, previousTexture, bar, amount, barOffsetXPercent)
 	if type(bar) == "userdata"
 		and bar.ClearAllPoints
 		and not (bar.IsForbidden and bar:IsForbidden())
 	then
-		-- success, error
+		-- TODO: Handle error - determine if needed?
+		-- (discarded) success, error
 		local _, _ = pcall(function()
 			bar:ClearAllPoints()
 		end)
-		-- TODO: Handle error
 	end
 end)
 
