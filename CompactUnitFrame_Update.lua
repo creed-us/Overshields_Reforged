@@ -3,11 +3,15 @@ local OVERSHIELD_TICK_OFFSET = -7
 
 -- Securely hook into the base UI function to clear points before it sets them
 hooksecurefunc("CompactUnitFrameUtil_UpdateFillBar", function(frame, previousTexture, bar, amount, barOffsetXPercent)
-    if (bar == frame.totalAbsorb or bar == frame.totalAbsorbOverlay)
-		and bar
+	if type(bar) == "userdata"
 		and bar.ClearAllPoints
+		and not (bar.IsForbidden and bar:IsForbidden())
 	then
-		bar:ClearAllPoints()
+		-- success, error
+		local _, _ = pcall(function()
+			bar:ClearAllPoints()
+		end)
+		-- TODO: Handle error
 	end
 end)
 
