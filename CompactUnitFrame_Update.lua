@@ -1,19 +1,13 @@
 local _, ns = ...
 local OVERSHIELD_TICK_OFFSET = -7
 
-local function clearAllPoints(bar)
-	-- TODO: Catch error - determine if handling needed?
-	-- _, (discarded) error
-	local success, _ = pcall(function()
-		if bar.ClearAllPoints and not (bar.IsForbidden and bar:IsForbidden()) then
-			bar:ClearAllPoints()
-		end
-	end)
-	if not success then
-		print("[OSR] CompactUnitFrameUtil_UpdateFillBar: ClearAllPoints produced an error for: ", bar:GetName())
-		print("[OSR] Please report this! (https://github.com/creed-us/Overshields_Reforged).")
+-- Clear points for fill bars to avoid circular reference bug (e9f667b)
+-- pcall used here to circumvent expensive validation and suppress irrelevant errors
+hooksecurefunc("CompactUnitFrameUtil_UpdateFillBar", function(frame, _, bar)
+	if (bar == frame.totalAbsorb or bar == frame.totalAbsorbOverlay or bar == frame.overAbsorbGlow) then
+		pcall(bar.ClearAllPoints, bar)
 	end
-end
+end)
 
 ns.HandleCompactUnitFrame_Update = function(frame)
 	local db = OvershieldsReforged.db.profile
@@ -62,8 +56,7 @@ ns.HandleCompactUnitFrame_Update = function(frame)
 
 	-- Handle overshieldTick prior to shieldOverlay and shieldBar to ensure correct visibility
 	if hasOvershield then
-		clearAllPoints(overshieldTick)
-		--overshieldTick:ClearAllPoints()
+		overshieldTick:ClearAllPoints()
 		if hasMissingHealth then
 			overshieldTick:SetPoint("TOPLEFT", healthBar, "TOPRIGHT", OVERSHIELD_TICK_OFFSET, 0)
 			overshieldTick:SetPoint("BOTTOMLEFT", healthBar, "BOTTOMRIGHT", OVERSHIELD_TICK_OFFSET, 0)
@@ -93,8 +86,7 @@ ns.HandleCompactUnitFrame_Update = function(frame)
 
 
 	-- Handle shieldOverlay visibility and positioning
-	clearAllPoints(shieldOverlay)
-	--shieldOverlay:ClearAllPoints()
+	shieldOverlay:ClearAllPoints()
 	shieldOverlay:SetParent(healthBar)
 	-- Apply the texture and ensure proper tiling
 	local tileSize = shieldOverlay.tileSize or 128
@@ -124,7 +116,6 @@ ns.HandleCompactUnitFrame_Update = function(frame)
 	end
 
 	-- Handle shieldBar visibility and positioning
-	clearAllPoints(shieldBar)
 	shieldBar:ClearAllPoints()
 	-- Apply custom color/alpha, blend mode, and texture to shieldBar
 	local shieldBarColor = db.shieldBarColor
