@@ -25,9 +25,9 @@ ns.HandleCompactUnitFrame_Update = function(frame)
 	end
 
 	local healthFillBar = healthBar:GetStatusBarTexture()
-	local totalShield   = UnitGetTotalAbsorbs(frame.displayedUnit) or 0
+	local totalShield = UnitGetTotalAbsorbs(frame.displayedUnit) or 0
 	local currentHealth = healthBar:GetValue()
-	local _, maxHealth  = healthBar:GetMinMaxValues()
+	local _, maxHealth = healthBar:GetMinMaxValues()
 
 	if totalShield <= 0 or maxHealth <= 0 then
 		shieldOverlay:Hide()
