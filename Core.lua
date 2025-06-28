@@ -1,6 +1,5 @@
 local ADDON_NAME, ns = ...
 local AceAddon = LibStub("AceAddon-3.0")
-
 OvershieldsReforged = AceAddon:NewAddon(ADDON_NAME, "AceEvent-3.0", "AceConsole-3.0")
 
 function OvershieldsReforged:OnInitialize()
