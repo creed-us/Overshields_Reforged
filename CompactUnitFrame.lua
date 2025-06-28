@@ -52,15 +52,16 @@ local function HandleCompactUnitFrameUpdate(frame)
 
 	local shieldBar, shieldOverlay, overshieldTick, healthBar = frame.totalAbsorb, frame.totalAbsorbOverlay, frame.overAbsorbGlow, frame.healthBar
 
-	if (not shieldOverlay or shieldOverlay:IsForbidden())
-		or (not overshieldTick or overshieldTick:IsForbidden())
-		or (not healthBar or healthBar:IsForbidden())
-	then
-		return
-	end
+    if (not shieldOverlay or shieldOverlay:IsForbidden())
+        or (not overshieldTick or overshieldTick:IsForbidden())
+        or (not healthBar or healthBar:IsForbidden())
+    then
+        return
+    end
 
-	local totalShield = UnitGetTotalAbsorbs(unit) or 0
 	local _, maxHealth = healthBar:GetMinMaxValues()
+
+    local totalShield = UnitGetTotalAbsorbs(frame.unit) or 0
 
 	if totalShield <= 0 or maxHealth <= 0 then
 		shieldOverlay:Hide()
