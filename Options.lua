@@ -4,8 +4,6 @@ local AceConfig = LibStub("AceConfig-3.0")
 local AceConfigDialog = LibStub("AceConfigDialog-3.0")
 local AceDB = LibStub("AceDB-3.0")
 
-OvershieldsReforged = OvershieldsReforged or {}
-
 local function OnAppearanceChanged()
 	ns.UpdateAllCompactUnitFrames()
 end
