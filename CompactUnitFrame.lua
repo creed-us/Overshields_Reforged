@@ -1,46 +1,58 @@
 local _, ns = ...
-local OVERSHIELD_TICK_OFFSET = -7
-
--- Clear points for fill bars to avoid circular reference bug (e9f667b)
--- pcall used here to circumvent expensive validation and suppress irrelevant errors
-hooksecurefunc("CompactUnitFrameUtil_UpdateFillBar", function(frame, _, bar)
-	if (bar == frame.totalAbsorb or bar == frame.totalAbsorbOverlay or bar == frame.overAbsorbGlow) then
-		pcall(bar.ClearAllPoints, bar)
-	end
-end)
-
--- Per-frame batching system for CompactUnitFrame updates
-local updateQueue = {}
-local queuedFrames = setmetatable({}, { __mode = "k" }) -- weak keys for GC
-
 -- Invisible, non-interactable, non-movable frame for OnUpdate batching
 local batchFrame = CreateFrame("Frame", nil, UIParent)
 batchFrame:Hide()
-batchFrame:SetScript("OnUpdate", function(self)
-    for frame in pairs(updateQueue) do
-        ns.HandleCompactUnitFrameUpdate(frame)
-        updateQueue[frame] = nil
-        queuedFrames[frame] = nil
-    end
-    self:Hide() -- Only process once per frame
-end)
+local updateQueue = {}
 
--- Public function to queue a frame for update
-function ns.QueueCompactUnitFrameUpdate(frame)
-    if not frame or queuedFrames[frame] then return end
-    updateQueue[frame] = true
-    queuedFrames[frame] = true
-    batchFrame:Show()
+-- Anchor layouts
+-- anchor0, anchor1, *offsetX, *offsetY
+local AnchorLayouts = {
+	OvershieldTick_MissingHealth = {
+		{ "TOPLEFT", "TOPRIGHT", -7, 0 },
+		{ "BOTTOMLEFT", "BOTTOMRIGHT", -7, 0 },
+	},
+	OvershieldTick_FullHealth = {
+		{ "TOPLEFT", "TOPLEFT", -7, 0 },
+		{ "BOTTOMLEFT", "BOTTOMLEFT", -7, 0 },
+	},
+	ShieldOverlay_MissingHealth = {
+		{ "TOPLEFT", "TOPRIGHT" },
+		{ "BOTTOMLEFT", "BOTTOMRIGHT" },
+	},
+	ShieldOverlay_FullHealth = {
+		{ "TOPRIGHT", "TOPRIGHT" },
+		{ "BOTTOMRIGHT","BOTTOMRIGHT" },
+	},
+	ShieldBar_MissingHealth = {
+		{ "TOPLEFT", "TOPRIGHT" },
+		{ "BOTTOMLEFT", "BOTTOMRIGHT" },
+	},
+	ShieldBar_FullHealth = {
+		{ "TOPRIGHT", "TOPRIGHT" },
+		{ "BOTTOMRIGHT","BOTTOMRIGHT" },
+	},
+}
+
+local function ApplyPoints(region, targetFrame, layoutKey)
+	if not region or not targetFrame then return end
+	region:ClearAllPoints()
+	local layout = AnchorLayouts[layoutKey]
+	if not layout then return end
+	for _, value in ipairs(layout) do
+		local regionAnchor, targetAnchor, offsetX, offsetY = value[1], value[2], value[3] or 0, value[4] or 0
+		region:SetPoint(regionAnchor, targetFrame, targetAnchor, offsetX, offsetY)
+	end
 end
 
-function ns.HandleCompactUnitFrameUpdate(frame)
+local function HandleCompactUnitFrameUpdate(frame)
 	local db = OvershieldsReforged.db.profile
 	if not db or not frame then return end
 
-	local shieldBar = frame.totalAbsorb
-	local shieldOverlay = frame.totalAbsorbOverlay
-	local overshieldTick = frame.overAbsorbGlow
-	local healthBar = frame.healthBar
+	local unit = frame.displayedUnit
+	if not unit or not UnitExists(unit) then return end
+
+	local shieldBar, shieldOverlay, overshieldTick, healthBar = frame.totalAbsorb, frame.totalAbsorbOverlay, frame.overAbsorbGlow, frame.healthBar
+
 	if (not shieldOverlay or shieldOverlay:IsForbidden())
 		or (not overshieldTick or overshieldTick:IsForbidden())
 		or (not healthBar or healthBar:IsForbidden())
@@ -48,9 +60,7 @@ function ns.HandleCompactUnitFrameUpdate(frame)
 		return
 	end
 
-	local healthFillBar = healthBar:GetStatusBarTexture()
-	local totalShield = UnitGetTotalAbsorbs(frame.displayedUnit) or 0
-	local currentHealth = healthBar:GetValue()
+	local totalShield = UnitGetTotalAbsorbs(unit) or 0
 	local _, maxHealth = healthBar:GetMinMaxValues()
 
 	if totalShield <= 0 or maxHealth <= 0 then
@@ -60,46 +70,27 @@ function ns.HandleCompactUnitFrameUpdate(frame)
 		return
 	end
 
+	local healthFillBar = healthBar:GetStatusBarTexture()
+	local currentHealth = healthBar:GetValue()
 	local missingHealth = maxHealth - currentHealth
 	local hasMissingHealth = missingHealth > 0
 	local effectiveHealth = currentHealth + totalShield
 	local hasOvershield = effectiveHealth > maxHealth
-
-	local displayedShield
-	if currentHealth < maxHealth then
-		displayedShield = math.min(totalShield, missingHealth)
-	else
-		displayedShield = totalShield
-	end
-
-	-- Calculate the width of the shield overlay as a fraction of the health bar width
-	local healthBarWidth, _ = healthBar:GetSize()
+	local displayedShield = (currentHealth < maxHealth) and math.min(totalShield, missingHealth) or totalShield
+	local healthBarWidth = healthBar:GetWidth()
 	local shieldWidth = math.min((displayedShield / maxHealth) * healthBarWidth, healthBarWidth)
+
 	shieldOverlay:SetWidth(shieldWidth)
 	shieldBar:SetWidth(shieldWidth)
 
-	-- Handle overshieldTick prior to shieldOverlay and shieldBar to ensure correct visibility
-	if hasOvershield then
-		overshieldTick:ClearAllPoints()
-		if hasMissingHealth then
-			overshieldTick:SetPoint("TOPLEFT", healthBar, "TOPRIGHT", OVERSHIELD_TICK_OFFSET, 0)
-			overshieldTick:SetPoint("BOTTOMLEFT", healthBar, "BOTTOMRIGHT", OVERSHIELD_TICK_OFFSET, 0)
-			if not db.showTickWhenNotFullHealth then
-				overshieldTick:Hide()
-			end
-		else
-			overshieldTick:SetPoint("TOPLEFT", shieldOverlay, "TOPLEFT", OVERSHIELD_TICK_OFFSET, 0)
-			overshieldTick:SetPoint("BOTTOMLEFT", shieldOverlay, "BOTTOMLEFT", OVERSHIELD_TICK_OFFSET, 0)
-			overshieldTick:Show()
-		end
-		local color = db.overshieldTickColor
-		overshieldTick:SetVertexColor(color.r, color.g, color.b, color.a)
-		overshieldTick:SetBlendMode(db.overshieldTickBlendMode)
-
-		local tickTexture = db.overshieldTickTexture or "Interface\\RaidFrame\\Shield-Overshield"
-		overshieldTick:SetTexture(tickTexture)
-	else
+    -- Overshield Tick
+	overshieldTick:Show()
+	if not hasOvershield or (hasMissingHealth and not db.showTickWhenNotFullHealth) then
 		overshieldTick:Hide()
+	elseif hasMissingHealth then
+		ApplyPoints(overshieldTick, healthBar, "OvershieldTick_MissingHealth")
+	else
+		ApplyPoints(overshieldTick, shieldOverlay, "OvershieldTick_FullHealth")
 	end
 
 	if displayedShield <= 0 then
@@ -108,58 +99,53 @@ function ns.HandleCompactUnitFrameUpdate(frame)
 		return
 	end
 
-
-	-- Handle shieldOverlay visibility and positioning
+	-- Shield Overlay
 	shieldOverlay:ClearAllPoints()
 	shieldOverlay:SetParent(healthBar)
-	-- Apply the texture and ensure proper tiling
+
 	local tileSize = shieldOverlay.tileSize or 128
 	local tileCount = shieldWidth / tileSize
 	shieldOverlay:SetTexCoord(0, tileCount, 0, 1)
-	-- Apply custom color/alpha, blend mode, and texture to shieldOverlay
-	local shieldOverlayColor = db.shieldOverlayColor
-	shieldOverlay:SetDesaturated(true)
-	shieldOverlay:SetVertexColor(shieldOverlayColor.r, shieldOverlayColor.g, shieldOverlayColor.b, shieldOverlayColor.a)
-	shieldOverlay:SetAlpha(shieldOverlayColor.a)
-	shieldOverlay:SetBlendMode(db.shieldOverlayBlendMode)
-	local shieldOverlayTexture = db.shieldOverlayTexture or "Interface\\RaidFrame\\Shield-Overlay"
-	if shieldOverlayTexture ~= "Interface\\RaidFrame\\Shield-Overlay" then
-		shieldOverlay:SetTexture(shieldOverlayTexture)
-	end
-	-- Set anchor points for shieldOverlay based on health bar state and config
+
 	if hasMissingHealth then
-		-- Anchor the overlay to the shield bar instead of the health bar
-		shieldOverlay:SetPoint("TOPLEFT", healthFillBar, "TOPRIGHT", 0, 0)
-		shieldOverlay:SetPoint("BOTTOMLEFT", healthFillBar, "BOTTOMRIGHT", 0, 0)
+		ApplyPoints(shieldOverlay, healthFillBar, "ShieldOverlay_MissingHealth")
 		shieldOverlay:Show()
 	elseif db.showShieldOverlayAtFullHealth then
-		-- Anchor the overlay to the right edge of the health bar
-		shieldOverlay:SetPoint("TOPRIGHT", healthBar, "TOPRIGHT", 0, 0)
-		shieldOverlay:SetPoint("BOTTOMRIGHT", healthBar, "BOTTOMRIGHT", 0, 0)
+		ApplyPoints(shieldOverlay, healthBar, "ShieldOverlay_FullHealth")
 		shieldOverlay:Show()
 	end
 
-	-- Handle shieldBar visibility and positioning
-	shieldBar:ClearAllPoints()
-	-- Apply custom color/alpha, blend mode, and texture to shieldBar
-	local shieldBarColor = db.shieldBarColor
-	shieldBar:SetVertexColor(shieldBarColor.r, shieldBarColor.g, shieldBarColor.b, shieldBarColor.a)
-	shieldBar:SetAlpha(shieldBarColor.a)
-	shieldBar:SetBlendMode(db.shieldBarBlendMode)
-	local shieldBarTexture = db.shieldBarTexture or "Interface\\RaidFrame\\Shield-Fill"
-	if shieldBarTexture ~= "Interface\\RaidFrame\\Shield-Fill" then
-		shieldBar:SetTexture(shieldBarTexture)
-	end
+	-- Shield Bar
+    shieldBar:ClearAllPoints()
 
 	if hasMissingHealth then
-		-- Anchor the shieldBar to the healthFillBar for proper alignment
-		shieldBar:SetPoint("TOPLEFT", healthFillBar, "TOPRIGHT", 0, 0)
-		shieldBar:SetPoint("BOTTOMLEFT", healthFillBar, "BOTTOMRIGHT", 0, 0)
+		ApplyPoints(shieldBar, healthFillBar, "ShieldBar_MissingHealth")
 		shieldBar:Show()
 	elseif db.showShieldBarAtFullHealth then
-		-- Anchor the shieldBar to the healthFillBar for full health scenarios
-		shieldBar:SetPoint("TOPRIGHT", healthBar, "TOPRIGHT", 0, 0)
-		shieldBar:SetPoint("BOTTOMRIGHT", healthBar, "BOTTOMRIGHT", 0, 0)
+		ApplyPoints(shieldBar, healthBar, "ShieldBar_FullHealth")
 		shieldBar:Show()
 	end
+end
+
+-- Clear points for already-existing fill bars with unset anchors to avoid circular reference bug (e9f667b)
+-- pcall used here to circumvent expensive validation and suppress irrelevant errors
+hooksecurefunc("CompactUnitFrameUtil_UpdateFillBar", function(frame, _, bar)
+	if bar == frame.totalAbsorb or bar == frame.totalAbsorbOverlay or bar == frame.overAbsorbGlow then
+		pcall(bar.ClearAllPoints, bar)
+	end
+end)
+
+-- Per-frame batching for CompactUnitFrame updates
+batchFrame:SetScript("OnUpdate", function()
+	for frame in next, updateQueue do
+   		HandleCompactUnitFrameUpdate(frame)
+	end
+    wipe(updateQueue)
+	batchFrame:Hide() -- we only want to update if there are queued frames, so we hide once done to stop iterating
+end)
+
+function ns.QueueCompactUnitFrameUpdate(frame)
+	if not frame or updateQueue[frame] then return end
+	updateQueue[frame] = true
+	batchFrame:Show()
 end
