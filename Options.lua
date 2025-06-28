@@ -259,7 +259,7 @@ function OvershieldsReforged:SetupOptions()
 						type = "select",
 						name = "Bar Texture",
 						order = 3,
-						values = ShieldTextureDropdownValues("Interface\\RaidFrame\\Shield-Fill"), -- Updated default texture
+						values = ShieldTextureDropdownValues("Interface\\RaidFrame\\Shield-Fill"),
 						get = function() return self.db.profile.shieldBarTexture end,
                         set = function(_, value)
 							self.db.profile.shieldBarTexture = value
