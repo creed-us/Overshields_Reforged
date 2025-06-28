@@ -1,6 +1,5 @@
 local _, ns = ...
 
--- Main appearance application logic (moved from CompactUnitFrame.lua)
 local function ApplyAppearance(frame)
 	local db = OvershieldsReforged.db.profile
     if not db or not frame then
@@ -77,7 +76,6 @@ local function UpdatePetFrames()
 	end
 end
 
--- Update all CompactUnitFrames with current appearance settings
 function ns.UpdateAllCompactUnitFrames()
     local isInRaid = IsInRaid()
 	if not isInRaid then
@@ -91,7 +89,6 @@ function ns.UpdateAllCompactUnitFrames()
 	end
 end
 
--- Event handler for party/raid changes
 local eventFrame = CreateFrame("Frame", nil, UIParent)
 eventFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
 eventFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
