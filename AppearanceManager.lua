@@ -90,8 +90,8 @@ function ns.UpdateAllCompactUnitFrames()
 end
 
 local eventFrame = CreateFrame("Frame", nil, UIParent)
-eventFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
 eventFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
+eventFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
 eventFrame:RegisterEvent("RAID_ROSTER_UPDATE")
 eventFrame:RegisterEvent("PARTY_MEMBER_ENABLE")
 eventFrame:RegisterEvent("PARTY_MEMBER_DISABLE")
@@ -99,7 +99,10 @@ eventFrame:RegisterEvent("UNIT_PET")
 eventFrame:RegisterEvent("UNIT_NAME_UPDATE")
 eventFrame:RegisterEvent("PLAYER_ROLES_ASSIGNED")
 eventFrame:SetScript("OnEvent", function(self, event, ...)
-	if event == "GROUP_ROSTER_UPDATE" or event == "PLAYER_ENTERING_WORLD" or event == "RAID_ROSTER_UPDATE" or event == "PLAYER_ROLES_ASSIGNED" or event == "PARTY_MEMBER_ENABLE" or event == "PARTY_MEMBER_DISABLE" or event == "UNIT_PET" or event == "UNIT_NAME_UPDATE" then
+    if event == "PLAYER_ENTERING_WORLD"
+		or event == "GROUP_ROSTER_UPDATE" or event == "RAID_ROSTER_UPDATE"
+        or event == "PARTY_MEMBER_ENABLE" or event == "PARTY_MEMBER_DISABLE"
+		or event == "UNIT_PET" or event == "UNIT_NAME_UPDATE" or event == "PLAYER_ROLES_ASSIGNED" then
 		ns.UpdateAllCompactUnitFrames()
 	end
 end)
