@@ -1,5 +1,4 @@
 local _, ns = ...
--- Invisible, non-interactable, non-movable frame for OnUpdate batching
 local batchFrame = CreateFrame("Frame", nil, UIParent)
 batchFrame:Hide()
 local updateQueue = {}
