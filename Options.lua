@@ -1,3 +1,4 @@
+local _, ns = ...
 local LSM = LibStub("LibSharedMedia-3.0")
 local AceConfig = LibStub("AceConfig-3.0")
 local AceConfigDialog = LibStub("AceConfigDialog-3.0")
@@ -5,21 +6,25 @@ local AceDB = LibStub("AceDB-3.0")
 
 OvershieldsReforged = OvershieldsReforged or {}
 
+local function OnAppearanceChanged()
+	ns.UpdateAllCompactUnitFrames()
+end
+
 function OvershieldsReforged:InitializeDatabase()
 	self.db = AceDB:New("OvershieldsReforgedDB", {
 		profile = {
-			showTickWhenNotFullHealth = true,
 			overshieldTickColor = { r = 1, g = 1, b = 1, a = 0.7 },
 			overshieldTickBlendMode = "ADD",
 			overshieldTickTexture = "Interface\\RaidFrame\\Shield-Overshield",
+			shieldBarTexture = "Interface\\RaidFrame\\Shield-Fill",
+			showTickWhenNotFullHealth = true,
 			showShieldOverlayAtFullHealth = true,
+			showShieldBarAtFullHealth = false,
 			shieldOverlayColor = { r = 0, g = 0, b = 1, a = 0.7 },
 			shieldOverlayBlendMode = "BLEND",
 			shieldOverlayTexture = "Interface\\RaidFrame\\Shield-Overlay",
-			showShieldBarAtFullHealth = false,
 			shieldBarColor = { r = 1, g = 1, b = 1, a = 1 },
 			shieldBarBlendMode = "ADD",
-			shieldBarTexture = "Interface\\RaidFrame\\Shield-Fill",
 		},
 	})
 end
@@ -30,7 +35,9 @@ function OvershieldsReforged:SetupOptions()
 			text = "Changes require a UI reload. Reload now?",
 			button1 = ACCEPT,
 			button2 = CANCEL,
-			OnAccept = function() ReloadUI() end,
+            OnAccept = function()
+                ReloadUI()
+			end,
 			timeout = 30,
 			whileDead = true,
 			hideOnEscape = true,
@@ -98,6 +105,7 @@ function OvershieldsReforged:SetupOptions()
 						end,
 						set = function(_, r, g, b, a)
 							self.db.profile.overshieldTickColor = { r = r, g = g, b = b, a = a }
+							OnAppearanceChanged()
 						end,
 					},
 					overshieldTickBlendMode = {
@@ -106,7 +114,10 @@ function OvershieldsReforged:SetupOptions()
 						order = 2,
 						values = { DISABLE = "DISABLE", BLEND = "BLEND", ALPHAKEY = "ALPHAKEY", ADD = "ADD", MOD = "MOD" },
 						get = function() return self.db.profile.overshieldTickBlendMode end,
-						set = function(_, value) self.db.profile.overshieldTickBlendMode = value end,
+                        set = function(_, value)
+							self.db.profile.overshieldTickBlendMode = value
+							OnAppearanceChanged()
+						end,
 					},
 					overshieldTickTexture = {
 						type = "select",
@@ -114,7 +125,10 @@ function OvershieldsReforged:SetupOptions()
 						order = 3,
 						values = TickTextureDropdownValues(),
 						get = function() return self.db.profile.overshieldTickTexture end,
-						set = function(_, value) self.db.profile.overshieldTickTexture = value end,
+                        set = function(_, value)
+							self.db.profile.overshieldTickTexture = value
+							OnAppearanceChanged()
+						end,
 					},
 					resetOvershieldTick = {
 						type = "execute",
@@ -125,7 +139,8 @@ function OvershieldsReforged:SetupOptions()
 							self.db.profile.showTickWhenNotFullHealth = true
 							self.db.profile.overshieldTickColor = { r = 1, g = 1, b = 1, a = 1 }
 							self.db.profile.overshieldTickBlendMode = "ADD"
-							self.db.profile.overshieldTickTexture = "Interface\\RaidFrame\\Shield-Overshield"
+                            self.db.profile.overshieldTickTexture = "Interface\\RaidFrame\\Shield-Overshield"
+							OnAppearanceChanged()
 							ReloadUIWithConfirmation()
 						end,
 					},
@@ -143,7 +158,9 @@ function OvershieldsReforged:SetupOptions()
 						desc = "Allow the shield overlay to display over the health bar when the unit is at full health.",
 						order = 0,
 						get = function() return self.db.profile.showShieldOverlayAtFullHealth end,
-						set = function(_, value) self.db.profile.showShieldOverlayAtFullHealth = value end,
+                        set = function(_, value)
+                        	self.db.profile.showShieldOverlayAtFullHealth = value
+						end,
 					},
 					shieldOverlayColor = {
 						type = "color",
@@ -156,6 +173,7 @@ function OvershieldsReforged:SetupOptions()
 						end,
 						set = function(_, r, g, b, a)
 							self.db.profile.shieldOverlayColor = { r = r, g = g, b = b, a = a }
+							OnAppearanceChanged()
 						end,
 					},
 					shieldOverlayBlendMode = {
@@ -164,7 +182,10 @@ function OvershieldsReforged:SetupOptions()
 						order = 2,
 						values = { DISABLE = "DISABLE", BLEND = "BLEND", ALPHAKEY = "ALPHAKEY", ADD = "ADD", MOD = "MOD" },
 						get = function() return self.db.profile.shieldOverlayBlendMode end,
-						set = function(_, value) self.db.profile.shieldOverlayBlendMode = value end,
+                        set = function(_, value)
+                            self.db.profile.shieldOverlayBlendMode = value
+							OnAppearanceChanged()
+						end,
 					},
 					shieldOverlayTexture = {
 						type = "select",
@@ -172,7 +193,10 @@ function OvershieldsReforged:SetupOptions()
 						order = 3,
 						values = ShieldTextureDropdownValues("Interface\\RaidFrame\\Shield-Overlay"),
 						get = function() return self.db.profile.shieldOverlayTexture end,
-						set = function(_, value) self.db.profile.shieldOverlayTexture = value end,
+                        set = function(_, value)
+                            self.db.profile.shieldOverlayTexture = value
+                            OnAppearanceChanged()
+						end,
 					},
 					resetShieldOverlay = {
 						type = "execute",
@@ -184,6 +208,7 @@ function OvershieldsReforged:SetupOptions()
 							self.db.profile.shieldOverlayColor = { r = 0, g = 0, b = 1, a = 1 }
 							self.db.profile.shieldOverlayBlendMode = "BLEND"
 							self.db.profile.shieldOverlayTexture = "Interface\\RaidFrame\\Shield-Overlay"
+							OnAppearanceChanged()
 							ReloadUIWithConfirmation()
 						end,
 					},
@@ -201,7 +226,9 @@ function OvershieldsReforged:SetupOptions()
 						desc = "Allow the shield bar to display over the health bar when the unit is at full health.",
 						order = 0,
 						get = function() return self.db.profile.showShieldBarAtFullHealth end,
-						set = function(_, value) self.db.profile.showShieldBarAtFullHealth = value end,
+                        set = function(_, value)
+                            self.db.profile.showShieldBarAtFullHealth = value
+						end,
 					},
 					shieldBarColor = {
 						type = "color",
@@ -214,6 +241,7 @@ function OvershieldsReforged:SetupOptions()
 						end,
 						set = function(_, r, g, b, a)
 							self.db.profile.shieldBarColor = { r = r, g = g, b = b, a = a }
+							OnAppearanceChanged()
 						end,
 					},
 					shieldBarBlendMode = {
@@ -222,7 +250,10 @@ function OvershieldsReforged:SetupOptions()
 						order = 2,
 						values = { DISABLE = "DISABLE", BLEND = "BLEND", ALPHAKEY = "ALPHAKEY", ADD = "ADD", MOD = "MOD" },
 						get = function() return self.db.profile.shieldBarBlendMode end,
-						set = function(_, value) self.db.profile.shieldBarBlendMode = value end,
+                        set = function(_, value)
+                            self.db.profile.shieldBarBlendMode = value
+                            OnAppearanceChanged()
+						end,
 					},
 					shieldBarTexture = {
 						type = "select",
@@ -230,7 +261,10 @@ function OvershieldsReforged:SetupOptions()
 						order = 3,
 						values = ShieldTextureDropdownValues("Interface\\RaidFrame\\Shield-Fill"), -- Updated default texture
 						get = function() return self.db.profile.shieldBarTexture end,
-						set = function(_, value) self.db.profile.shieldBarTexture = value end,
+                        set = function(_, value)
+							self.db.profile.shieldBarTexture = value
+                            OnAppearanceChanged()
+						end,
 					},
 					resetShieldBar = {
 						type = "execute",
@@ -241,7 +275,8 @@ function OvershieldsReforged:SetupOptions()
 							self.db.profile.showShieldBarAtFullHealth = false
 							self.db.profile.shieldBarColor = { r = 1, g = 1, b = 1, a = 1 }
 							self.db.profile.shieldBarBlendMode = "ADD"
-							self.db.profile.shieldBarTexture = "Interface\\RaidFrame\\Shield-Fill"
+                            self.db.profile.shieldBarTexture = "Interface\\RaidFrame\\Shield-Fill"
+							OnAppearanceChanged()
 							ReloadUIWithConfirmation()
 						end,
 					},
