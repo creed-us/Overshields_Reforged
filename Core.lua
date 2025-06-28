@@ -12,7 +12,7 @@ function OvershieldsReforged:OnInitialize()
 		ns.HandleUnitFrameUpdate(frame)
 	end)
 	hooksecurefunc("CompactUnitFrame_UpdateHealPrediction", function(frame)
-		ns.HandleCompactUnitFrame_Update(frame)
+		ns.QueueCompactUnitFrameUpdate(frame)
 	end)
 end
 

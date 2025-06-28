@@ -9,7 +9,31 @@ hooksecurefunc("CompactUnitFrameUtil_UpdateFillBar", function(frame, _, bar)
 	end
 end)
 
-ns.HandleCompactUnitFrame_Update = function(frame)
+-- Per-frame batching system for CompactUnitFrame updates
+local updateQueue = {}
+local queuedFrames = setmetatable({}, { __mode = "k" }) -- weak keys for GC
+
+-- Invisible, non-interactable, non-movable frame for OnUpdate batching
+local batchFrame = CreateFrame("Frame", nil, UIParent)
+batchFrame:Hide()
+batchFrame:SetScript("OnUpdate", function(self)
+    for frame in pairs(updateQueue) do
+        ns.HandleCompactUnitFrameUpdate(frame)
+        updateQueue[frame] = nil
+        queuedFrames[frame] = nil
+    end
+    self:Hide() -- Only process once per frame
+end)
+
+-- Public function to queue a frame for update
+function ns.QueueCompactUnitFrameUpdate(frame)
+    if not frame or queuedFrames[frame] then return end
+    updateQueue[frame] = true
+    queuedFrames[frame] = true
+    batchFrame:Show()
+end
+
+function ns.HandleCompactUnitFrameUpdate(frame)
 	local db = OvershieldsReforged.db.profile
 	if not db or not frame then return end
 
