@@ -1,7 +1,7 @@
 local _, ns = ...
 local OVERSHIELD_TICK_OFFSET = -7
 
-ns.HandleUnitFrameUpdate = function(frame)
+function ns.HandleUnitFrameUpdate(frame)
 	local db = OvershieldsReforged.db.profile
 	if not db or not frame then return end
 
@@ -21,7 +21,7 @@ ns.HandleUnitFrameUpdate = function(frame)
 		return
 	end
 
-	local totalShield = UnitGetTotalAbsorbs(frame.unit) or 0
+    local totalShield = UnitGetTotalAbsorbs(frame.unit) or 0
 	if totalShield <= 0 then
 		shieldBar:Hide()
 		overshieldTick:Hide()
@@ -36,11 +36,12 @@ ns.HandleUnitFrameUpdate = function(frame)
 		overshieldTick:SetPoint("TOPLEFT", healthBar, "TOPRIGHT", OVERSHIELD_TICK_OFFSET, 0)
 		overshieldTick:SetPoint("BOTTOMLEFT", healthBar, "BOTTOMRIGHT", OVERSHIELD_TICK_OFFSET, 0)
 		overshieldTick:SetAlpha(db.overshieldTickColor.a)
-		if db.showTickWhenNotFullHealth then
-			overshieldTick:Show()
-		else
-			overshieldTick:Hide()
-		end
+        if db.showTickWhenNotFullHealth then
+            overshieldTick:Show()
+        else
+            overshieldTick:Hide()
+        end
+
 		return
 	end
 
