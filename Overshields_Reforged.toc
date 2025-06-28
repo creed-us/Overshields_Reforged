@@ -17,3 +17,4 @@ Core.lua
 Options.lua
 UnitFrame.lua
 CompactUnitFrame.lua
+AppearanceManager.lua
