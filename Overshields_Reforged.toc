@@ -1,4 +1,4 @@
-## Interface: 120000
+## Interface: 120001
 ## Title: Overshields Reforged
 ## Notes: Simple addon to improve the default UI's damage prevention bars (like those shown for Power Word: Shield) so they always tell how much prevention is left, even when at full HP.
 ## Author: Mysticae-Proudmoore
