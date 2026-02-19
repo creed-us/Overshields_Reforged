@@ -76,7 +76,10 @@ local function HandleCompactUnitFrameUpdate(frame)
 	local glow = frame.overAbsorbGlow
 	if not glow or glow:IsForbidden() then return end
 
-	local glowVisible = glow:IsVisible()
+    local glowVisible = glow:IsVisible()
+	if (glowVisible) then
+		ns.ApplyAppearanceToOverAbsorbGlow(glow)
+	end
 	local maxHealth = UnitHealthMax(unit) or 0
 	local absorbValue = UnitGetTotalAbsorbs(unit)
 
@@ -91,12 +94,12 @@ local function HandleCompactUnitFrameUpdate(frame)
 
 	-- Update custom overlay bar values
 	local overlay = GetOrCreateOverlay(frame)
-	if overlay then
-		overlay:SetMinMaxValues(0, maxHealth)
-		overlay:SetValue(absorbValue)
+    if overlay then
+        overlay:SetMinMaxValues(0, maxHealth)
+        overlay:SetValue(absorbValue)
         overlay:SetShown(frame:IsVisible())
-		ns.ApplyAppearanceToOverlay(overlay, glowVisible)
-	end
+        ns.ApplyAppearanceToOverlay(overlay, glowVisible)
+    end
 end
 
 --- Hook into Blizzard's fill bar update to prevent native absorb bars from interfering.
