@@ -13,10 +13,16 @@ end
 function OvershieldsReforged:InitializeDatabase()
 	self.db = AceDB:New("OvershieldsReforgedDB", {
 		profile = {
+			-- Normal shield appearance (when overAbsorbGlow is not visible)
 			absorbColor = { r = 1, g = 1, b = 1, a = 0.75 },
 			absorbTexture = "Interface\\RaidFrame\\Shield-Fill",
 			overlayColor = { r = 1, g = 1, b = 1, a = 0.5 },
 			overlayTexture = "Interface\\RaidFrame\\Shield-Overlay",
+			-- Overshield appearance (when overAbsorbGlow is visible)
+			overAbsorbColor = { r = 1, g = 1, b = 1, a = 0.75 },
+			overAbsorbTexture = "Interface\\RaidFrame\\Shield-Fill",
+			overAbsorbOverlayColor = { r = 1, g = 1, b = 1, a = 0.5 },
+			overAbsorbOverlayTexture = "Interface\\RaidFrame\\Shield-Overlay",
 		},
 	})
 end
@@ -72,7 +78,7 @@ function OvershieldsReforged:SetupOptions()
 					desc = "Reset to defaults.",
 					order = 2,
 					func = function()
-                        if textureKey == "absorbTexture" then
+                        if textureKey == "absorbTexture" or textureKey == "overAbsorbTexture" then
 							self.db.profile[colorKey] = { r = 1, g = 1, b = 1, a = 0.75 }
                             self.db.profile[textureKey] = "Interface\\RaidFrame\\Shield-Fill"
                         else
@@ -91,8 +97,22 @@ function OvershieldsReforged:SetupOptions()
 		type = "group",
 		name = "Overshields Reforged",
 		args = {
-			absorbGroup = CreateBarGroup("Shield Bar", "absorbColor", "absorbTexture", 0),
-			overlayGroup = CreateBarGroup("Overlay Bar", "overlayColor", "overlayTexture", 1),
+			-- Non-OverAbsorb Group
+			normalShieldsHeader = {
+				type = "header",
+				name = "Non-OverAbsorb Shields",
+				order = 0,
+			},
+			absorbGroup = CreateBarGroup("Shield Bar", "absorbColor", "absorbTexture", 1),
+			overlayGroup = CreateBarGroup("Overlay Bar", "overlayColor", "overlayTexture", 2),
+			-- OverAbsorb Group
+			overshieldsHeader = {
+				type = "header",
+				name = "OverAbsorb Shields",
+				order = 3,
+			},
+			overAbsorbGroup = CreateBarGroup("Shield Bar", "overAbsorbColor", "overAbsorbTexture", 4),
+			overshieldOverlayGroup = CreateBarGroup("Overlay Bar", "overAbsorbOverlayColor", "overAbsorbOverlayTexture", 5),
 		},
 	}
 	AceConfig:RegisterOptionsTable("Overshields Reforged", options)
