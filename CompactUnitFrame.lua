@@ -1,151 +1,130 @@
 local _, ns = ...
+
+--- Batch update frame used to defer frame updates until OnUpdate cycle
 local batchFrame = CreateFrame("Frame", nil, UIParent)
 batchFrame:Hide()
+
+--- Queue of frames pending updates in current batch
 local updateQueue = {}
 
--- Anchor layouts
--- anchor0, anchor1, *offsetX, *offsetY
-local AnchorLayouts = {
-	OvershieldTick_MissingHealth = {
-		{ "TOPLEFT", "TOPRIGHT", -7, 0 },
-		{ "BOTTOMLEFT", "BOTTOMRIGHT", -7, 0 },
-	},
-	OvershieldTick_FullHealth = {
-		{ "TOPLEFT", "TOPLEFT", -7, 0 },
-		{ "BOTTOMLEFT", "BOTTOMLEFT", -7, 0 },
-	},
-	ShieldOverlay_MissingHealth = {
-		{ "TOPLEFT", "TOPRIGHT" },
-		{ "BOTTOMLEFT", "BOTTOMRIGHT" },
-	},
-	ShieldOverlay_FullHealth = {
-		{ "TOPRIGHT", "TOPRIGHT" },
-		{ "BOTTOMRIGHT","BOTTOMRIGHT" },
-	},
-	ShieldBar_MissingHealth = {
-		{ "TOPLEFT", "TOPRIGHT" },
-		{ "BOTTOMLEFT", "BOTTOMRIGHT" },
-	},
-	ShieldBar_FullHealth = {
-		{ "TOPRIGHT", "TOPRIGHT" },
-		{ "BOTTOMRIGHT","BOTTOMRIGHT" },
-	},
-}
+--- Cache mapping frame → custom shield bar StatusBar
+local containers = {}
 
-local function ApplyPoints(region, targetFrame, layoutKey)
-	if not region or not targetFrame then return end
-	region:ClearAllPoints()
-	local layout = AnchorLayouts[layoutKey]
-	if not layout then return end
-	for _, value in ipairs(layout) do
-		local regionAnchor, targetAnchor, offsetX, offsetY = value[1], value[2], value[3] or 0, value[4] or 0
-		region:SetPoint(regionAnchor, targetFrame, targetAnchor, offsetX, offsetY)
+--- Cache mapping frame → custom overlay bar StatusBar
+local overlayContainers = {}
+
+--- Exports caches for use by AppearanceManager
+ns.absorbBarCache = containers
+ns.overlayBarCache = overlayContainers
+
+--- Creates or retrieves the custom shield bar for a compact unit frame.
+-- @param frame The compact unit frame to process
+-- @return StatusBar frame for absorb display, or nil if healthBar unavailable
+local function GetOrCreateAbsorbBar(frame)
+	if containers[frame] then
+		return containers[frame]
 	end
+
+	local healthBar = frame.healthBar
+	if not healthBar then return nil end
+
+	local absorb = CreateFrame("StatusBar", nil, healthBar)
+	absorb:SetAllPoints(healthBar)
+	absorb:SetReverseFill(true)
+	absorb:SetFrameLevel(healthBar:GetFrameLevel())
+	absorb:SetFrameStrata(healthBar:GetFrameStrata())
+	absorb:Hide()
+
+	containers[frame] = absorb
+	frame._absorbBar = absorb
+
+	return absorb
 end
 
-local function HandleCompactUnitFrameUpdate(frame)
-	local db = OvershieldsReforged.db.profile
-	if not db or not frame then return end
+--- Creates or retrieves the custom overlay bar for a compact unit frame.
+-- @param frame The compact unit frame to process
+-- @return StatusBar frame for overlay display, or nil if healthBar unavailable
+local function GetOrCreateOverlayBar(frame)
+	if overlayContainers[frame] then
+		return overlayContainers[frame]
+	end
 
+	local healthBar = frame.healthBar
+	if not healthBar then return nil end
+
+	local overlay = CreateFrame("StatusBar", nil, healthBar)
+	overlay:SetAllPoints(healthBar)
+	overlay:SetReverseFill(true)  -- Fill from right to left
+	overlay:SetFrameLevel(healthBar:GetFrameLevel() + 1)  -- Layer above shield bar
+	overlay:SetFrameStrata(healthBar:GetFrameStrata())
+	overlay:Hide()
+
+	overlayContainers[frame] = overlay
+	frame._overlayBar = overlay
+
+	return overlay
+end
+
+--- Updates a compact unit frame with current absorb bar values and glow state.
+-- Synchronizes bar values with unit API and glow visibility.
+-- Appearance is managed exclusively by AppearanceManager.
+-- @param frame The compact unit frame to update
+local function HandleCompactUnitFrameUpdate(frame)
 	local unit = frame.displayedUnit
 	if not unit or not UnitExists(unit) then return end
 
-	local shieldBar, shieldOverlay, overshieldTick, healthBar = frame.totalAbsorb, frame.totalAbsorbOverlay, frame.overAbsorbGlow, frame.healthBar
+	local glow = frame.overAbsorbGlow
+	if not glow or glow:IsForbidden() then return end
 
-    if (not shieldOverlay or shieldOverlay:IsForbidden())
-        or (not overshieldTick or overshieldTick:IsForbidden())
-        or (not healthBar or healthBar:IsForbidden())
-    then
-        return
-    end
+	local isGlowVisible = glow:IsVisible()
+	local maxHealth = UnitHealthMax(unit) or 0
+	local absorbValue = UnitGetTotalAbsorbs(unit)
 
-	local _, maxHealth = healthBar:GetMinMaxValues()
-
-    local totalShield = UnitGetTotalAbsorbs(frame.unit) or 0
-
-	if totalShield <= 0 or maxHealth <= 0 then
-		shieldOverlay:Hide()
-		shieldBar:Hide()
-		overshieldTick:Hide()
-		return
+	-- Update custom shield bar values
+	local absorb = GetOrCreateAbsorbBar(frame)
+	if absorb then
+		absorb:SetMinMaxValues(0, maxHealth)
+		absorb:SetValue(absorbValue)
+		absorb:SetShown(isGlowVisible)
+		ns.ApplyShieldBarAppearance(absorb)
 	end
 
-	local healthFillBar = healthBar:GetStatusBarTexture()
-	local currentHealth = healthBar:GetValue()
-	local missingHealth = maxHealth - currentHealth
-	local hasMissingHealth = missingHealth > 0
-	local effectiveHealth = currentHealth + totalShield
-	local hasOvershield = effectiveHealth > maxHealth
-	local displayedShield = (currentHealth < maxHealth) and math.min(totalShield, missingHealth) or totalShield
-	local healthBarWidth = healthBar:GetWidth()
-	local shieldWidth = math.min((displayedShield / maxHealth) * healthBarWidth, healthBarWidth)
-
-	shieldOverlay:SetWidth(shieldWidth)
-	shieldBar:SetWidth(shieldWidth)
-
-    -- Overshield Tick
-	overshieldTick:Show()
-	if not hasOvershield or (hasMissingHealth and not db.showTickWhenNotFullHealth) then
-		overshieldTick:Hide()
-	elseif hasMissingHealth then
-		ApplyPoints(overshieldTick, healthBar, "OvershieldTick_MissingHealth")
-	else
-		ApplyPoints(overshieldTick, shieldOverlay, "OvershieldTick_FullHealth")
-	end
-
-	if displayedShield <= 0 then
-		shieldOverlay:Hide()
-		shieldBar:Hide()
-		return
-	end
-
-	-- Shield Overlay
-	shieldOverlay:ClearAllPoints()
-	shieldOverlay:SetParent(healthBar)
-
-	local tileSize = shieldOverlay.tileSize or 128
-	local tileCount = shieldWidth / tileSize
-	shieldOverlay:SetTexCoord(0, tileCount, 0, 1)
-
-	if hasMissingHealth then
-		ApplyPoints(shieldOverlay, healthFillBar, "ShieldOverlay_MissingHealth")
-		shieldOverlay:Show()
-	elseif db.showShieldOverlayAtFullHealth then
-		ApplyPoints(shieldOverlay, healthBar, "ShieldOverlay_FullHealth")
-		shieldOverlay:Show()
-	end
-
-	-- Shield Bar
-    shieldBar:ClearAllPoints()
-
-	if hasMissingHealth then
-		ApplyPoints(shieldBar, healthFillBar, "ShieldBar_MissingHealth")
-		shieldBar:Show()
-	elseif db.showShieldBarAtFullHealth then
-		ApplyPoints(shieldBar, healthBar, "ShieldBar_FullHealth")
-		shieldBar:Show()
+	-- Update custom overlay bar values
+	local overlay = GetOrCreateOverlayBar(frame)
+	if overlay then
+		overlay:SetMinMaxValues(0, maxHealth)
+		overlay:SetValue(absorbValue)
+		overlay:SetShown(true)
+		ns.ApplyOverlayBarAppearance(overlay)
 	end
 end
 
--- Clear points for already-existing fill bars with unset anchors to avoid circular reference bug (e9f667b)
--- pcall used here to circumvent expensive validation and suppress irrelevant errors
+--- Hook into Blizzard's fill bar update to prevent native absorb bars from interfering.
+-- Clears anchor points on protected frames to avoid layout conflicts.
 hooksecurefunc("CompactUnitFrameUtil_UpdateFillBar", function(frame, _, bar)
 	if bar == frame.totalAbsorb or bar == frame.totalAbsorbOverlay or bar == frame.overAbsorbGlow then
 		pcall(bar.ClearAllPoints, bar)
 	end
 end)
 
--- Per-frame batching for CompactUnitFrame updates
+--- Process queued frame updates once per cycle.
 batchFrame:SetScript("OnUpdate", function()
-	for frame in next, updateQueue do
-   		HandleCompactUnitFrameUpdate(frame)
-	end
-    wipe(updateQueue)
-	batchFrame:Hide() -- we only want to update if there are queued frames, so we hide once done to stop iterating
+	local db = OvershieldsReforged.db.profile
+	if not db then return end
+
+    for frame in next, updateQueue do
+        HandleCompactUnitFrameUpdate(frame)
+    end
+
+	wipe(updateQueue)
+	batchFrame:Hide()
 end)
 
+--- Queues a compact unit frame for appearance update.
+-- Frames are batched and processed during the next OnUpdate cycle for efficiency.
+-- @param frame The compact unit frame to queue for update
 function ns.QueueCompactUnitFrameUpdate(frame)
-	if not frame or updateQueue[frame] then return end
-	updateQueue[frame] = true
-	batchFrame:Show()
+    if not frame or updateQueue[frame] then return end
+    updateQueue[frame] = true
+    batchFrame:Show()
 end
