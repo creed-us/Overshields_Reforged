@@ -72,9 +72,7 @@ local function ApplyAppearanceToNativeOverlay(overlay, glowVisible)
 	pcall(ApplyAppearanceToOverlay, overlay, glowVisible)
 end
 
-ns.ApplyAppearanceToBar = ApplyAppearanceToBar
-ns.ApplyAppearanceToOverlay = ApplyAppearanceToOverlay
-ns.UpdateAllFrameAppearances = function()
+local function UpdateAllFrameAppearances()
 	local function ApplyAppearanceToFrame(frame, glowVisible)
 		ApplyAppearanceToBar(ns.absorbCache[frame], glowVisible)
         ApplyAppearanceToOverlay(ns.overlayCache[frame], glowVisible)
@@ -111,3 +109,7 @@ ns.UpdateAllFrameAppearances = function()
 		end
 	end
 end
+
+ns.ApplyAppearanceToBar = ApplyAppearanceToBar
+ns.ApplyAppearanceToOverlay = ApplyAppearanceToOverlay
+ns.UpdateAllFrameAppearances = UpdateAllFrameAppearances
