@@ -1,21 +1,22 @@
 # Overshields Reforged
 
+**Updated for World of Warcraft: Midnight, with some changes.**
+
 Overshields Reforged began as a fork of the [Overshields](https://github.com/enthh/overshields) addon by enthh, but turned into a rewrite.
 
-Overshields Reforged adds information about shielding on Blizzard unit frames. Overshields Reforged displays the default UI's absorb shield overlay as an extra bar that overflows the standard health bars on Blizzard unit frames, which allows you to make more informed decisions on who to shield and when.
+Overshields Reforged allows you to configure how absorbs & overabsorbs display on compact unit frames.
 
-There are also a few options: Overshield overlay alpha (the striped absorb shield bar), overshield tick alpha (indicates overabsorb), and whether to show the overshield glow tick when a unit is not at full life.
+There are a couple of options: Color (including alpha/transparency), and texture. The old options which allowed you to pick when and how the overabsorb tick (the thick bar indicating that current shields/absorbs exceed missing HP) are gone due to new interface limitations in Midnight.
 
 Works with Blizzard's default Player, Target, Focus, Party, and Raid frames.
 
-![Overshields Reforged on individual units (not at full life)](./target_1.jpg)
-![Overshields Reforged on individual units (at full life)](./target_2.jpg)
-![Overshields Reforged in party and raid](./group_1.jpg)
-![Overshields Reforged settings in the addon options panel](./options.jpg)
+![Overshields Reforged raid-style party frames with options panel visible, and Non-OverAbsorb shield bar configured as a red color.](./midnight_options.jpg)
 
 ## How to Use
 
 Run **/overshieldsreforged options** or **/osr o** in your chat or press **Esc** and go to **Options > AddOns > Overshields Reforged**.
+
+Run **/overshieldsreforged reset** or **/osr r** in your chat to reset all Overshields Reforged options. *This is recommended for users updating to the Midnight version.*
 
 Run **/overshieldsreforged version** or **/osr v** in your chat to check the installed version of Overshields Reforged.
 
