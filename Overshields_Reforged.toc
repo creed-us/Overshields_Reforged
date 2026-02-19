@@ -1,4 +1,4 @@
-## Interface: 110105
+## Interface: 120000
 ## Title: Overshields Reforged
 ## Notes: Simple addon to improve the default UI's damage prevention bars (like those shown for Power Word: Shield) so they always tell how much prevention is left, even when at full HP.
 ## Author: Mysticae-Proudmoore
@@ -15,6 +15,5 @@ embeds.xml
 
 Core.lua
 Options.lua
-UnitFrame.lua
 CompactUnitFrame.lua
 AppearanceManager.lua
