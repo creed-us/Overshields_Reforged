@@ -12,9 +12,11 @@ local function ApplyAppearanceToBar(absorb, glowVisible)
 
     local colorTable = db.absorbColor
     local textureFile = db.absorbTexture
+	local blendMode = db.absorbBlendMode
     if glowVisible then
         colorTable = db.overAbsorbColor
         textureFile = db.overAbsorbTexture
+		blendMode = db.overAbsorbBlendMode
     end
 
     -- Apply color and transparency
@@ -27,7 +29,7 @@ local function ApplyAppearanceToBar(absorb, glowVisible)
     -- This matches Blizzard's approach in CompactUnitFrame
     local texture = absorb:GetStatusBarTexture()
     if texture then
-        texture:SetTexture(textureFile, "REPEAT", "REPEAT")
+        texture:SetTexture(textureFile, "REPEAT", "CLAMP")
         -- Set tileSize (Blizzard uses 32 for Shield-Overlay)
         absorb.tileSize = 32
     end
@@ -46,9 +48,11 @@ local function ApplyAppearanceToOverlay(overlay, glowVisible)
 
     local colorTable = db.overlayColor
     local textureFile = db.overlayTexture
+	local blendMode = db.overlayBlendMode
     if glowVisible then
         colorTable = db.overAbsorbOverlayColor
         textureFile = db.overAbsorbOverlayTexture
+		blendMode = db.overAbsorbOverlayBlendMode
     end
 
     -- Apply color and transparency
@@ -57,23 +61,54 @@ local function ApplyAppearanceToOverlay(overlay, glowVisible)
     -- Apply texture with basic tiling
     overlay:SetStatusBarTexture(textureFile)
     local texture = overlay:GetStatusBarTexture()
-    if texture then
+    if texture == "Interface\\RaidFrame\\Shield-Overlay" then
         texture:SetTexture(textureFile, "REPEAT", "REPEAT")
         texture:SetHorizTile(true)
         texture:SetVertTile(true)
+    else
+        texture:SetTexture(textureFile, "REPEAT", "CLAMP")
+        texture:SetHorizTile(true)
+        texture:SetVertTile(false)
     end
+
+	texture:SetBlendMode(blendMode)
 end
 
 local function ApplyAppearanceToNativeOverlay(overlay, glowVisible)
 	pcall(ApplyAppearanceToOverlay, overlay, glowVisible)
 end
 
+local function ApplyAppearanceToOverAbsorbGlow(glow)
+    if not glow or not glow:IsVisible() then return end
+    local db = OvershieldsReforged.db.profile
+    if not db then return end
+
+    local colorTable = db.overAbsorbGlowColor
+    local textureFile = db.overAbsorbGlowTexture
+
+    -- Apply color and transparency
+    glow:SetVertexColor(colorTable.r, colorTable.g, colorTable.b, colorTable.a)
+
+    -- Apply texture
+    --glow:SetStatusBarTexture(textureFile)
+    --local texture = glow:GetStatusBarTexture()
+	glow:SetTexture(textureFile)
+
+    glow:SetBlendMode(db.overAbsorbGlowBlendMode)
+end
+
+local function ApplyAppearanceToNativeOverAbsorbGlow(glow)
+    pcall(ApplyAppearanceToOverAbsorbGlow, glow)
+end
+
 local function UpdateAllFrameAppearances()
 	local function ApplyAppearanceToFrame(frame, glowVisible)
 		ApplyAppearanceToBar(ns.absorbCache[frame], glowVisible)
         ApplyAppearanceToOverlay(ns.overlayCache[frame], glowVisible)
+        --ApplyAppearanceToOverAbsorbGlow(ns.overAbsorbGlowCache[frame])
         ApplyAppearanceToNativeBar(frame.totalAbsorb, glowVisible)
-		ApplyAppearanceToNativeOverlay(frame.totalAbsorbOverlay, glowVisible)
+        ApplyAppearanceToNativeOverlay(frame.totalAbsorbOverlay, glowVisible)
+        ApplyAppearanceToNativeOverAbsorbGlow(frame.overAbsorbGlow)
 	end
 
 	-- Update party frames
@@ -108,4 +143,5 @@ end
 
 ns.ApplyAppearanceToBar = ApplyAppearanceToBar
 ns.ApplyAppearanceToOverlay = ApplyAppearanceToOverlay
+ns.ApplyAppearanceToOverAbsorbGlow = ApplyAppearanceToOverAbsorbGlow
 ns.UpdateAllFrameAppearances = UpdateAllFrameAppearances
