@@ -14,13 +14,13 @@ local containers = {}
 local overlayContainers = {}
 
 --- Exports caches for use by AppearanceManager
-ns.absorbBarCache = containers
-ns.overlayBarCache = overlayContainers
+ns.absorbCache = containers
+ns.overlayCache = overlayContainers
 
 --- Creates or retrieves the custom shield bar for a compact unit frame.
 -- @param frame The compact unit frame to process
 -- @return StatusBar frame for absorb display, or nil if healthBar unavailable
-local function GetOrCreateAbsorbBar(frame)
+local function GetOrCreateAbsorb(frame)
 	if containers[frame] then
 		return containers[frame]
 	end
@@ -44,7 +44,7 @@ end
 --- Creates or retrieves the custom overlay bar for a compact unit frame.
 -- @param frame The compact unit frame to process
 -- @return StatusBar frame for overlay display, or nil if healthBar unavailable
-local function GetOrCreateOverlayBar(frame)
+local function GetOrCreateOverlay(frame)
 	if overlayContainers[frame] then
 		return overlayContainers[frame]
 	end
@@ -76,26 +76,26 @@ local function HandleCompactUnitFrameUpdate(frame)
 	local glow = frame.overAbsorbGlow
 	if not glow or glow:IsForbidden() then return end
 
-	local isGlowVisible = glow:IsVisible()
+	local glowVisible = glow:IsVisible()
 	local maxHealth = UnitHealthMax(unit) or 0
 	local absorbValue = UnitGetTotalAbsorbs(unit)
 
 	-- Update custom shield bar values
-	local absorb = GetOrCreateAbsorbBar(frame)
+	local absorb = GetOrCreateAbsorb(frame)
 	if absorb then
 		absorb:SetMinMaxValues(0, maxHealth)
 		absorb:SetValue(absorbValue)
-		absorb:SetShown(isGlowVisible)
-		ns.ApplyShieldBarAppearance(absorb)
+        absorb:SetShown(true)
+		ns.ApplyAppearanceToBar(absorb, glowVisible)
 	end
 
 	-- Update custom overlay bar values
-	local overlay = GetOrCreateOverlayBar(frame)
+	local overlay = GetOrCreateOverlay(frame)
 	if overlay then
 		overlay:SetMinMaxValues(0, maxHealth)
 		overlay:SetValue(absorbValue)
-		overlay:SetShown(true)
-		ns.ApplyOverlayBarAppearance(overlay)
+        overlay:SetShown(true)
+		ns.ApplyAppearanceToOverlay(overlay, glowVisible)
 	end
 end
 
