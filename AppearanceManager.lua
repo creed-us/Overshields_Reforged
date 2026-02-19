@@ -30,13 +30,9 @@ local function ApplyAppearanceToBar(absorb, glowVisible)
         texture:SetTexture(textureFile, "REPEAT", "REPEAT")
         -- Set tileSize (Blizzard uses 32 for Shield-Overlay)
         absorb.tileSize = 32
-        -- Calculate proper texture coordinates based on frame size
-        local _, height = absorb:GetSize()
-        if height then
-            -- Use full width, scale height based on tileSize
-            texture:SetTexCoord(0, 1, 0, height / absorb.tileSize)
-        end
     end
+
+	texture:SetBlendMode(blendMode)
 end
 
 local function ApplyAppearanceToNativeBar(bar, glowVisible)
