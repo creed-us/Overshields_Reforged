@@ -85,7 +85,7 @@ local function HandleCompactUnitFrameUpdate(frame)
 	if absorb then
 		absorb:SetMinMaxValues(0, maxHealth)
 		absorb:SetValue(absorbValue)
-        absorb:SetShown(true)
+        absorb:SetShown(frame:IsVisible())
 		ns.ApplyAppearanceToBar(absorb, glowVisible)
 	end
 
@@ -94,7 +94,7 @@ local function HandleCompactUnitFrameUpdate(frame)
 	if overlay then
 		overlay:SetMinMaxValues(0, maxHealth)
 		overlay:SetValue(absorbValue)
-        overlay:SetShown(true)
+        overlay:SetShown(frame:IsVisible())
 		ns.ApplyAppearanceToOverlay(overlay, glowVisible)
 	end
 end
