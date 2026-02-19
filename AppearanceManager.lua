@@ -1,108 +1,142 @@
 local _, ns = ...
 
-local function ApplyAppearance(frame)
-	local db = OvershieldsReforged.db.profile
-    if not db or not frame then
-        return
-    end
+--- Applies appearance settings (color, texture, and tiling) to a status bar.
+-- Uses SetTexCoord for proper tiling based on frame dimensions (Blizzard method).
+-- @param bar The status bar frame to style
+-- @param colorTable Table with r, g, b, a keys for color
+-- @param textureFile Path to texture file for the bar
+local function ApplyAppearanceToBar(bar, colorTable, textureFile)
+	if not bar then return end
 
-	local shieldBar = frame.totalAbsorb
-	local shieldOverlay = frame.totalAbsorbOverlay
-	local overshieldTick = frame.overAbsorbGlow
+	-- Apply color and transparency
+	bar:SetStatusBarColor(colorTable.r, colorTable.g, colorTable.b, colorTable.a)
 
-	-- Overshield Tick
-	if overshieldTick and not overshieldTick:IsForbidden() then
-		local color = db.overshieldTickColor
-		overshieldTick:SetVertexColor(color.r, color.g, color.b, color.a)
-		overshieldTick:SetBlendMode(db.overshieldTickBlendMode)
-		overshieldTick:SetTexture(db.overshieldTickTexture or "Interface\\RaidFrame\\Shield-Overshield")
-	elseif not overshieldTick then
-		print("Overshield Tick is unavailable or does not exist: ".. frame:GetName())
-	else
-		print("Overshield Tick is forbidden.")
-	end
+	-- Apply texture
+	bar:SetStatusBarTexture(textureFile)
 
-	-- Shield Overlay
-	if shieldOverlay and not shieldOverlay:IsForbidden() then
-		local shieldOverlayColor = db.shieldOverlayColor
-		shieldOverlay:SetDesaturated(true)
-		shieldOverlay:SetVertexColor(shieldOverlayColor.r, shieldOverlayColor.g, shieldOverlayColor.b, shieldOverlayColor.a)
-		shieldOverlay:SetAlpha(shieldOverlayColor.a)
-		shieldOverlay:SetBlendMode(db.shieldOverlayBlendMode)
-		if db.shieldOverlayTexture ~= "Interface\\RaidFrame\\Shield-Overlay" then
-			shieldOverlay:SetTexture(db.shieldOverlayTexture)
-		end
-	else
-		print("Shield Overlay is unavailable or does not exist.")
-	end
-
-    -- Shield Bar
-	if shieldBar and not shieldBar:IsForbidden() then
-		local shieldBarColor = db.shieldBarColor
-		shieldBar:SetVertexColor(shieldBarColor.r, shieldBarColor.g, shieldBarColor.b, shieldBarColor.a)
-		shieldBar:SetAlpha(shieldBarColor.a)
-		shieldBar:SetBlendMode(db.shieldBarBlendMode)
-		if db.shieldBarTexture ~= "Interface\\RaidFrame\\Shield-Fill" then
-			shieldBar:SetTexture(db.shieldBarTexture)
+	-- Configure tiling using SetTexCoord for proper vertical/horizontal tiling
+	-- This matches Blizzard's approach in CompactUnitFrame
+	local texture = bar:GetStatusBarTexture()
+	if texture then
+		texture:SetTexture(textureFile, "REPEAT", "REPEAT")
+		-- Set tileSize (Blizzard uses 32 for Shield-Overlay)
+		bar.tileSize = 32
+		-- Calculate proper texture coordinates based on frame size
+		local _, height = bar:GetSize()
+		if height then
+			-- Use full width, scale height based on tileSize
+			texture:SetTexCoord(0, 1, 0, height / bar.tileSize)
 		end
 	end
 end
 
-local function UpdatePartyFrames()
+--- Applies shield bar appearance to a custom absorb bar.
+-- @param absorb The custom shield bar StatusBar frame
+function ns.ApplyShieldBarAppearance(absorb)
+	local db = OvershieldsReforged.db.profile
+	if not db then return end
+	ApplyAppearanceToBar(absorb, db.absorbColor, db.absorbTexture)
+end
+
+--- Applies overlay bar appearance to a custom overlay bar.
+-- Uses basic tiling without SetTexCoord adjustments.
+-- @param overlay The custom overlay bar StatusBar frame
+function ns.ApplyOverlayBarAppearance(overlay)
+    local db = OvershieldsReforged.db.profile
+    if not db then return end
+
+	-- Apply color and transparency
+	overlay:SetStatusBarColor(db.overlayColor.r, db.overlayColor.g, db.overlayColor.b, db.overlayColor.a)
+
+	-- Apply texture with basic tiling
+	overlay:SetStatusBarTexture(db.overlayTexture)
+	local texture = overlay:GetStatusBarTexture()
+	if texture then
+		texture:SetTexture(db.overlayTexture, "REPEAT", "REPEAT")
+		texture:SetHorizTile(true)
+		texture:SetVertTile(true)
+	end
+end
+
+--- Applies shield bar appearance to Blizzard's native totalAbsorb frame.
+-- @param totalAbsorb The native absorb bar frame
+function ns.ApplyNativeShieldAppearance(totalAbsorb)
+	local db = OvershieldsReforged.db.profile
+	if not db or not totalAbsorb or totalAbsorb:IsForbidden() then return end
+	pcall(ApplyAppearanceToBar, totalAbsorb, db.absorbColor, db.absorbTexture)
+end
+
+--- Applies overlay appearance to Blizzard's native totalAbsorbOverlay frame.
+-- @param totalAbsorbOverlay The native overlay bar frame
+function ns.ApplyNativeOverlayAppearance(totalAbsorbOverlay)
+	local db = OvershieldsReforged.db.profile
+	if not db or not totalAbsorbOverlay or totalAbsorbOverlay:IsForbidden() then return end
+	pcall(ApplyAppearanceToBar, totalAbsorbOverlay, db.overlayColor, db.overlayTexture)
+end
+
+--- Updates appearance for all visible compact unit frames and their custom bars.
+-- Called when appearance settings change in options.
+function ns.UpdateAllFrameAppearances()
+	local function ApplyAppearanceToFrame(frame)
+		ns.ApplyShieldBarAppearance(ns.absorbBarCache[frame])
+		ns.ApplyOverlayBarAppearance(ns.overlayBarCache[frame])
+		ns.ApplyNativeShieldAppearance(frame.totalAbsorb)
+		ns.ApplyNativeOverlayAppearance(frame.totalAbsorbOverlay)
+	end
+
+	-- Update party frames
 	for i = 1, 5 do
 		local frame = _G["CompactPartyFrameMember" .. i]
-		if frame and frame:IsShown() and frame.displayedUnit and UnitExists(frame.displayedUnit) then
-			ApplyAppearance(frame)
+		if frame and frame:IsShown() and frame.displayedUnit then
+			ApplyAppearanceToFrame(frame)
+		end
+	end
+
+	-- Update raid frames
+	if IsInRaid() then
+		for i = 1, 40 do
+			local frame = _G["CompactRaidFrame" .. i]
+			if frame and frame:IsShown() and frame.displayedUnit then
+				ApplyAppearanceToFrame(frame)
+			end
+		end
+	end
+
+	-- Update pet frames
+	if CompactRaidFrameContainer and CompactRaidFrameContainer.displayPets then
+		local petFramePrefix = IsInRaid() and "CompactRaidFramePet" or "CompactPartyFramePet"
+		for i = 1, 40 do
+			local frame = _G[petFramePrefix .. i]
+			if frame and frame:IsShown() and frame.displayedUnit then
+				ApplyAppearanceToFrame(frame)
+			end
 		end
 	end
 end
 
-local function UpdateRaidFrames()
-	for i = 1, 40 do
-		local frame = _G["CompactRaidFrame" .. i]
-		if frame and frame:IsShown() and frame.displayedUnit and UnitExists(frame.displayedUnit) then
-			ApplyAppearance(frame)
-		end
-	end
-end
-
-local function UpdatePetFrames()
-	local petFramePrefix = IsInRaid() and "CompactRaidFramePet" or "CompactPartyFramePet"
-	for i = 1, 40 do
-		local frame = _G[petFramePrefix .. i]
-		if frame and frame:IsShown() and frame.displayedUnit and UnitExists(frame.displayedUnit) then
-			ApplyAppearance(frame)
-		end
-	end
-end
-
+--- Queues updates for all visible compact unit frames
+-- Batches frames for efficient processing via CompactUnitFrame update system.
 function ns.UpdateAllCompactUnitFrames()
-    local isInRaid = IsInRaid()
-	if not isInRaid then
-		UpdatePartyFrames()
-    else
-		UpdateRaidFrames()
+	local function QueueFrameUpdates(framePrefix, count)
+		for i = 1, count do
+			local frame = _G[framePrefix .. i]
+			if frame and frame:IsShown() and frame.displayedUnit and UnitExists(frame.displayedUnit) then
+				ns.QueueCompactUnitFrameUpdate(frame)
+			end
+		end
 	end
 
-	if CompactRaidFrameContainer.displayPets then
-		UpdatePetFrames()
+	-- Queue party frames
+	QueueFrameUpdates("CompactPartyFrameMember", 5)
+
+	-- Queue raid frames
+	if IsInRaid() then
+		QueueFrameUpdates("CompactRaidFrame", 40)
+	end
+
+	-- Queue pet frames
+	if CompactRaidFrameContainer and CompactRaidFrameContainer.displayPets then
+		local petFramePrefix = IsInRaid() and "CompactRaidFramePet" or "CompactPartyFramePet"
+		QueueFrameUpdates(petFramePrefix, 40)
 	end
 end
-
-local eventFrame = CreateFrame("Frame", nil, UIParent)
-eventFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
-eventFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
-eventFrame:RegisterEvent("RAID_ROSTER_UPDATE")
-eventFrame:RegisterEvent("PARTY_MEMBER_ENABLE")
-eventFrame:RegisterEvent("PARTY_MEMBER_DISABLE")
-eventFrame:RegisterEvent("UNIT_PET")
-eventFrame:RegisterEvent("UNIT_NAME_UPDATE")
-eventFrame:RegisterEvent("PLAYER_ROLES_ASSIGNED")
-eventFrame:SetScript("OnEvent", function(self, event, ...)
-    if event == "PLAYER_ENTERING_WORLD"
-		or event == "GROUP_ROSTER_UPDATE" or event == "RAID_ROSTER_UPDATE"
-        or event == "PARTY_MEMBER_ENABLE" or event == "PARTY_MEMBER_DISABLE"
-		or event == "UNIT_PET" or event == "UNIT_NAME_UPDATE" or event == "PLAYER_ROLES_ASSIGNED" then
-		ns.UpdateAllCompactUnitFrames()
-	end
-end)
