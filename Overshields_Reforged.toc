@@ -1,6 +1,6 @@
 ## Interface: 120001
 ## Title: Overshields Reforged
-## Notes: Simple addon to improve the default UI's damage prevention bars (like those shown for Power Word: Shield) so they always tell how much prevention is left, even when at full HP.
+## Notes: Simple addon made to improve the default UI's damage absorption bars (like those shown for Power Word: Shield) so they always tell how much damage absorption is left, even when at full HP.
 ## Author: Mysticae-Proudmoore
 ## Version: @project-version@
 ## IconTexture: Interface\ICONS\inv_shield_06
