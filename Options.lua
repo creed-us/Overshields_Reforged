@@ -406,6 +406,14 @@ function OvershieldsReforged:SetupOptions()
             },
 		},
 	}
+
+	-- Ace3 Profile management
+	local AceDBOptions = LibStub("AceDBOptions-3.0")
+	if AceDBOptions then
+		local dbOptions = AceDBOptions:GetOptionsTable(self.db)
+		options.args.profiles = dbOptions
+	end
+
 	AceConfig:RegisterOptionsTable("Overshields Reforged", options)
 	AceConfigDialog:AddToBlizOptions("Overshields Reforged", "Overshields Reforged")
 end
