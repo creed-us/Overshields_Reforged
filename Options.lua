@@ -91,6 +91,17 @@ function OvershieldsReforged:SetupOptions()
 		return values
 	end
 
+	local function BlendModeDropdownValues()
+        local values = {
+            ["ADD"] = "Add",
+			["ALPHAKEY"] = "Alphakey",
+			["BLEND"] = "Blend",
+            ["DISABLE"] = "Disable",
+			["MOD"] = "Mod"
+        }
+		return values
+	end
+
 	local options = {
 		type = "group",
         name = "Overshields Reforged",
@@ -139,7 +150,7 @@ function OvershieldsReforged:SetupOptions()
 								type = "select",
 								name = "Blend Mode",
 								order = 2,
-								values = { DISABLE = "DISABLE", BLEND = "BLEND", ALPHAKEY = "ALPHAKEY", ADD = "ADD", MOD = "MOD" },
+								values = BlendModeDropdownValues(),
 								get = function() return self.db.profile.absorbBlendMode end,
 								set = function(_, value)
 									self.db.profile.absorbBlendMode = value
@@ -197,7 +208,7 @@ function OvershieldsReforged:SetupOptions()
 								type = "select",
 								name = "Blend Mode",
 								order = 2,
-								values = { DISABLE = "DISABLE", BLEND = "BLEND", ALPHAKEY = "ALPHAKEY", ADD = "ADD", MOD = "MOD" },
+								values = BlendModeDropdownValues(),
 								get = function() return self.db.profile.overlayBlendMode end,
 								set = function(_, value)
 									self.db.profile.overlayBlendMode = value
@@ -264,7 +275,7 @@ function OvershieldsReforged:SetupOptions()
 								type = "select",
 								name = "Blend Mode",
 								order = 2,
-								values = { DISABLE = "DISABLE", BLEND = "BLEND", ALPHAKEY = "ALPHAKEY", ADD = "ADD", MOD = "MOD" },
+								values = BlendModeDropdownValues(),
 								get = function() return self.db.profile.overAbsorbBlendMode end,
 								set = function(_, value)
 									self.db.profile.overAbsorbBlendMode = value
@@ -322,7 +333,7 @@ function OvershieldsReforged:SetupOptions()
 								type = "select",
 								name = "Blend Mode",
 								order = 2,
-								values = { DISABLE = "DISABLE", BLEND = "BLEND", ALPHAKEY = "ALPHAKEY", ADD = "ADD", MOD = "MOD" },
+								values = BlendModeDropdownValues(),
 								get = function() return self.db.profile.overAbsorbOverlayBlendMode end,
 								set = function(_, value)
 									self.db.profile.overAbsorbOverlayBlendMode = value
@@ -380,7 +391,7 @@ function OvershieldsReforged:SetupOptions()
 								type = "select",
 								name = "Blend Mode",
 								order = 2,
-								values = { DISABLE = "DISABLE", BLEND = "BLEND", ALPHAKEY = "ALPHAKEY", ADD = "ADD", MOD = "MOD" },
+								values = BlendModeDropdownValues(),
 								get = function() return self.db.profile.overAbsorbGlowBlendMode end,
 								set = function(_, value)
 									self.db.profile.overAbsorbGlowBlendMode = value
