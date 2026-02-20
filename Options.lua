@@ -29,6 +29,16 @@ local defaultOptions = {
     overAbsorbGlowColor = { r = 1, g = 1, b = 1, a = 1 },
     overAbsorbGlowTexture = "Interface\\RaidFrame\\Shield-Overshield",
 	overAbsorbGlowBlendMode = "ADD",
+	-- Health bar appearance (non-overabsorb)
+	healthBarColor = { r = 1, g = 1, b = 1, a = 1 },
+	healthBarTexture = "Interface\\RaidFrame\\Raid-Bar-Hp-Fill",
+	healthBarBlendMode = "BLEND",
+	healthBarUseClassColor = true,
+	-- Health bar appearance (overabsorb)
+	overAbsorbHealthBarColor = { r = 1, g = 1, b = 1, a = 1 },
+	overAbsorbHealthBarTexture = "Interface\\RaidFrame\\Raid-Bar-Hp-Fill",
+	overAbsorbHealthBarBlendMode = "BLEND",
+	overAbsorbHealthBarUseClassColor = true,
 }
 
 function OvershieldsReforged:InitializeDatabase()
@@ -52,6 +62,16 @@ function OvershieldsReforged:InitializeDatabase()
 			overAbsorbGlowColor = defaultOptions.overAbsorbGlowColor,
 			overAbsorbGlowTexture = defaultOptions.overAbsorbGlowTexture,
 			overAbsorbGlowBlendMode = defaultOptions.overAbsorbGlowBlendMode,
+			-- Health bar appearance (non-overabsorb)
+			healthBarColor = defaultOptions.healthBarColor,
+			healthBarTexture = defaultOptions.healthBarTexture,
+			healthBarBlendMode = defaultOptions.healthBarBlendMode,
+			healthBarUseClassColor = defaultOptions.healthBarUseClassColor,
+			-- Health bar appearance (overabsorb)
+			overAbsorbHealthBarColor = defaultOptions.overAbsorbHealthBarColor,
+			overAbsorbHealthBarTexture = defaultOptions.overAbsorbHealthBarTexture,
+			overAbsorbHealthBarBlendMode = defaultOptions.overAbsorbHealthBarBlendMode,
+			overAbsorbHealthBarUseClassColor = defaultOptions.overAbsorbHealthBarUseClassColor,
 		},
 	})
 end
@@ -415,6 +435,158 @@ function OvershieldsReforged:SetupOptions()
 					},
 				}
             },
+            healthBarHeader = {
+				type = "group",
+                name = "Health Bars",
+                desc = "Settings for health bar appearance on Blizzard compact unit frames.",
+                order = 2,
+                args = {
+					--- Non-OverAbsorb Health Bar
+					healthBarGroup = {
+						type = "group",
+						name = "Health Bar",
+						desc = "Settings used when a unit's health and shields do not exceed maximum health.",
+						order = 0,
+						inline = false,
+						args = {
+							useClassColor = {
+								type = "toggle",
+								name = "Use Class Color",
+								desc = "Use Blizzard's default class color for health bars.",
+								order = 0,
+								width = "full",
+								get = function() return self.db.profile.healthBarUseClassColor end,
+								set = function(_, value)
+									self.db.profile.healthBarUseClassColor = value
+									OnAppearanceChanged()
+								end,
+							},
+							color = {
+								type = "color",
+								name = "Color",
+								order = 1,
+								hasAlpha = true,
+								disabled = function() return self.db.profile.healthBarUseClassColor end,
+								get = function()
+									local c = self.db.profile.healthBarColor
+									return c.r, c.g, c.b, c.a
+								end,
+								set = function(_, r, g, b, a)
+									self.db.profile.healthBarColor = { r = r, g = g, b = b, a = a }
+									OnAppearanceChanged()
+								end,
+							},
+							texture = {
+								type = "select",
+								name = "Texture",
+								order = 2,
+								values = TextureDropdownValues(),
+								get = function() return self.db.profile.healthBarTexture end,
+								set = function(_, value)
+									self.db.profile.healthBarTexture = value
+									OnAppearanceChanged()
+								end,
+							},
+							blendMode = {
+								type = "select",
+								name = "Blend Mode",
+								order = 3,
+								values = BlendModeDropdownValues(),
+								get = function() return self.db.profile.healthBarBlendMode end,
+								set = function(_, value)
+									self.db.profile.healthBarBlendMode = value
+									OnAppearanceChanged()
+								end,
+							},
+							reset = {
+								type = "execute",
+								name = "|TInterface\\Buttons\\UI-RefreshButton:16:16|t Reset",
+								desc = "Reset to Blizzard default values.",
+								order = -1,
+								func = function()
+									self.db.profile.healthBarColor = defaultOptions.healthBarColor
+									self.db.profile.healthBarTexture = defaultOptions.healthBarTexture
+									self.db.profile.healthBarBlendMode = defaultOptions.healthBarBlendMode
+									self.db.profile.healthBarUseClassColor = defaultOptions.healthBarUseClassColor
+									OnAppearanceChanged()
+								end,
+							},
+						},
+					},
+					--- OverAbsorb Health Bar
+					overAbsorbHealthBarGroup = {
+						type = "group",
+						name = "Overshield Health Bar",
+						desc = "Settings used when a unit's health and shields exceed maximum health.",
+						order = 1,
+						inline = false,
+						args = {
+							useClassColor = {
+								type = "toggle",
+								name = "Use Class Color",
+								desc = "Use Blizzard's default class color for health bars.",
+								order = 0,
+								width = "full",
+								get = function() return self.db.profile.overAbsorbHealthBarUseClassColor end,
+								set = function(_, value)
+									self.db.profile.overAbsorbHealthBarUseClassColor = value
+									OnAppearanceChanged()
+								end,
+							},
+							color = {
+								type = "color",
+								name = "Color",
+								order = 1,
+								hasAlpha = true,
+								disabled = function() return self.db.profile.overAbsorbHealthBarUseClassColor end,
+								get = function()
+									local c = self.db.profile.overAbsorbHealthBarColor
+									return c.r, c.g, c.b, c.a
+								end,
+								set = function(_, r, g, b, a)
+									self.db.profile.overAbsorbHealthBarColor = { r = r, g = g, b = b, a = a }
+									OnAppearanceChanged()
+								end,
+							},
+							texture = {
+								type = "select",
+								name = "Texture",
+								order = 2,
+								values = TextureDropdownValues(),
+								get = function() return self.db.profile.overAbsorbHealthBarTexture end,
+								set = function(_, value)
+									self.db.profile.overAbsorbHealthBarTexture = value
+									OnAppearanceChanged()
+								end,
+							},
+							blendMode = {
+								type = "select",
+								name = "Blend Mode",
+								order = 3,
+								values = BlendModeDropdownValues(),
+								get = function() return self.db.profile.overAbsorbHealthBarBlendMode end,
+								set = function(_, value)
+									self.db.profile.overAbsorbHealthBarBlendMode = value
+									OnAppearanceChanged()
+								end,
+							},
+							reset = {
+								type = "execute",
+								name = "|TInterface\\Buttons\\UI-RefreshButton:16:16|t Reset",
+								desc = "Reset to Blizzard default values.",
+								order = -1,
+								func = function()
+									self.db.profile.overAbsorbHealthBarColor = defaultOptions.overAbsorbHealthBarColor
+									self.db.profile.overAbsorbHealthBarTexture = defaultOptions.overAbsorbHealthBarTexture
+									self.db.profile.overAbsorbHealthBarBlendMode = defaultOptions.overAbsorbHealthBarBlendMode
+									self.db.profile.overAbsorbHealthBarUseClassColor = defaultOptions.overAbsorbHealthBarUseClassColor
+									OnAppearanceChanged()
+								end,
+							},
+						},
+					},
+				},
+			}
 		},
 	}
 

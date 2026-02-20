@@ -7,6 +7,7 @@ function OvershieldsReforged:OnInitialize()
     self:InitializeDatabase()
     self:SetupOptions()
     -- Hook Blizzard's heal-prediction functions
+    -- QueueCompactUnitFrameUpdate handles both value batching and glow state detection
     hooksecurefunc("CompactUnitFrame_UpdateHealPrediction", function(frame)
         ns.QueueCompactUnitFrameUpdate(frame)
     end)

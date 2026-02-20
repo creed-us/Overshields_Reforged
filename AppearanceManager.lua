@@ -101,6 +101,49 @@ local function ApplyAppearanceToNativeOverAbsorbGlow(glow)
     pcall(ApplyAppearanceToOverAbsorbGlow, glow)
 end
 
+local function ApplyAppearanceToHealthBar(healthBar, unit, glowVisible)
+    if not healthBar then return end
+    local db = OvershieldsReforged.db.profile
+    if not db then return end
+
+    local colorTable, textureFile, blendMode, useClassColor
+    if glowVisible then
+        colorTable = db.overAbsorbHealthBarColor
+        textureFile = db.overAbsorbHealthBarTexture
+        blendMode = db.overAbsorbHealthBarBlendMode
+        useClassColor = db.overAbsorbHealthBarUseClassColor
+    else
+        colorTable = db.healthBarColor
+        textureFile = db.healthBarTexture
+        blendMode = db.healthBarBlendMode
+        useClassColor = db.healthBarUseClassColor
+    end
+
+    -- Apply color (class color or custom)
+    if useClassColor and unit then
+        local _, class = UnitClass(unit)
+        if class then
+            local classColor = RAID_CLASS_COLORS[class]
+            if classColor then
+                healthBar:SetStatusBarColor(classColor.r, classColor.g, classColor.b, colorTable.a)
+            end
+        end
+    else
+        healthBar:SetStatusBarColor(colorTable.r, colorTable.g, colorTable.b, colorTable.a)
+    end
+
+    -- Apply texture
+    healthBar:SetStatusBarTexture(textureFile)
+    local texture = healthBar:GetStatusBarTexture()
+    if texture then
+        texture:SetBlendMode(blendMode)
+    end
+end
+
+local function ApplyAppearanceToNativeHealthBar(healthBar, unit, glowVisible)
+    pcall(ApplyAppearanceToHealthBar, healthBar, unit, glowVisible)
+end
+
 local function UpdateAllFrameAppearances()
 	local function ApplyAppearanceToFrame(frame, glowVisible)
 		ApplyAppearanceToBar(ns.absorbCache[frame], glowVisible)
@@ -109,6 +152,10 @@ local function UpdateAllFrameAppearances()
         ApplyAppearanceToNativeBar(frame.totalAbsorb, glowVisible)
         ApplyAppearanceToNativeOverlay(frame.totalAbsorbOverlay, glowVisible)
         ApplyAppearanceToNativeOverAbsorbGlow(frame.overAbsorbGlow)
+		-- Apply health bar appearance
+		if frame.healthBar then
+			ApplyAppearanceToNativeHealthBar(frame.healthBar, frame.displayedUnit, glowVisible)
+		end
 	end
 
 	-- Update party frames
@@ -144,4 +191,5 @@ end
 ns.ApplyAppearanceToBar = ApplyAppearanceToBar
 ns.ApplyAppearanceToOverlay = ApplyAppearanceToOverlay
 ns.ApplyAppearanceToOverAbsorbGlow = ApplyAppearanceToOverAbsorbGlow
+ns.ApplyAppearanceToHealthBar = ApplyAppearanceToHealthBar
 ns.UpdateAllFrameAppearances = UpdateAllFrameAppearances
