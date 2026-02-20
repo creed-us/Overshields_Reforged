@@ -74,7 +74,7 @@ local function HandleCompactUnitFrameUpdate(frame)
 	local glow = frame.overAbsorbGlow
 	if not glow or glow:IsForbidden() then return end
 
-    local glowVisible = glow:IsVisible()
+	local glowVisible = glow:IsVisible()
 	if (glowVisible) then
 		ns.ApplyAppearanceToOverAbsorbGlow(glow)
 	end
@@ -86,18 +86,18 @@ local function HandleCompactUnitFrameUpdate(frame)
 	if absorb then
 		absorb:SetMinMaxValues(0, maxHealth)
 		absorb:SetValue(absorbValue)
-        absorb:SetShown(frame:IsVisible())
+		absorb:SetShown(frame:IsVisible())
 		ns.ApplyAppearanceToBar(absorb, glowVisible)
 	end
 
 	-- Update custom overlay bar values
 	local overlay = GetOrCreateOverlay(frame)
-    if overlay then
-        overlay:SetMinMaxValues(0, maxHealth)
-        overlay:SetValue(absorbValue)
-        overlay:SetShown(frame:IsVisible())
-        ns.ApplyAppearanceToOverlay(overlay, glowVisible)
-    end
+	if overlay then
+		overlay:SetMinMaxValues(0, maxHealth)
+		overlay:SetValue(absorbValue)
+		overlay:SetShown(frame:IsVisible())
+		ns.ApplyAppearanceToOverlay(overlay, glowVisible)
+	end
 end
 
 --- Hook into Bliz's fill bar update to prevent native absorb bars from interfering.
@@ -115,9 +115,9 @@ batchFrame:SetScript("OnUpdate", function()
 	local db = OvershieldsReforged.db.profile
 	if not db then return end
 
-    for frame in next, updateQueue do
-        HandleCompactUnitFrameUpdate(frame)
-    end
+	for frame in next, updateQueue do
+		HandleCompactUnitFrameUpdate(frame)
+	end
 
 	wipe(updateQueue)
 	batchFrame:Hide()
@@ -127,7 +127,7 @@ end)
 -- Frames are batched and processed during the next OnUpdate cycle for efficiency.
 -- @param frame The compact unit frame to queue for update
 function ns.QueueCompactUnitFrameUpdate(frame)
-    if not frame or updateQueue[frame] then return end
-    updateQueue[frame] = true
-    batchFrame:Show()
+	if not frame or updateQueue[frame] then return end
+	updateQueue[frame] = true
+	batchFrame:Show()
 end
