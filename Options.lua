@@ -93,313 +93,317 @@ function OvershieldsReforged:SetupOptions()
 
 	local options = {
 		type = "group",
-		name = "Overshields Reforged",
-		args = {
+        name = "Overshields Reforged",
+		childGroups = "tab",
+        args = {
 			-- Non-OverAbsorb Shield Group
 			absorbHeader = {
-				type = "header",
-				name = "Normal Shields",
-				order = 0,
-			},
-            --CreateBarGroup("Shield Bar", "absorbColor", "absorbTexture", 1)
-			--- Non-OverAbsorb Shield Bar group
-            absorbGroup = {
-                type = "group",
-                name = "Shield Bar",
-                order = 1,
-                inline = true,
-				args = {
-                    color = {
-						type = "color",
-						name = "Color",
-						order = 0,
-						hasAlpha = true,
-						get = function()
-							local c = self.db.profile.absorbColor
-							return c.r, c.g, c.b, c.a
-						end,
-						set = function(_, r, g, b, a)
-							self.db.profile.absorbColor = { r = r, g = g, b = b, a = a }
-							OnAppearanceChanged()
-						end,
-					},
-                    texture = {
-						type = "select",
-						name = "Texture",
-						order = 1,
-						values = TextureDropdownValues(),
-						get = function() return self.db.profile.absorbTexture end,
-                        set = function(_, value)
-							self.db.profile.absorbTexture = value
-							OnAppearanceChanged()
-						end,
-                    },
-					blendMode = {
-						type = "select",
-						name = "Blend Mode",
-						order = 2,
-						values = { DISABLE = "DISABLE", BLEND = "BLEND", ALPHAKEY = "ALPHAKEY", ADD = "ADD", MOD = "MOD" },
-						get = function() return self.db.profile.absorbBlendMode end,
-                        set = function(_, value)
-							self.db.profile.absorbBlendMode = value
-							OnAppearanceChanged()
-						end,
-					},
-                    reset = {
-						type = "execute",
-						name = "|TInterface\\Buttons\\UI-RefreshButton:16:16|t Reset",
-						desc = "Reset this group to the default configuration.",
-						order = 3,
-						func = function()
-							self.db.profile.absorbColor = defaultOptions.absorbColor
-							self.db.profile.absorbTexture = defaultOptions.absorbTexture
-							self.db.profile.absorbBlendMode = defaultOptions.absorbBlendMode
-
-							OnAppearanceChanged()
-                        end,
-					},
-				},
-            },
-            --CreateBarGroup("Overlay Bar", "overlayColor", "overlayTexture", 2)
-			--- Non-OverAbsorb Shield Bar Overlay group
-            overlayGroup = {
-                type = "group",
-                name = "Shield Bar Overlay",
-                order = 2,
-                inline = true,
-				args = {
-                    color = {
-						type = "color",
-						name = "Color",
-						order = 0,
-						hasAlpha = true,
-						get = function()
-							local c = self.db.profile.overlayColor
-							return c.r, c.g, c.b, c.a
-						end,
-						set = function(_, r, g, b, a)
-							self.db.profile.overlayColor = { r = r, g = g, b = b, a = a }
-							OnAppearanceChanged()
-						end,
-					},
-                    texture = {
-						type = "select",
-						name = "Texture",
-						order = 1,
-						values = TextureDropdownValues(),
-						get = function() return self.db.profile.overlayTexture end,
-                        set = function(_, value)
-							self.db.profile.overlayTexture = value
-							OnAppearanceChanged()
-						end,
-                    },
-					blendMode = {
-						type = "select",
-						name = "Blend Mode",
-						order = 2,
-						values = { DISABLE = "DISABLE", BLEND = "BLEND", ALPHAKEY = "ALPHAKEY", ADD = "ADD", MOD = "MOD" },
-						get = function() return self.db.profile.overlayBlendMode end,
-                        set = function(_, value)
-							self.db.profile.overlayBlendMode = value
-							OnAppearanceChanged()
-						end,
-					},
-                    reset = {
-						type = "execute",
-						name = "|TInterface\\Buttons\\UI-RefreshButton:16:16|t Reset",
-						desc = "Reset this group to the default configuration.",
-						order = 3,
-						func = function()
-							self.db.profile.overlayColor = defaultOptions.overlayColor
-							self.db.profile.overlayTexture = defaultOptions.overlayTexture
-							self.db.profile.overlayBlendMode = defaultOptions.overlayBlendMode
-
-							OnAppearanceChanged()
-                        end,
-					},
-				},
-            },
-			-- OverAbsorb shield Group
-			overAbsorbHeader = {
-				type = "header",
-				name = "Overshields",
-				order = 3,
-            },
-            -- CreateBarGroup("Shield Bar", "overAbsorbColor", "overAbsorbTexture", 4)
-			--- OverAbsorb Shield Bar group
-            overAbsorbGroup = {
-                type = "group",
-                name = "Overshield Bar",
-                order = 4,
-                inline = true,
-				args = {
-                    color = {
-						type = "color",
-						name = "Color",
-						order = 0,
-						hasAlpha = true,
-						get = function()
-							local c = self.db.profile.overAbsorbColor
-							return c.r, c.g, c.b, c.a
-						end,
-						set = function(_, r, g, b, a)
-							self.db.profile.overAbsorbColor = { r = r, g = g, b = b, a = a }
-							OnAppearanceChanged()
-						end,
-					},
-                    texture = {
-						type = "select",
-						name = "Texture",
-						order = 1,
-						values = TextureDropdownValues(),
-						get = function() return self.db.profile.overAbsorbTexture end,
-                        set = function(_, value)
-							self.db.profile.overAbsorbTexture = value
-							OnAppearanceChanged()
-						end,
-                    },
-					blendMode = {
-						type = "select",
-						name = "Blend Mode",
-						order = 2,
-						values = { DISABLE = "DISABLE", BLEND = "BLEND", ALPHAKEY = "ALPHAKEY", ADD = "ADD", MOD = "MOD" },
-						get = function() return self.db.profile.overAbsorbBlendMode end,
-                        set = function(_, value)
-							self.db.profile.overAbsorbBlendMode = value
-							OnAppearanceChanged()
-						end,
-					},
-                    reset = {
-						type = "execute",
-						name = "|TInterface\\Buttons\\UI-RefreshButton:16:16|t Reset",
-						desc = "Reset this group to the default configuration.",
-						order = 3,
-						func = function()
-							self.db.profile.overAbsorbColor = defaultOptions.overAbsorbColor
-							self.db.profile.overAbsorbTexture = defaultOptions.overAbsorbTexture
-							self.db.profile.overAbsorbBlendMode = defaultOptions.overAbsorbBlendMode
-
-							OnAppearanceChanged()
-                        end,
-					},
-				},
-            },
-            -- CreateBarGroup("Overlay Bar", "overAbsorbOverlayColor", "overAbsorbOverlayTexture", 5)
-			--- OverAbsorb Shield Bar Overlay group
-            overAbsorbOverlayGroup = {
-                type = "group",
-                name = "Overshield Bar Overlay",
-                order = 5,
-                inline = true,
-				args = {
-                    color = {
-						type = "color",
-						name = "Color",
-						order = 0,
-						hasAlpha = true,
-						get = function()
-							local c = self.db.profile.overAbsorbOverlayColor
-							return c.r, c.g, c.b, c.a
-						end,
-						set = function(_, r, g, b, a)
-							self.db.profile.overAbsorbOverlayColor = { r = r, g = g, b = b, a = a }
-							OnAppearanceChanged()
-						end,
-					},
-                    texture = {
-						type = "select",
-						name = "Texture",
-						order = 1,
-						values = TextureDropdownValues(),
-						get = function() return self.db.profile.overAbsorbOverlayTexture end,
-                        set = function(_, value)
-							self.db.profile.overAbsorbOverlayTexture = value
-							OnAppearanceChanged()
-						end,
-                    },
-					blendMode = {
-						type = "select",
-						name = "Blend Mode",
-						order = 2,
-						values = { DISABLE = "DISABLE", BLEND = "BLEND", ALPHAKEY = "ALPHAKEY", ADD = "ADD", MOD = "MOD" },
-						get = function() return self.db.profile.overAbsorbOverlayBlendMode end,
-                        set = function(_, value)
-							self.db.profile.overAbsorbOverlayBlendMode = value
-							OnAppearanceChanged()
-						end,
-					},
-                    reset = {
-						type = "execute",
-						name = "|TInterface\\Buttons\\UI-RefreshButton:16:16|t Reset",
-						desc = "Reset this group to the default configuration.",
-						order = 3,
-						func = function()
-							self.db.profile.overAbsorbOverlayColor = defaultOptions.overAbsorbOverlayColor
-							self.db.profile.overAbsorbOverlayTexture = defaultOptions.overAbsorbOverlayTexture
-							self.db.profile.overAbsorbOverlayBlendMode = defaultOptions.overAbsorbOverlayBlendMode
-
-							OnAppearanceChanged()
-                        end,
-					},
-				},
-            },
-            overAbsorbGlowGroup = {
-                type = "group",
-                name = "Overshield Glow",
-                order = 6,
-                inline = true,
+				type = "group",
+				name = "Shields",
+				desc = "These settings are used while a unit's current health and combined shields *do not* exceed the unit's maximum health.",
+                order = 0,
                 args = {
-                    color = {
-						type = "color",
-						name = "Color",
-						order = 0,
-						hasAlpha = true,
-						get = function()
-							local c = self.db.profile.overAbsorbGlowColor
-							return c.r, c.g, c.b, c.a
-						end,
-						set = function(_, r, g, b, a)
-							self.db.profile.overAbsorbGlowColor = { r = r, g = g, b = b, a = a }
-							OnAppearanceChanged()
-						end,
-					},
-                    texture = {
-						type = "select",
-						name = "Texture",
+					--- Non-OverAbsorb Shield Bar
+					absorbGroup = {
+						type = "group",
+						name = "Shield Bar",
 						order = 1,
-                        values = OverAbsorbGlowTextureDropdownValues(),
-						get = function() return self.db.profile.overAbsorbGlowTexture end,
-                        set = function(_, value)
-							self.db.profile.overAbsorbGlowTexture = value
-							OnAppearanceChanged()
-						end,
-                    },
-					blendMode = {
-						type = "select",
-						name = "Blend Mode",
-						order = 2,
-						values = { DISABLE = "DISABLE", BLEND = "BLEND", ALPHAKEY = "ALPHAKEY", ADD = "ADD", MOD = "MOD" },
-						get = function() return self.db.profile.overAbsorbGlowBlendMode end,
-                        set = function(_, value)
-							self.db.profile.overAbsorbGlowBlendMode = value
-							OnAppearanceChanged()
-						end,
-					},
-                    reset = {
-						type = "execute",
-						name = "|TInterface\\Buttons\\UI-RefreshButton:16:16|t Reset",
-						desc = "Reset this group to the default configuration.",
-						order = 3,
-						func = function()
-							self.db.profile.overAbsorbGlowColor = defaultOptions.overAbsorbGlowColor
-							self.db.profile.overAbsorbGlowTexture = defaultOptions.overAbsorbGlowTexture
-							self.db.profile.overAbsorbGlowBlendMode = defaultOptions.overAbsorbGlowBlendMode
+						inline = true,
+						args = {
+							color = {
+								type = "color",
+								name = "Color",
+								order = 0,
+								hasAlpha = true,
+								get = function()
+									local c = self.db.profile.absorbColor
+									return c.r, c.g, c.b, c.a
+								end,
+								set = function(_, r, g, b, a)
+									self.db.profile.absorbColor = { r = r, g = g, b = b, a = a }
+									OnAppearanceChanged()
+								end,
+							},
+							texture = {
+								type = "select",
+								name = "Texture",
+								order = 1,
+								values = TextureDropdownValues(),
+								get = function() return self.db.profile.absorbTexture end,
+								set = function(_, value)
+									self.db.profile.absorbTexture = value
+									OnAppearanceChanged()
+								end,
+							},
+							blendMode = {
+								type = "select",
+								name = "Blend Mode",
+								order = 2,
+								values = { DISABLE = "DISABLE", BLEND = "BLEND", ALPHAKEY = "ALPHAKEY", ADD = "ADD", MOD = "MOD" },
+								get = function() return self.db.profile.absorbBlendMode end,
+								set = function(_, value)
+									self.db.profile.absorbBlendMode = value
+									OnAppearanceChanged()
+								end,
+							},
+							reset = {
+								type = "execute",
+								name = "|TInterface\\Buttons\\UI-RefreshButton:16:16|t Reset",
+								desc = "Reset this group to the default configuration.",
+								order = 3,
+								func = function()
+									self.db.profile.absorbColor = defaultOptions.absorbColor
+									self.db.profile.absorbTexture = defaultOptions.absorbTexture
+									self.db.profile.absorbBlendMode = defaultOptions.absorbBlendMode
 
-							OnAppearanceChanged()
-                        end,
+									OnAppearanceChanged()
+								end,
+							},
+						},
+					},
+					--- Non-OverAbsorb Shield Bar Overlay
+					overlayGroup = {
+						type = "group",
+						name = "Shield Bar Overlay",
+						order = 2,
+						inline = true,
+						args = {
+							color = {
+								type = "color",
+								name = "Color",
+								order = 0,
+								hasAlpha = true,
+								get = function()
+									local c = self.db.profile.overlayColor
+									return c.r, c.g, c.b, c.a
+								end,
+								set = function(_, r, g, b, a)
+									self.db.profile.overlayColor = { r = r, g = g, b = b, a = a }
+									OnAppearanceChanged()
+								end,
+							},
+							texture = {
+								type = "select",
+								name = "Texture",
+								order = 1,
+								values = TextureDropdownValues(),
+								get = function() return self.db.profile.overlayTexture end,
+								set = function(_, value)
+									self.db.profile.overlayTexture = value
+									OnAppearanceChanged()
+								end,
+							},
+							blendMode = {
+								type = "select",
+								name = "Blend Mode",
+								order = 2,
+								values = { DISABLE = "DISABLE", BLEND = "BLEND", ALPHAKEY = "ALPHAKEY", ADD = "ADD", MOD = "MOD" },
+								get = function() return self.db.profile.overlayBlendMode end,
+								set = function(_, value)
+									self.db.profile.overlayBlendMode = value
+									OnAppearanceChanged()
+								end,
+							},
+							reset = {
+								type = "execute",
+								name = "|TInterface\\Buttons\\UI-RefreshButton:16:16|t Reset",
+								desc = "Reset this group to the default configuration.",
+								order = 3,
+								func = function()
+									self.db.profile.overlayColor = defaultOptions.overlayColor
+									self.db.profile.overlayTexture = defaultOptions.overlayTexture
+									self.db.profile.overlayBlendMode = defaultOptions.overlayBlendMode
+
+									OnAppearanceChanged()
+								end,
+							},
+						},
 					},
 				},
 			},
+			-- OverAbsorb Shield Group
+			overAbsorbHeader = {
+				type = "group",
+                name = "Overshields",
+				desc = "These settings are used while a unit's current health and combined shields exceed the unit's maximum health.",
+                order = 1,
+				args = {
+					--- OverAbsorb Shield Bar
+					overAbsorbGroup = {
+						type = "group",
+						name = "Overshield Bar",
+						order = 0,
+						inline = true,
+						args = {
+							color = {
+								type = "color",
+								name = "Color",
+								order = 0,
+								hasAlpha = true,
+								get = function()
+									local c = self.db.profile.overAbsorbColor
+									return c.r, c.g, c.b, c.a
+								end,
+								set = function(_, r, g, b, a)
+									self.db.profile.overAbsorbColor = { r = r, g = g, b = b, a = a }
+									OnAppearanceChanged()
+								end,
+							},
+							texture = {
+								type = "select",
+								name = "Texture",
+								order = 1,
+								values = TextureDropdownValues(),
+								get = function() return self.db.profile.overAbsorbTexture end,
+								set = function(_, value)
+									self.db.profile.overAbsorbTexture = value
+									OnAppearanceChanged()
+								end,
+							},
+							blendMode = {
+								type = "select",
+								name = "Blend Mode",
+								order = 2,
+								values = { DISABLE = "DISABLE", BLEND = "BLEND", ALPHAKEY = "ALPHAKEY", ADD = "ADD", MOD = "MOD" },
+								get = function() return self.db.profile.overAbsorbBlendMode end,
+								set = function(_, value)
+									self.db.profile.overAbsorbBlendMode = value
+									OnAppearanceChanged()
+								end,
+							},
+							reset = {
+								type = "execute",
+								name = "|TInterface\\Buttons\\UI-RefreshButton:16:16|t Reset",
+								desc = "Reset this group to the default configuration.",
+								order = 3,
+								func = function()
+									self.db.profile.overAbsorbColor = defaultOptions.overAbsorbColor
+									self.db.profile.overAbsorbTexture = defaultOptions.overAbsorbTexture
+									self.db.profile.overAbsorbBlendMode = defaultOptions.overAbsorbBlendMode
+
+									OnAppearanceChanged()
+								end,
+							},
+						},
+					},
+					--- OverAbsorb Shield Bar Overlay
+					overAbsorbOverlayGroup = {
+						type = "group",
+						name = "Overshield Bar Overlay",
+						order = 1,
+						inline = true,
+						args = {
+							color = {
+								type = "color",
+								name = "Color",
+								order = 0,
+								hasAlpha = true,
+								get = function()
+									local c = self.db.profile.overAbsorbOverlayColor
+									return c.r, c.g, c.b, c.a
+								end,
+								set = function(_, r, g, b, a)
+									self.db.profile.overAbsorbOverlayColor = { r = r, g = g, b = b, a = a }
+									OnAppearanceChanged()
+								end,
+							},
+							texture = {
+								type = "select",
+								name = "Texture",
+								order = 1,
+								values = TextureDropdownValues(),
+								get = function() return self.db.profile.overAbsorbOverlayTexture end,
+								set = function(_, value)
+									self.db.profile.overAbsorbOverlayTexture = value
+									OnAppearanceChanged()
+								end,
+							},
+							blendMode = {
+								type = "select",
+								name = "Blend Mode",
+								order = 2,
+								values = { DISABLE = "DISABLE", BLEND = "BLEND", ALPHAKEY = "ALPHAKEY", ADD = "ADD", MOD = "MOD" },
+								get = function() return self.db.profile.overAbsorbOverlayBlendMode end,
+								set = function(_, value)
+									self.db.profile.overAbsorbOverlayBlendMode = value
+									OnAppearanceChanged()
+								end,
+							},
+							reset = {
+								type = "execute",
+								name = "|TInterface\\Buttons\\UI-RefreshButton:16:16|t Reset",
+								desc = "Reset this group to the default configuration.",
+								order = 3,
+								func = function()
+									self.db.profile.overAbsorbOverlayColor = defaultOptions.overAbsorbOverlayColor
+									self.db.profile.overAbsorbOverlayTexture = defaultOptions.overAbsorbOverlayTexture
+									self.db.profile.overAbsorbOverlayBlendMode = defaultOptions.overAbsorbOverlayBlendMode
+
+									OnAppearanceChanged()
+								end,
+							},
+						},
+					},
+					--- Overabsorb Shield Glow
+					overAbsorbGlowGroup = {
+						type = "group",
+						name = "Overshield Glow",
+						order = 2,
+						inline = true,
+						args = {
+							color = {
+								type = "color",
+								name = "Color",
+								order = 0,
+								hasAlpha = true,
+								get = function()
+									local c = self.db.profile.overAbsorbGlowColor
+									return c.r, c.g, c.b, c.a
+								end,
+								set = function(_, r, g, b, a)
+									self.db.profile.overAbsorbGlowColor = { r = r, g = g, b = b, a = a }
+									OnAppearanceChanged()
+								end,
+							},
+							texture = {
+								type = "select",
+								name = "Texture",
+								order = 1,
+								values = OverAbsorbGlowTextureDropdownValues(),
+								get = function() return self.db.profile.overAbsorbGlowTexture end,
+								set = function(_, value)
+									self.db.profile.overAbsorbGlowTexture = value
+									OnAppearanceChanged()
+								end,
+							},
+							blendMode = {
+								type = "select",
+								name = "Blend Mode",
+								order = 2,
+								values = { DISABLE = "DISABLE", BLEND = "BLEND", ALPHAKEY = "ALPHAKEY", ADD = "ADD", MOD = "MOD" },
+								get = function() return self.db.profile.overAbsorbGlowBlendMode end,
+								set = function(_, value)
+									self.db.profile.overAbsorbGlowBlendMode = value
+									OnAppearanceChanged()
+								end,
+							},
+							reset = {
+								type = "execute",
+								name = "|TInterface\\Buttons\\UI-RefreshButton:16:16|t Reset",
+								desc = "Reset this group to the default configuration.",
+								order = 3,
+								func = function()
+									self.db.profile.overAbsorbGlowColor = defaultOptions.overAbsorbGlowColor
+									self.db.profile.overAbsorbGlowTexture = defaultOptions.overAbsorbGlowTexture
+									self.db.profile.overAbsorbGlowBlendMode = defaultOptions.overAbsorbGlowBlendMode
+
+									OnAppearanceChanged()
+								end,
+							},
+						},
+					},
+				}
+            },
 		},
 	}
 	AceConfig:RegisterOptionsTable("Overshields Reforged", options)
