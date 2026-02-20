@@ -100,7 +100,7 @@ local function HandleCompactUnitFrameUpdate(frame)
     end
 end
 
---- Hook into Blizzard's fill bar update to prevent native absorb bars from interfering.
+--- Hook into Bliz's fill bar update to prevent native absorb bars from interfering.
 -- Clears anchor points on non-forbidden frames to suppress the native bar layout.
 hooksecurefunc("CompactUnitFrameUtil_UpdateFillBar", function(frame, _, bar)
 	if bar == frame.totalAbsorb or bar == frame.totalAbsorbOverlay or bar == frame.overAbsorbGlow then

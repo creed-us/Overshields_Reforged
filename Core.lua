@@ -12,7 +12,7 @@ function OvershieldsReforged:OnEnable()
 	self:RegisterChatCommand("overshieldsreforged", "HandleSlashCommand")
 	self:RegisterChatCommand("osr", "HandleSlashCommand")
 
-	-- Hook Blizzard's heal-prediction.
+	-- Hook Bliz's heal-prediction.
 	hooksecurefunc("CompactUnitFrame_UpdateHealPrediction", function(frame)
 		ns.QueueCompactUnitFrameUpdate(frame)
 	end)
