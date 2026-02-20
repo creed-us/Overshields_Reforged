@@ -36,7 +36,6 @@ local function GetOrCreateAbsorb(frame)
 	absorb:Hide()
 
 	containers[frame] = absorb
-	frame._absorbBar = absorb
 
 	return absorb
 end
@@ -60,7 +59,6 @@ local function GetOrCreateOverlay(frame)
 	overlay:Hide()
 
 	overlayContainers[frame] = overlay
-	frame._overlayBar = overlay
 
 	return overlay
 end
@@ -103,10 +101,12 @@ local function HandleCompactUnitFrameUpdate(frame)
 end
 
 --- Hook into Blizzard's fill bar update to prevent native absorb bars from interfering.
--- Clears anchor points on protected frames to avoid layout conflicts.
+-- Clears anchor points on non-forbidden frames to suppress the native bar layout.
 hooksecurefunc("CompactUnitFrameUtil_UpdateFillBar", function(frame, _, bar)
 	if bar == frame.totalAbsorb or bar == frame.totalAbsorbOverlay or bar == frame.overAbsorbGlow then
-		pcall(bar.ClearAllPoints, bar)
+		if bar and not bar:IsForbidden() then
+			bar:ClearAllPoints()
+		end
 	end
 end)
 
