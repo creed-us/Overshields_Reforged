@@ -1,144 +1,148 @@
 local _, ns = ...
 
---- Applies appearance settings (color, texture, and tiling) to a status bar.
--- Uses SetTexCoord for proper tiling based on frame dimensions (Blizzard method).
+--- Applies appearance settings (color, texture, blend mode, and tiling) to a status bar.
+-- Uses SetTexCoord for proper tiling based on frame dimensions (Bliz method).
 -- @param bar The status bar frame to style
--- @param colorTable Table with r, g, b, a keys for color
--- @param textureFile Path to texture file for the bar
-local function ApplyAppearanceToBar(absorb, glowVisible)
-    if not absorb then return end
+-- @param glowVisible true when overAbsorb glow is active on the parent frame
+local function ApplyAppearanceToBar(bar, glowVisible)
+    if not bar or not bar.SetStatusBarColor then return end
     local db = OvershieldsReforged.db.profile
     if not db then return end
 
-    local colorTable = db.absorbColor
-    local textureFile = db.absorbTexture
-	local blendMode = db.absorbBlendMode
-    if glowVisible then
-        colorTable = db.overAbsorbColor
-        textureFile = db.overAbsorbTexture
-		blendMode = db.overAbsorbBlendMode
-    end
+    local colorTable = glowVisible and db.overAbsorbColor or db.absorbColor
+    local textureFile = glowVisible and db.overAbsorbTexture or db.absorbTexture
+    local blendMode   = glowVisible and db.overAbsorbBlendMode or db.absorbBlendMode
 
-    -- Apply color and transparency
-    absorb:SetStatusBarColor(colorTable.r, colorTable.g, colorTable.b, colorTable.a)
+    bar:SetStatusBarColor(colorTable.r, colorTable.g, colorTable.b, colorTable.a)
+    bar:SetStatusBarTexture(textureFile)
 
-    -- Apply texture
-    absorb:SetStatusBarTexture(textureFile)
-
-    -- Configure tiling using SetTexCoord for proper vertical/horizontal tiling
-    -- This matches Blizzard's approach in CompactUnitFrame
-    local texture = absorb:GetStatusBarTexture()
+    local texture = bar:GetStatusBarTexture()
     if texture then
         texture:SetTexture(textureFile, "REPEAT", "CLAMP")
-        -- Set tileSize (Blizzard uses 32 for Shield-Overlay)
-        absorb.tileSize = 32
+        -- Bliz uses tileSize = 32 for Shield-Overlay tiling
+        bar.tileSize = 32
+        texture:SetBlendMode(blendMode)
     end
-
-	texture:SetBlendMode(blendMode)
 end
 
+--- Applies appearance settings to a native Bliz-owned bar.
+-- @param bar The status bar frame to style (may be Bliz-owned)
+-- @param glowVisible true when overAbsorb glow is active on the parent frame
 local function ApplyAppearanceToNativeBar(bar, glowVisible)
-	pcall(ApplyAppearanceToBar, bar, glowVisible)
+    if bar and not bar:IsForbidden() then
+        ApplyAppearanceToBar(bar, glowVisible)
+    end
 end
 
+--- Applies appearance settings (color, texture, blend mode, and tiling) to a overlay bar.
+-- The default Shield-Overlay texture tiles on both axes; all other textures should tile horizontally.
+-- @param overlay The status bar frame to style
+-- @param glowVisible true when overAbsorb glow is active on the parent frame
 local function ApplyAppearanceToOverlay(overlay, glowVisible)
-    if not overlay then return end
+    if not overlay or not overlay.SetStatusBarColor then return end
     local db = OvershieldsReforged.db.profile
     if not db then return end
 
-    local colorTable = db.overlayColor
-    local textureFile = db.overlayTexture
-	local blendMode = db.overlayBlendMode
-    if glowVisible then
-        colorTable = db.overAbsorbOverlayColor
-        textureFile = db.overAbsorbOverlayTexture
-		blendMode = db.overAbsorbOverlayBlendMode
-    end
+    local colorTable = glowVisible and db.overAbsorbOverlayColor or db.overlayColor
+    local textureFile = glowVisible and db.overAbsorbOverlayTexture or db.overlayTexture
+    local blendMode   = glowVisible and db.overAbsorbOverlayBlendMode or db.overlayBlendMode
 
-    -- Apply color and transparency
     overlay:SetStatusBarColor(colorTable.r, colorTable.g, colorTable.b, colorTable.a)
-
-    -- Apply texture with basic tiling
     overlay:SetStatusBarTexture(textureFile)
+
     local texture = overlay:GetStatusBarTexture()
-    if texture == "Interface\\RaidFrame\\Shield-Overlay" then
-        texture:SetTexture(textureFile, "REPEAT", "REPEAT")
-        texture:SetHorizTile(true)
-        texture:SetVertTile(true)
-    else
-        texture:SetTexture(textureFile, "REPEAT", "CLAMP")
-        texture:SetHorizTile(true)
-        texture:SetVertTile(false)
+    if texture then
+        -- The default overlay texture tiles on both axes; custom textures tile only horizontally.
+        if textureFile == "Interface\\RaidFrame\\Shield-Overlay" then
+            texture:SetTexture(textureFile, "REPEAT", "REPEAT")
+            texture:SetHorizTile(true)
+            texture:SetVertTile(true)
+        else
+            texture:SetTexture(textureFile, "REPEAT", "CLAMP")
+            texture:SetHorizTile(true)
+            texture:SetVertTile(false)
+        end
+        texture:SetBlendMode(blendMode)
     end
-
-	texture:SetBlendMode(blendMode)
 end
 
+--- Applies appearance settings to a native Bliz-owned overlay, guarded against forbidden frames.
+-- @param overlay The status bar frame to style (may be Bliz-owned)
+-- @param glowVisible true when overAbsorb glow is active on the parent frame
 local function ApplyAppearanceToNativeOverlay(overlay, glowVisible)
-	pcall(ApplyAppearanceToOverlay, overlay, glowVisible)
+    if overlay and not overlay:IsForbidden() then
+        ApplyAppearanceToOverlay(overlay, glowVisible)
+    end
 end
 
+--- Applies appearance settings (color, texture, blend mode) to the overAbsorb glow texture.
+-- @param glow The Texture (or Texture-like Frame) representing the overAbsorb glow
 local function ApplyAppearanceToOverAbsorbGlow(glow)
-    if not glow or not glow:IsVisible() then return end
+    if not glow or glow:IsForbidden() or not glow:IsVisible() then return end
     local db = OvershieldsReforged.db.profile
     if not db then return end
 
-    local colorTable = db.overAbsorbGlowColor
-    local textureFile = db.overAbsorbGlowTexture
-
-    -- Apply color and transparency
-    glow:SetVertexColor(colorTable.r, colorTable.g, colorTable.b, colorTable.a)
-
-    -- Apply texture
-    --glow:SetStatusBarTexture(textureFile)
-    --local texture = glow:GetStatusBarTexture()
-	glow:SetTexture(textureFile)
-
+    glow:SetVertexColor(db.overAbsorbGlowColor.r, db.overAbsorbGlowColor.g, db.overAbsorbGlowColor.b, db.overAbsorbGlowColor.a)
+    glow:SetTexture(db.overAbsorbGlowTexture)
     glow:SetBlendMode(db.overAbsorbGlowBlendMode)
 end
 
+--- Applies appearance settings to a native Bliz-owned glow, guarded against forbidden frames.
+-- @param glow The Texture representing the overAbsorb glow (may be Bliz-owned)
 local function ApplyAppearanceToNativeOverAbsorbGlow(glow)
-    pcall(ApplyAppearanceToOverAbsorbGlow, glow)
+    if glow and not glow:IsForbidden() then
+        ApplyAppearanceToOverAbsorbGlow(glow)
+    end
 end
 
+--- Applies all appearance settings to a single compact unit frame.
+-- @param frame The compact unit frame
+-- @param glowVisible true when overAbsorb glow is active
+local function ApplyAppearanceToFrame(frame, glowVisible)
+    ApplyAppearanceToBar(ns.absorbCache[frame], glowVisible)
+    ApplyAppearanceToOverlay(ns.overlayCache[frame], glowVisible)
+    ApplyAppearanceToNativeBar(frame.totalAbsorb, glowVisible)
+    ApplyAppearanceToNativeOverlay(frame.totalAbsorbOverlay, glowVisible)
+    ApplyAppearanceToNativeOverAbsorbGlow(frame.overAbsorbGlow)
+end
+
+--- Resolves visible glow state for a frame, guarding against forbidden access.
+-- @param frame The compact unit frame
+-- @return boolean true if the overAbsorb glow is visible
+local function IsGlowVisible(frame)
+    local glow = frame.overAbsorbGlow
+    if not glow or glow:IsForbidden() then return false end
+    return glow:IsVisible()
+end
+
+--- Iterates a pool of compact unit frames by global name prefix and applies appearance updates.
+-- @param prefix Global name prefix (e.g. "CompactRaidFrame")
+-- @param count Maximum frame index to check
+local function UpdateFramePool(prefix, count)
+    for i = 1, count do
+        local frame = _G[prefix .. i]
+        if frame and frame:IsShown() and frame.displayedUnit then
+            ApplyAppearanceToFrame(frame, IsGlowVisible(frame))
+        end
+    end
+end
+
+--- Iterates all visible compact unit frames and applies current appearance settings.
+-- Called after any appearance setting changes.
 local function UpdateAllFrameAppearances()
-	local function ApplyAppearanceToFrame(frame, glowVisible)
-		ApplyAppearanceToBar(ns.absorbCache[frame], glowVisible)
-        ApplyAppearanceToOverlay(ns.overlayCache[frame], glowVisible)
-        --ApplyAppearanceToOverAbsorbGlow(ns.overAbsorbGlowCache[frame])
-        ApplyAppearanceToNativeBar(frame.totalAbsorb, glowVisible)
-        ApplyAppearanceToNativeOverlay(frame.totalAbsorbOverlay, glowVisible)
-        ApplyAppearanceToNativeOverAbsorbGlow(frame.overAbsorbGlow)
-	end
+    -- Party frames (1–5)
+    UpdateFramePool("CompactPartyFrameMember", 5)
 
-	-- Update party frames
-	for i = 1, 5 do
-		local frame = _G["CompactPartyFrameMember" .. i]
-		if frame and frame:IsShown() and frame.displayedUnit then
-			ApplyAppearanceToFrame(frame, frame.overAbsorbGlow:IsVisible())
-		end
-	end
+    -- Raid frames (1–40)
+    if IsInRaid() then
+        UpdateFramePool("CompactRaidFrame", 40)
+    end
 
-	-- Update raid frames
-	if IsInRaid() then
-		for i = 1, 40 do
-			local frame = _G["CompactRaidFrame" .. i]
-			if frame and frame:IsShown() and frame.displayedUnit then
-				ApplyAppearanceToFrame(frame, frame.overAbsorbGlow:IsVisible())
-			end
-		end
-	end
-
-	-- Update pet frames
-	if CompactRaidFrameContainer and CompactRaidFrameContainer.displayPets then
-		local petFramePrefix = IsInRaid() and "CompactRaidFramePet" or "CompactPartyFramePet"
-		for i = 1, 40 do
-			local frame = _G[petFramePrefix .. i]
-			if frame and frame:IsShown() and frame.displayedUnit then
-				ApplyAppearanceToFrame(frame, frame.overAbsorbGlow:IsVisible())
-			end
-		end
-	end
+    -- Pet frames
+    if CompactRaidFrameContainer and CompactRaidFrameContainer.displayPets then
+        local petPrefix = IsInRaid() and "CompactRaidFramePet" or "CompactPartyFramePet"
+        UpdateFramePool(petPrefix, 40)
+    end
 end
 
 ns.ApplyAppearanceToBar = ApplyAppearanceToBar
