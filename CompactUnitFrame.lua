@@ -53,8 +53,8 @@ local function GetOrCreateOverlay(frame)
 
 	local overlay = CreateFrame("StatusBar", nil, healthBar)
 	overlay:SetAllPoints(healthBar)
-	overlay:SetReverseFill(true)  -- Fill from right to left
-	overlay:SetFrameLevel(healthBar:GetFrameLevel() + 1)  -- Layer above shield bar
+	overlay:SetReverseFill(true)
+	overlay:SetFrameLevel(healthBar:GetFrameLevel() + 1)
 	overlay:SetFrameStrata(healthBar:GetFrameStrata())
 	overlay:Hide()
 
