@@ -108,12 +108,12 @@ function OvershieldsReforged:SetupOptions()
 						type = "group",
 						name = "Shield Bar",
 						order = 1,
-						inline = true,
+						inline = false,
 						args = {
 							color = {
 								type = "color",
 								name = "Color",
-								order = 0,
+                                order = 0,
 								hasAlpha = true,
 								get = function()
 									local c = self.db.profile.absorbColor
@@ -166,7 +166,7 @@ function OvershieldsReforged:SetupOptions()
 						type = "group",
 						name = "Shield Bar Overlay",
 						order = 2,
-						inline = true,
+						inline = false,
 						args = {
 							color = {
 								type = "color",
@@ -233,7 +233,7 @@ function OvershieldsReforged:SetupOptions()
 						type = "group",
 						name = "Overshield Bar",
 						order = 0,
-						inline = true,
+						inline = false,
 						args = {
 							color = {
 								type = "color",
@@ -291,7 +291,7 @@ function OvershieldsReforged:SetupOptions()
 						type = "group",
 						name = "Overshield Bar Overlay",
 						order = 1,
-						inline = true,
+						inline = false,
 						args = {
 							color = {
 								type = "color",
@@ -349,7 +349,7 @@ function OvershieldsReforged:SetupOptions()
 						type = "group",
 						name = "Overshield Glow",
 						order = 2,
-						inline = true,
+						inline = false,
 						args = {
 							color = {
 								type = "color",
