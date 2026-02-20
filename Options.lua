@@ -150,7 +150,7 @@ function OvershieldsReforged:SetupOptions()
 								type = "execute",
 								name = "|TInterface\\Buttons\\UI-RefreshButton:16:16|t Reset",
 								desc = "Reset this group to the default configuration.",
-								order = 3,
+								order = -1,
 								func = function()
 									self.db.profile.absorbColor = defaultOptions.absorbColor
 									self.db.profile.absorbTexture = defaultOptions.absorbTexture
@@ -208,7 +208,7 @@ function OvershieldsReforged:SetupOptions()
 								type = "execute",
 								name = "|TInterface\\Buttons\\UI-RefreshButton:16:16|t Reset",
 								desc = "Reset this group to the default configuration.",
-								order = 3,
+								order = -1,
 								func = function()
 									self.db.profile.overlayColor = defaultOptions.overlayColor
 									self.db.profile.overlayTexture = defaultOptions.overlayTexture
@@ -275,7 +275,7 @@ function OvershieldsReforged:SetupOptions()
 								type = "execute",
 								name = "|TInterface\\Buttons\\UI-RefreshButton:16:16|t Reset",
 								desc = "Reset this group to the default configuration.",
-								order = 3,
+								order = -1,
 								func = function()
 									self.db.profile.overAbsorbColor = defaultOptions.overAbsorbColor
 									self.db.profile.overAbsorbTexture = defaultOptions.overAbsorbTexture
@@ -333,7 +333,7 @@ function OvershieldsReforged:SetupOptions()
 								type = "execute",
 								name = "|TInterface\\Buttons\\UI-RefreshButton:16:16|t Reset",
 								desc = "Reset this group to the default configuration.",
-								order = 3,
+								order = -1,
 								func = function()
 									self.db.profile.overAbsorbOverlayColor = defaultOptions.overAbsorbOverlayColor
 									self.db.profile.overAbsorbOverlayTexture = defaultOptions.overAbsorbOverlayTexture
@@ -391,7 +391,7 @@ function OvershieldsReforged:SetupOptions()
 								type = "execute",
 								name = "|TInterface\\Buttons\\UI-RefreshButton:16:16|t Reset",
 								desc = "Reset this group to the default configuration.",
-								order = 3,
+								order = -1,
 								func = function()
 									self.db.profile.overAbsorbGlowColor = defaultOptions.overAbsorbGlowColor
 									self.db.profile.overAbsorbGlowTexture = defaultOptions.overAbsorbGlowTexture
