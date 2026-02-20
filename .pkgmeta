@@ -1,5 +1,11 @@
 package-as: Overshields_Reforged
 
+required-dependencies:
+    - Ace3
+
+optional-dependencies:
+    - LibSharedMedia-3.0
+
 ignore:
     - .github/*
     - .git/*
@@ -7,7 +13,6 @@ ignore:
     - .gitattributes
     - .vscode/*
     - .prettierignore
+    - Libs/*
     - README.md
-    - group_1.png
-    - target_1.png
-    - target_2.png
+    - midnight_options.jpg
