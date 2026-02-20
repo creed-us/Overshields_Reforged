@@ -4,7 +4,7 @@ required-dependencies:
     - Ace3
 
 optional-dependencies:
-    - LibSharedMedia-3.0
+    - libsharedmedia
 
 ignore:
     - .github/*
