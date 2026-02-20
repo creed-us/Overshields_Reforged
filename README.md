@@ -8,7 +8,7 @@ Overshields Reforged allows you to configure how shields & overshields appear on
 
 There are a couple of options: Color (including alpha/transparency), and texture. The old options which allowed you to pick when and how the overshield tick (the thick bar indicating that current health & shields exceed maximum health) are gone due to new interface limitations in Midnight. You can, however, create different frame appearances based on whether the overshield condition is met or not.
 
-Works with Blizzard's default Player, Target, Focus, Party, and Raid frames.
+Works with Blizzard's compact raid-style Party, and Raid frames.
 
 ![Overshields Reforged raid-style party frames with options panel visible, and Non-Overshield bar configured as a red color.](./midnight_options.jpg)
 
