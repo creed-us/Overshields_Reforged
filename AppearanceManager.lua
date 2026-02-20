@@ -34,8 +34,8 @@ local function ApplyAppearanceToNativeBar(bar, glowVisible)
     end
 end
 
---- Applies appearance settings (color, texture, blend mode, and tiling) to a overlay bar.
--- The default Shield-Overlay texture tiles on both axes; all other textures should tile horizontally.
+--- Applies appearance settings (color, texture, blend mode, and tiling) to a  overlay bar.
+-- Tiles horizontally and clamps vertically so the texture spans the full bar height.
 -- @param overlay The status bar frame to style
 -- @param glowVisible true when overAbsorb glow is active on the parent frame
 local function ApplyAppearanceToOverlay(overlay, glowVisible)
@@ -52,16 +52,9 @@ local function ApplyAppearanceToOverlay(overlay, glowVisible)
 
     local texture = overlay:GetStatusBarTexture()
     if texture then
-        -- The default overlay texture tiles on both axes; custom textures tile only horizontally.
-        if textureFile == "Interface\\RaidFrame\\Shield-Overlay" then
-            texture:SetTexture(textureFile, "REPEAT", "REPEAT")
-            texture:SetHorizTile(true)
-            texture:SetVertTile(true)
-        else
-            texture:SetTexture(textureFile, "REPEAT", "CLAMP")
-            texture:SetHorizTile(true)
-            texture:SetVertTile(false)
-        end
+        texture:SetTexture(textureFile, "REPEAT", "CLAMP")
+        texture:SetHorizTile(true)
+        texture:SetVertTile(false)
         texture:SetBlendMode(blendMode)
     end
 end
