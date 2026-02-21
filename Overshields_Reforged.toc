@@ -11,6 +11,8 @@
 ## OptionalDeps: LibSharedMedia-3.0
 
 Core.lua
+Performance.lua
+ChatCommands.lua
 Options.lua
 CompactUnitFrame.lua
 AppearanceManager.lua
