@@ -22,6 +22,17 @@ local function ResetStyleState(target)
 	end
 end
 
+local function SetTextureOrAtlas(textureRegion, asset)
+	if C_Texture and C_Texture.GetAtlasInfo and C_Texture.GetAtlasInfo(asset) then
+		textureRegion:SetAtlas(asset, false, nil, true)
+		textureRegion:SetTexCoord(0, 1, 0, 1)
+		return
+	end
+
+	textureRegion:SetTexture(asset)
+	textureRegion:SetTexCoord(0, 1, 0, 1)
+end
+
 local function HideCustomBars(frame)
 	local absorb = ns.absorbCache[frame]
 	if absorb then
@@ -212,7 +223,7 @@ local function ApplyAppearanceToOverAbsorbGlow(glow)
 	end
 
 	if state.textureFile ~= textureFile then
-		glow:SetTexture(textureFile)
+		SetTextureOrAtlas(glow, textureFile)
 		state.textureFile = textureFile
 	end
 

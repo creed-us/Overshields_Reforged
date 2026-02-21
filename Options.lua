@@ -79,25 +79,92 @@ local function TextureDropdownValues()
 	return values
 end
 
---- Lazy builds the texture dropdown value table for the overAbsorb glow selector so that late-registered LSM spark textures appear.
+--- Lazy builds the texture dropdown value table for the overAbsorb glow selector so that late-registered LSM spark/pip textures appear.
+local function BuildGlowTextureOptionLabel(asset, displayName)
+	if C_Texture and C_Texture.GetAtlasInfo and C_Texture.GetAtlasInfo(asset) then
+		return string.format("|A:%s:16:16|a %s", asset, displayName)
+	end
+
+	return string.format("|T%s:16:16|t %s", asset, displayName)
+end
+
+local function BuildGlowTextureValues(textureEntries)
+	local values = {}
+    for _, textureEntry in ipairs(textureEntries) do
+		local textureAsset = textureEntry[1]
+		local displayName = textureEntry[2]
+        if textureAsset ~= "__PLACEHOLDER" then
+			values[textureAsset] = BuildGlowTextureOptionLabel(textureAsset, displayName)
+		end
+	end
+	return values
+end
+
 local function OverAbsorbGlowTextureDropdownValues()
-	local values = {
-		["Interface\\RaidFrame\\Shield-Overshield"] = "|TInterface\\RaidFrame\\Shield-Overshield:16:16|t Default Glow",
-		["Interface\\CastingBar\\UI-CastingBar-Spark"] = "|TInterface\\CastingBar\\UI-CastingBar-Spark:16:16|t CastingBar-Spark",
-		["Interface\\Cooldown\\star4"] = "|TInterface\\Cooldown\\star4:16:16|t Star4",
-		["Interface\\Cooldown\\starburst"] = "|TInterface\\Cooldown\\starburst:16:16|t Starburst",
-		["Interface\\Artifacts\\Blizzard_Spark"] = "|TInterface\\Artifacts\\Blizzard_Spark:16:16|t Blizzard Spark",
-		["Interface\\Garrison\\GarrMission_EncounterBar-Spark"] = "|TInterface\\Garrison\\GarrMission_EncounterBar-Spark:16:16|t GarrMission Spark",
-		["Interface\\InsanityBar\\Insanity-Spark"] = "|TInterface\\InsanityBar\\Insanity-Spark:16:16|t Insanity Spark",
-		["Interface\\Legionfall\\Legionfall_BarSpark"] = "|TInterface\\Legionfall\\Legionfall_BarSpark:16:16|t Legionfall Spark",
-		["Interface\\XPBarAnim\\XPBarAnim-OrangeSpark"] = "|TInterface\\XPBarAnim\\XPBarAnim-OrangeSpark:16:16|t XPBar Orange Spark",
-		["Interface\\BonusObjective\\bonusobjective-bar-spark"] = "|TInterface\\BonusObjective\\bonusobjective-bar-spark:16:16|t Bonus Objective Spark",
-		["Interface\\HonorFrame\\honorsystem-bar-spark"] = "|TInterface\\HonorFrame\\honorsystem-bar-spark:16:16|t Honor System Spark",
-	}
+	local values = BuildGlowTextureValues({
+		{ "Interface\\RaidFrame\\Shield-Overshield", "Default Glow" },
+		{ "Interface\\CastingBar\\UI-CastingBar-Spark", "Cast Bar Spark" },
+		{ "Interface\\Cooldown\\star4", "Star4" },
+		{ "Interface\\Cooldown\\starburst", "Starburst" },
+		{ "Warlock-Shard-Spark", "Warlock Spark" },
+		{ "cosmic-bar-spark", "Cosmic Spark" },
+		{ "CovenantSanctum-Reservoir-Spark-Kyrian", "Kyrian Spark" },
+		{ "CovenantSanctum-Reservoir-Spark-Glow-Kyrian", "Kyrian Glow Spark" },
+		{ "CovenantSanctum-Reservoir-Spark-Necrolord", "Necrolord Spark" },
+		{ "CovenantSanctum-Reservoir-Spark-Glow-Necrolord", "Necrolord Glow Spark" },
+		{ "CovenantSanctum-Reservoir-Spark-Nightfae", "Night Fae Spark" },
+		{ "CovenantSanctum-Reservoir-Spark-Glow-Nightfae", "Night Fae Glow Spark" },
+		{ "CovenantSanctum-Reservoir-Spark-Venthyr", "Venthyr Spark" },
+		{ "CovenantSanctum-Reservoir-Spark-Glow-Venthyr", "Venthyr Glow Spark" },
+		{ "UI-Frame-DastardlyDuos-ProgressBar-Spark", "Dastardly Duos Spark" },
+		{ "Garr_MissionFX-Glow", "Mission Glow" },
+		{ "Garr_MissionFX-Lines", "Mission Lines" },
+		{ "GenericWidgetBar-Spark-Line", "Widget Spark Line" },
+		{ "gradientbar-marker-diamond", "Diamond Marker" },
+		{ "gradientbar-marker-plain", "Plain Marker" },
+		{ "gradientbar-Spark-arrows", "Spark Arrows" },
+		{ "islands-queue-progressbar-spark", "Islands Queue Spark" },
+		{ "Legionfall_BarSpark", "Legionfall Spark" },
+		{ "Mage-ArcaneCharge-Spark", "Arcane Charge Spark" },
+		{ "Mage-ArcaneCharge-SmallSpark", "Small Arcane Spark" },
+		{ "objectivewidget-bar-spark-left", "Objective Left Spark" },
+		{ "objectivewidget-bar-spark-neutral", "Objective Neutral Spark" },
+		{ "objectivewidget-bar-spark-right", "Objective Right Spark" },
+		{ "Insanity-Spark", "Insanity Spark" },
+		{ "honorsystem-bar-spark", "Honor Bar Spark" },
+		{ "UI-World-Quest-spark", "World Quest Spark" },
+		{ "stormcapture-spark-air", "Air Capture Spark" },
+		{ "stormcapture-spark-earth", "Earth Capture Spark" },
+		{ "stormcapture-spark-water", "Water Capture Spark" },
+		{ "ui-castingbar-pip-red", "Red Pip" },
+		{ "cast-empowered-pipflare", "Empowered Pip Flare" },
+		{ "UI-Frame-Bar-Spark", "Frame Bar Spark" },
+		{ "plunderstorm-stormbar-spark", "Plunderstorm Spark" },
+		{ "BastionAnima-Horizontal-Spark", "Bastion Anima Spark" },
+		{ "widgetstatusbar-spark", "Status Bar Spark" },
+		{ "machinebar-spark", "Machine Bar Spark" },
+		{ "worldstate-capturebar-spark-boss", "Boss Capture Spark" },
+		{ "worldstate-capturebar-spark-factions", "Faction Capture Spark" },
+		{ "worldstate-capturebar-spark-lfd", "LFD Capture Spark" },
+		{ "worldstate-capturebar-spark-target", "Target Capture Spark" },
+		{ "worldstate-capturebar-spark-white", "White Capture Spark" },
+		{ "worldstate-capturebar-spark-bastionarmor", "Bastion Armor Spark" },
+		{ "worldstate-capturebar-spark-neutral-bastionarmor", "Neutral Bastion Spark" },
+		{ "worldstate-capturebar-spark-casualformal-embercourt", "Ember Court Spark" },
+		{ "XPBarAnim-OrangeSpark", "Orange XP Spark" },
+	})
 	if LSM then
-		for name, path in pairs(LSM:HashTable("statusbar")) do
-			if name:lower():find("spark") then
-				values[path] = string.format("|T%s:16:16|t %s", path, name)
+		local mediaTypes = {
+			"statusbar",
+			"spark",
+			"pip",
+		}
+		for _, mediaType in ipairs(mediaTypes) do
+			for name, path in pairs(LSM:HashTable(mediaType) or {}) do
+				local lowerName = name:lower()
+				if lowerName:find("spark") or lowerName:find("pip") then
+					values[path] = BuildGlowTextureOptionLabel(path, name)
+				end
 			end
 		end
 	end
