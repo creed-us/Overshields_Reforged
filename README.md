@@ -16,9 +16,9 @@ Works with Blizzard's compact raid-style Party, and Raid frames.
 
 Run **/overshieldsreforged options** or **/osr o** in your chat or press **Esc** and go to **Options > AddOns > Overshields Reforged**.
 
-The **Performance Settings** group includes an **Update Policy** selector for frame-based queue cadence and a **Refresh Debounce** control for option-change refresh behavior.
-
 Run **/overshieldsreforged reset** or **/osr r** in your chat to reset all Overshields Reforged options. _This is recommended for users updating to the Midnight version._
+
+The **Performance** settings group includes an **Update Policy** selector for frame-based queue cadence and a **Refresh Debounce** control for option-change refresh behavior.
 
 ## Installation
 
