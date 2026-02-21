@@ -1,5 +1,55 @@
 local _, ns = ...
 
+local styleCache = setmetatable({}, { __mode = "k" })
+
+local function GetStyleState(target)
+	if not target then
+		return nil
+	end
+
+	local state = styleCache[target]
+	if not state then
+		state = {}
+		styleCache[target] = state
+	end
+
+	return state
+end
+
+local function ResetStyleState(target)
+	if target then
+		styleCache[target] = nil
+	end
+end
+
+local function HideCustomBars(frame)
+	local absorb = ns.absorbCache[frame]
+	if absorb then
+		ResetStyleState(absorb)
+		absorb:Hide()
+	end
+
+	local overlay = ns.overlayCache[frame]
+	if overlay then
+		ResetStyleState(overlay)
+		overlay:Hide()
+	end
+end
+
+local function HideCachedBarsByPredicate(predicate)
+	for frame in pairs(ns.absorbCache) do
+		if predicate(frame) then
+			HideCustomBars(frame)
+		end
+	end
+
+	for frame in pairs(ns.overlayCache) do
+		if predicate(frame) then
+			HideCustomBars(frame)
+		end
+	end
+end
+
 --- Applies appearance settings (color, texture, blend mode, and tiling) to a status bar.
 -- Uses SetTexCoord for proper tiling based on frame dimensions (Bliz method).
 -- @param bar The status bar frame to style
@@ -12,16 +62,46 @@ local function ApplyAppearanceToBar(bar, glowVisible)
 	local colorTable = glowVisible and db.overAbsorbColor or db.absorbColor
 	local textureFile = glowVisible and db.overAbsorbTexture or db.absorbTexture
 	local blendMode = glowVisible and db.overAbsorbBlendMode or db.absorbBlendMode
+	local state = GetStyleState(bar)
+	if not state or not colorTable then return end
 
-	bar:SetStatusBarColor(colorTable.r, colorTable.g, colorTable.b, colorTable.a)
-	bar:SetStatusBarTexture(textureFile)
+	local colorR = colorTable.r or 1
+	local colorG = colorTable.g or 1
+	local colorB = colorTable.b or 1
+	local colorA = colorTable.a or 1
+	textureFile = textureFile or "Interface\\RaidFrame\\Shield-Fill"
+	blendMode = blendMode or "ADD"
+
+	if state.colorR ~= colorR or state.colorG ~= colorG or state.colorB ~= colorB or state.colorA ~= colorA then
+		bar:SetStatusBarColor(colorR, colorG, colorB, colorA)
+		state.colorR = colorR
+		state.colorG = colorG
+		state.colorB = colorB
+		state.colorA = colorA
+	end
+
+	if state.textureFile ~= textureFile then
+		bar:SetStatusBarTexture(textureFile)
+		state.textureFile = textureFile
+	end
 
 	local texture = bar:GetStatusBarTexture()
 	if texture then
-		texture:SetTexture(textureFile, "REPEAT", "CLAMP")
-		-- Bliz uses tileSize = 32 for Shield-Overlay tiling
-		bar.tileSize = 32
-		texture:SetBlendMode(blendMode)
+		if state.textureObject ~= texture or state.textureFileApplied ~= textureFile then
+			texture:SetTexture(textureFile, "REPEAT", "CLAMP")
+			state.textureFileApplied = textureFile
+			state.textureObject = texture
+		end
+
+		if state.tileSize ~= 32 then
+			bar.tileSize = 32
+			state.tileSize = 32
+		end
+
+		if state.blendMode ~= blendMode then
+			texture:SetBlendMode(blendMode)
+			state.blendMode = blendMode
+		end
 	end
 end
 
@@ -46,16 +126,51 @@ local function ApplyAppearanceToOverlay(overlay, glowVisible)
 	local colorTable = glowVisible and db.overAbsorbOverlayColor or db.overlayColor
 	local textureFile = glowVisible and db.overAbsorbOverlayTexture or db.overlayTexture
 	local blendMode = glowVisible and db.overAbsorbOverlayBlendMode or db.overlayBlendMode
+	local state = GetStyleState(overlay)
+	if not state or not colorTable then return end
 
-	overlay:SetStatusBarColor(colorTable.r, colorTable.g, colorTable.b, colorTable.a)
-	overlay:SetStatusBarTexture(textureFile)
+	local colorR = colorTable.r or 1
+	local colorG = colorTable.g or 1
+	local colorB = colorTable.b or 1
+	local colorA = colorTable.a or 1
+	textureFile = textureFile or "Interface\\RaidFrame\\Shield-Overlay"
+	blendMode = blendMode or "BLEND"
+
+	if state.colorR ~= colorR or state.colorG ~= colorG or state.colorB ~= colorB or state.colorA ~= colorA then
+		overlay:SetStatusBarColor(colorR, colorG, colorB, colorA)
+		state.colorR = colorR
+		state.colorG = colorG
+		state.colorB = colorB
+		state.colorA = colorA
+	end
+
+	if state.textureFile ~= textureFile then
+		overlay:SetStatusBarTexture(textureFile)
+		state.textureFile = textureFile
+	end
 
 	local texture = overlay:GetStatusBarTexture()
 	if texture then
-		texture:SetTexture(textureFile, "REPEAT", "CLAMP")
-		texture:SetHorizTile(true)
-		texture:SetVertTile(false)
-		texture:SetBlendMode(blendMode)
+		if state.textureObject ~= texture or state.textureFileApplied ~= textureFile then
+			texture:SetTexture(textureFile, "REPEAT", "CLAMP")
+			state.textureFileApplied = textureFile
+			state.textureObject = texture
+		end
+
+		if state.horizTile ~= true then
+			texture:SetHorizTile(true)
+			state.horizTile = true
+		end
+
+		if state.vertTile ~= false then
+			texture:SetVertTile(false)
+			state.vertTile = false
+		end
+
+		if state.blendMode ~= blendMode then
+			texture:SetBlendMode(blendMode)
+			state.blendMode = blendMode
+		end
 	end
 end
 
@@ -74,10 +189,37 @@ local function ApplyAppearanceToOverAbsorbGlow(glow)
 	if not glow or glow:IsForbidden() or not glow:IsVisible() then return end
 	local db = OvershieldsReforged.db.profile
 	if not db then return end
+	local state = GetStyleState(glow)
+	local glowColor = db.overAbsorbGlowColor
+	if not state or not glowColor then return end
 
-	glow:SetVertexColor(db.overAbsorbGlowColor.r, db.overAbsorbGlowColor.g, db.overAbsorbGlowColor.b, db.overAbsorbGlowColor.a)
-	glow:SetTexture(db.overAbsorbGlowTexture)
-	glow:SetBlendMode(db.overAbsorbGlowBlendMode)
+	local colorR = glowColor.r or 1
+	local colorG = glowColor.g or 1
+	local colorB = glowColor.b or 1
+	local colorA = glowColor.a or 1
+	local textureFile = db.overAbsorbGlowTexture or "Interface\\RaidFrame\\Shield-Overshield"
+	local blendMode = db.overAbsorbGlowBlendMode or "ADD"
+
+	if state.colorR ~= colorR
+		or state.colorG ~= colorG
+		or state.colorB ~= colorB
+		or state.colorA ~= colorA then
+		glow:SetVertexColor(colorR, colorG, colorB, colorA)
+		state.colorR = colorR
+		state.colorG = colorG
+		state.colorB = colorB
+		state.colorA = colorA
+	end
+
+	if state.textureFile ~= textureFile then
+		glow:SetTexture(textureFile)
+		state.textureFile = textureFile
+	end
+
+	if state.blendMode ~= blendMode then
+		glow:SetBlendMode(blendMode)
+		state.blendMode = blendMode
+	end
 end
 
 --- Applies appearance settings to a native Bliz-owned glow, guarded against forbidden frames.
@@ -92,6 +234,11 @@ end
 -- @param frame The compact unit frame
 -- @param glowVisible true when overAbsorb glow is active
 local function ApplyAppearanceToFrame(frame, glowVisible)
+	if not OvershieldsReforged:IsFrameContextEnabled(frame) then
+		HideCustomBars(frame)
+		return
+	end
+
 	ApplyAppearanceToBar(ns.absorbCache[frame], glowVisible)
 	ApplyAppearanceToOverlay(ns.overlayCache[frame], glowVisible)
 	ApplyAppearanceToNativeBar(frame.totalAbsorb, glowVisible)
@@ -114,8 +261,12 @@ end
 local function UpdateFramePool(prefix, count)
 	for i = 1, count do
 		local frame = _G[prefix .. i]
-		if frame and frame:IsShown() and frame.displayedUnit then
-			ApplyAppearanceToFrame(frame, IsGlowVisible(frame))
+		if frame and frame.displayedUnit then
+			if frame:IsShown() then
+				ApplyAppearanceToFrame(frame, IsGlowVisible(frame))
+			else
+				HideCustomBars(frame)
+			end
 		end
 	end
 end
@@ -123,18 +274,37 @@ end
 --- Iterates all visible compact unit frames and applies current appearance settings.
 -- Called after any appearance setting changes.
 local function UpdateAllFrameAppearances()
+	local profile = OvershieldsReforged.db and OvershieldsReforged.db.profile
+	if not profile then
+		return
+	end
+
 	-- Party frames (1–5)
-	UpdateFramePool("CompactPartyFrameMember", 5)
+	if profile.enableParty ~= false then
+		UpdateFramePool("CompactPartyFrameMember", 5)
+	else
+		HideCachedBarsByPredicate(function(frame)
+			return frame and frame.displayedUnit and string.find(frame.displayedUnit, "party", 1, true) and not string.find(frame.displayedUnit, "pet", 1, true)
+		end)
+	end
 
 	-- Raid frames (1–40)
-	if IsInRaid() then
+	if IsInRaid() and profile.enableRaid ~= false then
 		UpdateFramePool("CompactRaidFrame", 40)
+	elseif IsInRaid() then
+		HideCachedBarsByPredicate(function(frame)
+			return frame and frame.displayedUnit and string.find(frame.displayedUnit, "raid", 1, true) and not string.find(frame.displayedUnit, "pet", 1, true)
+		end)
 	end
 
 	-- Pet frames
-	if CompactRaidFrameContainer and CompactRaidFrameContainer.displayPets then
+	if CompactRaidFrameContainer and CompactRaidFrameContainer.displayPets and profile.enablePets ~= false then
 		local petPrefix = IsInRaid() and "CompactRaidFramePet" or "CompactPartyFramePet"
 		UpdateFramePool(petPrefix, 40)
+	elseif CompactRaidFrameContainer and CompactRaidFrameContainer.displayPets then
+		HideCachedBarsByPredicate(function(frame)
+			return frame and frame.displayedUnit and string.find(frame.displayedUnit, "pet", 1, true)
+		end)
 	end
 end
 
