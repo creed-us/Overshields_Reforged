@@ -17,6 +17,46 @@ local overlayContainers = {}
 ns.absorbCache = containers
 ns.overlayCache = overlayContainers
 
+local function PerfCount(counterName, delta)
+	if ns.RecordPerf then
+		ns.RecordPerf(counterName, delta)
+	end
+end
+
+local UPDATE_POLICY_FRAMES = {
+	fast = 1,
+	balanced = 2,
+	efficient = 4,
+}
+
+local framesSinceBatch = 0
+
+local function GetUpdatePolicyFrameCadence(db)
+	if not db then
+		return UPDATE_POLICY_FRAMES.balanced
+	end
+
+	local policy = db.updatePolicy
+	local cadence = UPDATE_POLICY_FRAMES[policy]
+	if cadence == nil then
+		return UPDATE_POLICY_FRAMES.balanced
+	end
+
+	return cadence
+end
+
+local function HideCustomBars(frame)
+	local absorb = containers[frame]
+	if absorb then
+		absorb:Hide()
+	end
+
+	local overlay = overlayContainers[frame]
+	if overlay then
+		overlay:Hide()
+	end
+end
+
 --- Creates or retrieves the custom shield bar for a compact unit frame.
 -- @param frame The compact unit frame to process
 -- @return StatusBar frame for absorb display, or nil if healthBar unavailable
@@ -68,6 +108,12 @@ end
 -- Appearance is managed exclusively by AppearanceManager.
 -- @param frame The compact unit frame to update
 local function HandleCompactUnitFrameUpdate(frame)
+	if not OvershieldsReforged:IsFrameContextEnabled(frame) then
+		PerfCount("queueSkippedContext")
+		HideCustomBars(frame)
+		return
+	end
+
 	local unit = frame.displayedUnit
 	if not unit or not UnitExists(unit) then return end
 
@@ -103,6 +149,10 @@ end
 --- Hook into Bliz's fill bar update to prevent native absorb bars from interfering.
 -- Clears anchor points on non-forbidden frames to suppress the native bar layout.
 hooksecurefunc("CompactUnitFrameUtil_UpdateFillBar", function(frame, _, bar)
+	if not OvershieldsReforged:IsFrameContextEnabled(frame) then
+		return
+	end
+
 	if bar == frame.totalAbsorb or bar == frame.totalAbsorbOverlay or bar == frame.overAbsorbGlow then
 		if bar and not bar:IsForbidden() then
 			bar:ClearAllPoints()
@@ -114,9 +164,25 @@ end)
 batchFrame:SetScript("OnUpdate", function()
 	local db = OvershieldsReforged.db.profile
 	if not db then return end
+	PerfCount("onUpdateBatches")
 
+	local frameCadence = GetUpdatePolicyFrameCadence(db)
+	if frameCadence > 1 then
+		framesSinceBatch = framesSinceBatch + 1
+		if framesSinceBatch < frameCadence then
+			return
+		end
+	end
+	framesSinceBatch = 0
+
+	local processed = 0
 	for frame in next, updateQueue do
+		processed = processed + 1
 		HandleCompactUnitFrameUpdate(frame)
+	end
+
+	if processed > 0 then
+		PerfCount("queueProcessed", processed)
 	end
 
 	wipe(updateQueue)
@@ -127,7 +193,23 @@ end)
 -- Frames are batched and processed during the next OnUpdate cycle for efficiency.
 -- @param frame The compact unit frame to queue for update
 function ns.QueueCompactUnitFrameUpdate(frame)
-	if not frame or updateQueue[frame] then return end
+	if not frame then
+		PerfCount("queueDroppedInvalid")
+		return
+	end
+
+	if updateQueue[frame] then
+		PerfCount("queueDroppedDuplicate")
+		return
+	end
+
+	if not OvershieldsReforged:IsFrameContextEnabled(frame) then
+		PerfCount("queueSkippedContext")
+		HideCustomBars(frame)
+		return
+	end
+
+	PerfCount("queueEnqueued")
 	updateQueue[frame] = true
 	batchFrame:Show()
 end
