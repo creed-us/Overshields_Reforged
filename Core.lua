@@ -9,7 +9,6 @@ end
 function OvershieldsReforged:OnInitialize()
 	self:InitializeDatabase()
 	self:SetupOptions()
-	self:RefreshPerformanceDiagnosticsState()
 end
 
 function OvershieldsReforged:OnEnable()

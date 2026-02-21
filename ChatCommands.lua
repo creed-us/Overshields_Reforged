@@ -18,13 +18,6 @@ function addon:HandleSlashCommand(input)
 
 	if command == "version" or command == "v" then
 		self:Print("Version: " .. C_AddOns.GetAddOnMetadata(ADDON_NAME, "Version"))
-	elseif command == "perf" or command == "p" then
-		if argument == "reset" then
-			self:ResetPerformanceStats()
-			self:Print("Performance counters reset.")
-		else
-			self:PrintPerformanceStats()
-		end
 	elseif command == "status" or command == "s" then
 		local profile = self.db and self.db.profile
 		if not profile then
@@ -56,8 +49,6 @@ function addon:HandleSlashCommand(input)
 	else
 		self:Print("Usage:")
 		self:Print("/osr version (v) - Display the addon version.")
-		self:Print("/osr perf (p) - Show performance diagnostics.")
-		self:Print("/osr perf reset - Reset performance diagnostics counters.")
 		self:Print("/osr status (s) - Show enable and frame-scope settings.")
 		self:Print("/osr options (o) - Open the addon options.")
 		self:Print("/osr reset (r) - Reset all settings to default and reload the UI.")

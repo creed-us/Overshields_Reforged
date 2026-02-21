@@ -17,12 +17,6 @@ local overlayContainers = {}
 ns.absorbCache = containers
 ns.overlayCache = overlayContainers
 
-local function PerfCount(counterName, delta)
-	if ns.RecordPerf then
-		ns.RecordPerf(counterName, delta)
-	end
-end
-
 local UPDATE_POLICY_FRAMES = {
 	fast = 1,
 	balanced = 2,
@@ -109,7 +103,6 @@ end
 -- @param frame The compact unit frame to update
 local function HandleCompactUnitFrameUpdate(frame)
 	if not OvershieldsReforged:IsFrameContextEnabled(frame) then
-		PerfCount("queueSkippedContext")
 		HideCustomBars(frame)
 		return
 	end
@@ -164,7 +157,6 @@ end)
 batchFrame:SetScript("OnUpdate", function()
 	local db = OvershieldsReforged.db.profile
 	if not db then return end
-	PerfCount("onUpdateBatches")
 
 	local frameCadence = GetUpdatePolicyFrameCadence(db)
 	if frameCadence > 1 then
@@ -181,10 +173,6 @@ batchFrame:SetScript("OnUpdate", function()
 		HandleCompactUnitFrameUpdate(frame)
 	end
 
-	if processed > 0 then
-		PerfCount("queueProcessed", processed)
-	end
-
 	wipe(updateQueue)
 	batchFrame:Hide()
 end)
@@ -194,22 +182,18 @@ end)
 -- @param frame The compact unit frame to queue for update
 function ns.QueueCompactUnitFrameUpdate(frame)
 	if not frame then
-		PerfCount("queueDroppedInvalid")
 		return
 	end
 
 	if updateQueue[frame] then
-		PerfCount("queueDroppedDuplicate")
 		return
 	end
 
 	if not OvershieldsReforged:IsFrameContextEnabled(frame) then
-		PerfCount("queueSkippedContext")
 		HideCustomBars(frame)
 		return
 	end
 
-	PerfCount("queueEnqueued")
 	updateQueue[frame] = true
 	batchFrame:Show()
 end

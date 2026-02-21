@@ -14,7 +14,6 @@ local defaults = {
 		enablePets = false,
 		updatePolicy = "balanced",
 		appearanceRefreshDebounce = 0.02,
-		perfDiagnostics = false,
 		-- Normal shield appearance (overAbsorbGlow not visible)
 		absorbColor = { r = 1, g = 1, b = 1, a = 0.75 },
 		absorbTexture = "Interface\\RaidFrame\\Shield-Fill",
@@ -63,15 +62,8 @@ local function GetAppearanceRefreshDebounceDelay()
 end
 
 local function OnAppearanceChanged()
-	if ns.RecordPerf then
-		ns.RecordPerf("appearanceRefreshRequests")
-	end
-
 	local delay = GetAppearanceRefreshDebounceDelay()
 	if delay <= 0 or not C_Timer or not C_Timer.After then
-		if ns.RecordPerf then
-			ns.RecordPerf("appearanceRefreshRuns")
-		end
 		ns.UpdateAllFrameAppearances()
 		return
 	end
@@ -81,58 +73,12 @@ local function OnAppearanceChanged()
 
 	C_Timer.After(delay, function()
 		if refreshToken ~= pendingAppearanceRefreshToken then
-			if ns.RecordPerf then
-				ns.RecordPerf("appearanceRefreshSuperseded")
-			end
 			return
-		end
-		if ns.RecordPerf then
-			ns.RecordPerf("appearanceRefreshRuns")
 		end
 		ns.UpdateAllFrameAppearances()
 	end)
 end
 
-local PERF_TAB_REFRESH_SECONDS = 2
-local performanceLiveRefreshPending = false
-
-local function IsPerformanceDiagnosticsEnabled()
-	local profile = OvershieldsReforged and OvershieldsReforged.db and OvershieldsReforged.db.profile
-	return profile and profile.perfDiagnostics == true
-end
-
-local function SchedulePerformanceLiveRefresh()
-	if performanceLiveRefreshPending or not C_Timer or not C_Timer.After or not IsPerformanceDiagnosticsEnabled() then
-		return
-	end
-
-	performanceLiveRefreshPending = true
-	C_Timer.After(PERF_TAB_REFRESH_SECONDS, function()
-		performanceLiveRefreshPending = false
-		if not IsPerformanceDiagnosticsEnabled() then
-			return
-		end
-		AceConfigRegistry:NotifyChange("Overshields Reforged")
-	end)
-end
-
-local function BuildPerformanceLiveText()
-	if not OvershieldsReforged or not OvershieldsReforged.GetPerformanceSummaryLines then
-		return "Live diagnostics are unavailable."
-	end
-
-	if IsPerformanceDiagnosticsEnabled() then
-		SchedulePerformanceLiveRefresh()
-	end
-
-	local lines = OvershieldsReforged:GetPerformanceSummaryLines()
-	if not lines or #lines == 0 then
-		return "Live diagnostics are unavailable."
-	end
-
-	local header = string.format("Live Metrics (updates every %ds while this options page is open)", PERF_TAB_REFRESH_SECONDS)
-	return header .. "\n" .. table.concat(lines, "\n")
-end
 
 --- Static blend mode map.
 local BLEND_MODES = {
@@ -246,94 +192,41 @@ function OvershieldsReforged:SetupOptions()
 				name = "Performance",
 				order = -0.5,
 				args = {
-					settingsGroup = {
-						type = "group",
-						name = "Performance Settings",
+					updatePolicy = {
+						type = "select",
+						name = "Update Policy",
+						desc = "Queue cadence by frame count.",
 						order = 1,
-						inline = true,
-						args = {
-							updatePolicy = {
-								type = "select",
-								name = "Update Policy",
-								desc = "Queue cadence by frame count.",
-								order = 1,
-								values = UPDATE_POLICIES,
-								get = function()
-									local policy = self.db.profile.updatePolicy
-									if UPDATE_POLICIES[policy] == nil then
-										return defaults.profile.updatePolicy
-									end
-									return policy
-								end,
-								set = function(_, value)
-									self.db.profile.updatePolicy = value
-								end,
-							},
-							appearanceRefreshDebounce = {
-								type = "range",
-								name = "Refresh Debounce (Seconds)",
-								desc = "Delay before applying appearance changes. Higher values reduce full-frame refresh frequency while adjusting settings.",
-								order = 2,
-								min = 0,
-								max = 0.25,
-								step = 0.01,
-								get = function()
-									local delay = self.db.profile.appearanceRefreshDebounce
-									if type(delay) ~= "number" then
-										return defaults.profile.appearanceRefreshDebounce
-									end
-									return delay
-								end,
-								set = function(_, value)
-									self.db.profile.appearanceRefreshDebounce = value
-								end,
-							},
-						},
+						values = UPDATE_POLICIES,
+						get = function()
+							local policy = self.db.profile.updatePolicy
+							if UPDATE_POLICIES[policy] == nil then
+								return defaults.profile.updatePolicy
+							end
+							return policy
+						end,
+						set = function(_, value)
+							self.db.profile.updatePolicy = value
+						end,
 					},
-					diagnosticsGroup = {
-						type = "group",
-						name = "Performance Diagnostics",
+					appearanceRefreshDebounce = {
+						type = "range",
+						name = "Refresh Debounce (Seconds)",
+						desc = "Delay before applying appearance changes. Higher values reduce full-frame refresh frequency while adjusting settings.",
 						order = 2,
-						inline = true,
-						args = {
-							perfDiagnostics = {
-								type = "toggle",
-								name = "Track Metrics",
-								desc = "Track lightweight runtime counters for /osr perf reporting.",
-								order = 1,
-								get = function() return self.db.profile.perfDiagnostics == true end,
-								set = function(_, value)
-									self.db.profile.perfDiagnostics = value
-									self:RefreshPerformanceDiagnosticsState()
-									AceConfigRegistry:NotifyChange("Overshields Reforged")
-								end,
-							},
-							resetPerfCounters = {
-								type = "execute",
-								name = "|TInterface\\Buttons\\UI-RefreshButton:16:16|t Reset",
-								desc = "Reset counters displayed by /osr perf.",
-								order = 2,
-								func = function()
-									self:ResetPerformanceStats()
-									AceConfigRegistry:NotifyChange("Overshields Reforged")
-								end,
-								disabled = function()
-									return self.db.profile.perfDiagnostics ~= true
-								end,
-							},
-							liveHeader = {
-								type = "header",
-								name = "Live Diagnostics",
-								order = 10,
-							},
-							liveStats = {
-								type = "description",
-								name = BuildPerformanceLiveText,
-								order = 11,
-								fontSize = "medium",
-								width = "full",
-							},
-						},
+						min = 0,
+						max = 0.25,
+						step = 0.01,
+						get = function()
+							local delay = self.db.profile.appearanceRefreshDebounce
+							if type(delay) ~= "number" then
+								return defaults.profile.appearanceRefreshDebounce
+							end
+							return delay
+						end,
+						set = function(_, value)
+							self.db.profile.appearanceRefreshDebounce = value
+						end,
 					},
 				},
 			},
