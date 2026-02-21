@@ -12,8 +12,7 @@ local defaults = {
 		enableParty = true,
 		enableRaid = true,
 		enablePets = false,
-		updatePolicy = "balanced",
-		appearanceRefreshDebounce = 0.02,
+		appearanceRefreshDebounce = 0.01,
 		-- Normal shield appearance (overAbsorbGlow not visible)
 		absorbColor = { r = 1, g = 1, b = 1, a = 0.75 },
 		absorbTexture = "Interface\\RaidFrame\\Shield-Fill",
@@ -89,12 +88,6 @@ local BLEND_MODES = {
 	["MOD"] = "Mod",
 }
 
-local UPDATE_POLICIES = {
-	fast = "Fast",
-	balanced = "Balanced",
-	efficient = "Efficient",
-}
-
 --- Lazily uilds the texture dropdown value table for bar/overlay selectors to catch late-registered LSM textures.
 local function TextureDropdownValues()
 	local values = {
@@ -145,91 +138,6 @@ function OvershieldsReforged:SetupOptions()
 		name = "Overshields Reforged",
 		childGroups = "tab",
 		args = {
-			general = {
-				type = "group",
-				name = "General",
-				order = -1,
-				args = {
-					modifyHeader = {
-						type = "header",
-						name = "Modify Compact Frames",
-						order = 0,
-					},
-					enableParty = {
-						type = "toggle",
-						name = "Party",
-						order = 1,
-						get = function() return self.db.profile.enableParty ~= false end,
-						set = function(_, value)
-							self.db.profile.enableParty = value
-							OnAppearanceChanged()
-						end,
-					},
-					enableRaid = {
-						type = "toggle",
-						name = "Raid",
-						order = 2,
-						get = function() return self.db.profile.enableRaid ~= false end,
-						set = function(_, value)
-							self.db.profile.enableRaid = value
-							OnAppearanceChanged()
-						end,
-					},
-					enablePets = {
-						type = "toggle",
-						name = "Pets",
-						order = 3,
-						get = function() return self.db.profile.enablePets ~= false end,
-						set = function(_, value)
-							self.db.profile.enablePets = value
-							OnAppearanceChanged()
-						end,
-					},
-				},
-			},
-			performance = {
-				type = "group",
-				name = "Performance",
-				order = -0.5,
-				args = {
-					updatePolicy = {
-						type = "select",
-						name = "Update Policy",
-						desc = "Queue cadence by frame count.",
-						order = 1,
-						values = UPDATE_POLICIES,
-						get = function()
-							local policy = self.db.profile.updatePolicy
-							if UPDATE_POLICIES[policy] == nil then
-								return defaults.profile.updatePolicy
-							end
-							return policy
-						end,
-						set = function(_, value)
-							self.db.profile.updatePolicy = value
-						end,
-					},
-					appearanceRefreshDebounce = {
-						type = "range",
-						name = "Refresh Debounce (Seconds)",
-						desc = "Delay before applying appearance changes. Higher values reduce full-frame refresh frequency while adjusting settings.",
-						order = 2,
-						min = 0,
-						max = 0.25,
-						step = 0.01,
-						get = function()
-							local delay = self.db.profile.appearanceRefreshDebounce
-							if type(delay) ~= "number" then
-								return defaults.profile.appearanceRefreshDebounce
-							end
-							return delay
-						end,
-						set = function(_, value)
-							self.db.profile.appearanceRefreshDebounce = value
-						end,
-					},
-				},
-			},
 			-- Normal shield appearance (overAbsorbGlow not visible)
 			absorbHeader = {
 				type = "group",
@@ -535,6 +443,48 @@ function OvershieldsReforged:SetupOptions()
 								end,
 							},
 						},
+					},
+				},
+			},
+			behavior = {
+				type = "group",
+				name = "Behavior",
+				order = 2,
+				args = {
+					modifyHeader = {
+						type = "header",
+						name = "Modify Compact Frames",
+						order = 0,
+					},
+					enableParty = {
+						type = "toggle",
+						name = "Party",
+						order = 1,
+						get = function() return self.db.profile.enableParty ~= false end,
+						set = function(_, value)
+							self.db.profile.enableParty = value
+							OnAppearanceChanged()
+						end,
+					},
+					enableRaid = {
+						type = "toggle",
+						name = "Raid",
+						order = 2,
+						get = function() return self.db.profile.enableRaid ~= false end,
+						set = function(_, value)
+							self.db.profile.enableRaid = value
+							OnAppearanceChanged()
+						end,
+					},
+					enablePets = {
+						type = "toggle",
+						name = "Pets",
+						order = 3,
+						get = function() return self.db.profile.enablePets ~= false end,
+						set = function(_, value)
+							self.db.profile.enablePets = value
+							OnAppearanceChanged()
+						end,
 					},
 				},
 			},
