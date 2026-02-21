@@ -17,28 +17,6 @@ local overlayContainers = {}
 ns.absorbCache = containers
 ns.overlayCache = overlayContainers
 
-local UPDATE_POLICY_FRAMES = {
-	fast = 1,
-	balanced = 2,
-	efficient = 4,
-}
-
-local framesSinceBatch = 0
-
-local function GetUpdatePolicyFrameCadence(db)
-	if not db then
-		return UPDATE_POLICY_FRAMES.balanced
-	end
-
-	local policy = db.updatePolicy
-	local cadence = UPDATE_POLICY_FRAMES[policy]
-	if cadence == nil then
-		return UPDATE_POLICY_FRAMES.balanced
-	end
-
-	return cadence
-end
-
 local function HideCustomBars(frame)
 	local absorb = containers[frame]
 	if absorb then
@@ -157,15 +135,6 @@ end)
 batchFrame:SetScript("OnUpdate", function()
 	local db = OvershieldsReforged.db.profile
 	if not db then return end
-
-	local frameCadence = GetUpdatePolicyFrameCadence(db)
-	if frameCadence > 1 then
-		framesSinceBatch = framesSinceBatch + 1
-		if framesSinceBatch < frameCadence then
-			return
-		end
-	end
-	framesSinceBatch = 0
 
 	local processed = 0
 	for frame in next, updateQueue do
