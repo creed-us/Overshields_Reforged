@@ -29,7 +29,6 @@ function addon:HandleSlashCommand(input)
 		self:Print("Raid: " .. (IsSettingEnabled(profile.enableRaid) and "On" or "Off"))
 		self:Print("Pets: " .. (IsSettingEnabled(profile.enablePets) and "On" or "Off"))
 	elseif command == "options" or command == "o" then
-		self:Print("Opening options...")
 		self:OpenOptions()
 	elseif command == "reset" or command == "r" then
 		StaticPopupDialogs["OVERSHIELDS_REFORGED_RESET"] = {
