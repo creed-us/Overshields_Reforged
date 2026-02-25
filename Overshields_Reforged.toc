@@ -9,7 +9,9 @@
 
 ## OptionalDeps: Ace3, LibSharedMedia-3.0
 
+#@@no-lib-strip@@
 embeds.xml
+#@@end-no-lib-strip@@
 
 Core.lua
 ChatCommands.lua
