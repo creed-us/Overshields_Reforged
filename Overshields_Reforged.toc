@@ -7,8 +7,9 @@
 ## X-Curse-Project-ID: 1245082
 ## SavedVariables: OvershieldsReforgedDB
 
-## RequiredDeps: Ace3
-## OptionalDeps: LibSharedMedia-3.0
+## OptionalDeps: Ace3, LibSharedMedia-3.0
+
+embeds.xml
 
 Core.lua
 ChatCommands.lua
