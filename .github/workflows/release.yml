@@ -24,7 +24,7 @@ jobs:
               with:
                   args: -n "{package-name}-{project-version}"
 
-            - name: Package
+            - name: Package no-lib
               uses: BigWigsMods/packager@v2
               with:
                   args: -n "{package-name}-{project-version}" -s
