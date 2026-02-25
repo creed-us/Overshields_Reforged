@@ -19,10 +19,5 @@ jobs:
               with:
                   fetch-depth: 0
 
-            - name: Package
+            - name: Package & Release
               uses: BigWigsMods/packager@v2
-
-            - name: Package no-lib
-              uses: BigWigsMods/packager@v2
-              with:
-                  args: -s
