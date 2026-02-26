@@ -39,7 +39,7 @@ local pendingAppearanceRefreshToken = 0
 
 local function OnAppearanceChanged()
 	local delay = 0.01 -- >0 to prevent perf. tank while changing appearance in options
-	if delay <= 0 or not C_Timer or not C_Timer.After then
+	if not C_Timer or not C_Timer.After then
 		ns.UpdateAllFrameAppearances()
 		return
 	end
