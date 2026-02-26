@@ -29,50 +29,27 @@ local function HideCustomBars(frame)
 	end
 end
 
---- Creates or retrieves the custom shield bar for a compact unit frame.
--- @param frame The compact unit frame to process
--- @return StatusBar frame for absorb display, or nil if healthBar unavailable
-local function GetOrCreateAbsorb(frame)
-	if containers[frame] then
-		return containers[frame]
-	end
+--- Creates or retrieves a custom StatusBar for a compact unit frame.
+-- @param cache The cache table to read/write
+-- @param frame The compact unit frame
+-- @param levelOffset Frame level offset from healthBar (0 = absorb, 1 = overlay)
+-- @return StatusBar frame, or nil if healthBar unavailable
+local function GetOrCreate(cache, frame, levelOffset)
+	if cache[frame] then return cache[frame] end
 
 	local healthBar = frame.healthBar
 	if not healthBar then return nil end
 
-	local absorb = CreateFrame("StatusBar", nil, healthBar)
-	absorb:SetAllPoints(healthBar)
-	absorb:SetReverseFill(true)
-	absorb:SetFrameLevel(healthBar:GetFrameLevel())
-	absorb:SetFrameStrata(healthBar:GetFrameStrata())
-	absorb:Hide()
+	local bar = CreateFrame("StatusBar", nil, healthBar)
+	bar:SetAllPoints(healthBar)
+	bar:SetReverseFill(true)
+	bar:SetFrameLevel(healthBar:GetFrameLevel() + levelOffset)
+	bar:SetFrameStrata(healthBar:GetFrameStrata())
+	bar:Hide()
 
-	containers[frame] = absorb
+	cache[frame] = bar
 
-	return absorb
-end
-
---- Creates or retrieves the custom overlay bar for a compact unit frame.
--- @param frame The compact unit frame to process
--- @return StatusBar frame for overlay display, or nil if healthBar unavailable
-local function GetOrCreateOverlay(frame)
-	if overlayContainers[frame] then
-		return overlayContainers[frame]
-	end
-
-	local healthBar = frame.healthBar
-	if not healthBar then return nil end
-
-	local overlay = CreateFrame("StatusBar", nil, healthBar)
-	overlay:SetAllPoints(healthBar)
-	overlay:SetReverseFill(true)
-	overlay:SetFrameLevel(healthBar:GetFrameLevel() + 1)
-	overlay:SetFrameStrata(healthBar:GetFrameStrata())
-	overlay:Hide()
-
-	overlayContainers[frame] = overlay
-
-	return overlay
+	return bar
 end
 
 --- Updates a compact unit frame with current absorb bar values and glow state.
@@ -99,7 +76,7 @@ local function HandleCompactUnitFrameUpdate(frame)
 	local absorbValue = UnitGetTotalAbsorbs(unit) or 0
 
 	-- Update custom shield bar values
-	local absorb = GetOrCreateAbsorb(frame)
+	local absorb = GetOrCreate(containers, frame, 0)
 	if absorb then
 		absorb:SetMinMaxValues(0, maxHealth)
 		absorb:SetValue(absorbValue)
@@ -108,7 +85,7 @@ local function HandleCompactUnitFrameUpdate(frame)
 	end
 
 	-- Update custom overlay bar values
-	local overlay = GetOrCreateOverlay(frame)
+	local overlay = GetOrCreate(overlayContainers, frame, 1)
 	if overlay then
 		overlay:SetMinMaxValues(0, maxHealth)
 		overlay:SetValue(absorbValue)
@@ -133,7 +110,7 @@ end)
 
 --- Process queued frame updates once per cycle.
 batchFrame:SetScript("OnUpdate", function()
-	local db = OvershieldsReforged.db.profile
+	local db = OvershieldsReforged.db and OvershieldsReforged.db.profile
 	if not db then return end
 
 	for frame in next, updateQueue do

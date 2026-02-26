@@ -61,41 +61,21 @@ local function HideCachedBarsByPredicate(predicate)
 	end
 end
 
---- Applies appearance settings (color, texture, blend mode, and tiling) to a status bar.
--- Uses SetTexCoord for proper tiling based on frame dimensions (Bliz method).
--- @param bar The status bar frame to style
--- @param glowVisible true when overAbsorb glow is active on the parent frame
-local function ApplyAppearanceToBar(bar, glowVisible)
-	if not bar or not bar.SetStatusBarColor then return end
-	local db = OvershieldsReforged.db.profile
-	if not db then return end
-
-	local colorTable = glowVisible and db.overAbsorbColor or db.absorbColor
-	local textureFile = glowVisible and db.overAbsorbTexture or db.absorbTexture
-	local blendMode = glowVisible and db.overAbsorbBlendMode or db.absorbBlendMode
-	local state = GetStyleState(bar)
-	if not state or not colorTable then return end
-
-	local colorR = colorTable.r or 1
-	local colorG = colorTable.g or 1
-	local colorB = colorTable.b or 1
-	local colorA = colorTable.a or 1
-	textureFile = textureFile or "Interface\\RaidFrame\\Shield-Fill"
-	blendMode = blendMode or "ADD"
-
+--- Applies color to a StatusBar only when the cached value has changed.
+local function ApplyStatusBarColor(bar, state, colorR, colorG, colorB, colorA)
 	if state.colorR ~= colorR or state.colorG ~= colorG or state.colorB ~= colorB or state.colorA ~= colorA then
 		bar:SetStatusBarColor(colorR, colorG, colorB, colorA)
-		state.colorR = colorR
-		state.colorG = colorG
-		state.colorB = colorB
-		state.colorA = colorA
+		state.colorR, state.colorG, state.colorB, state.colorA = colorR, colorG, colorB, colorA
 	end
+end
 
+--- Applies texture and blend mode to a StatusBar only when cached values have changed.
+-- @param applyTiling When true, sets horizTile=true and vertTile=false (used by overlay bars)
+local function ApplyStatusBarTextureAndBlend(bar, state, textureFile, blendMode, applyTiling)
 	if state.textureFile ~= textureFile then
 		bar:SetStatusBarTexture(textureFile)
 		state.textureFile = textureFile
 	end
-
 	local texture = bar:GetStatusBarTexture()
 	if texture then
 		if state.textureObject ~= texture or state.textureFileApplied ~= textureFile then
@@ -103,12 +83,34 @@ local function ApplyAppearanceToBar(bar, glowVisible)
 			state.textureFileApplied = textureFile
 			state.textureObject = texture
 		end
-
+		if applyTiling then
+			if state.horizTile ~= true then texture:SetHorizTile(true); state.horizTile = true end
+			if state.vertTile ~= false then texture:SetVertTile(false); state.vertTile = false end
+		end
 		if state.blendMode ~= blendMode then
 			texture:SetBlendMode(blendMode)
 			state.blendMode = blendMode
 		end
 	end
+end
+
+--- Applies appearance settings (color, texture, blend mode, and tiling) to a status bar.
+-- Uses SetTexCoord for proper tiling based on frame dimensions (Bliz method).
+-- @param bar The status bar frame to style
+-- @param glowVisible true when overAbsorb glow is active on the parent frame
+local function ApplyAppearanceToBar(bar, glowVisible)
+	if not bar or not bar.SetStatusBarColor then return end
+	local db = OvershieldsReforged.db and OvershieldsReforged.db.profile
+	if not db then return end
+
+	local colorTable = glowVisible and db.overAbsorbColor or db.absorbColor
+	local textureFile = (glowVisible and db.overAbsorbTexture or db.absorbTexture) or "Interface\\RaidFrame\\Shield-Fill"
+	local blendMode = (glowVisible and db.overAbsorbBlendMode or db.absorbBlendMode) or "ADD"
+	local state = GetStyleState(bar)
+	if not state or not colorTable then return end
+
+	ApplyStatusBarColor(bar, state, colorTable.r or 1, colorTable.g or 1, colorTable.b or 1, colorTable.a or 1)
+	ApplyStatusBarTextureAndBlend(bar, state, textureFile, blendMode, false)
 end
 
 --- Applies appearance settings to a native Bliz-owned bar.
@@ -126,58 +128,17 @@ end
 -- @param glowVisible true when overAbsorb glow is active on the parent frame
 local function ApplyAppearanceToOverlay(overlay, glowVisible)
 	if not overlay or not overlay.SetStatusBarColor then return end
-	local db = OvershieldsReforged.db.profile
+	local db = OvershieldsReforged.db and OvershieldsReforged.db.profile
 	if not db then return end
 
 	local colorTable = glowVisible and db.overAbsorbOverlayColor or db.overlayColor
-	local textureFile = glowVisible and db.overAbsorbOverlayTexture or db.overlayTexture
-	local blendMode = glowVisible and db.overAbsorbOverlayBlendMode or db.overlayBlendMode
+	local textureFile = (glowVisible and db.overAbsorbOverlayTexture or db.overlayTexture) or "Interface\\RaidFrame\\Shield-Overlay"
+	local blendMode = (glowVisible and db.overAbsorbOverlayBlendMode or db.overlayBlendMode) or "BLEND"
 	local state = GetStyleState(overlay)
 	if not state or not colorTable then return end
 
-	local colorR = colorTable.r or 1
-	local colorG = colorTable.g or 1
-	local colorB = colorTable.b or 1
-	local colorA = colorTable.a or 1
-	textureFile = textureFile or "Interface\\RaidFrame\\Shield-Overlay"
-	blendMode = blendMode or "BLEND"
-
-	if state.colorR ~= colorR or state.colorG ~= colorG or state.colorB ~= colorB or state.colorA ~= colorA then
-		overlay:SetStatusBarColor(colorR, colorG, colorB, colorA)
-		state.colorR = colorR
-		state.colorG = colorG
-		state.colorB = colorB
-		state.colorA = colorA
-	end
-
-	if state.textureFile ~= textureFile then
-		overlay:SetStatusBarTexture(textureFile)
-		state.textureFile = textureFile
-	end
-
-	local texture = overlay:GetStatusBarTexture()
-	if texture then
-		if state.textureObject ~= texture or state.textureFileApplied ~= textureFile then
-			texture:SetTexture(textureFile, "REPEAT", "CLAMP")
-			state.textureFileApplied = textureFile
-			state.textureObject = texture
-		end
-
-		if state.horizTile ~= true then
-			texture:SetHorizTile(true)
-			state.horizTile = true
-		end
-
-		if state.vertTile ~= false then
-			texture:SetVertTile(false)
-			state.vertTile = false
-		end
-
-		if state.blendMode ~= blendMode then
-			texture:SetBlendMode(blendMode)
-			state.blendMode = blendMode
-		end
-	end
+	ApplyStatusBarColor(overlay, state, colorTable.r or 1, colorTable.g or 1, colorTable.b or 1, colorTable.a or 1)
+	ApplyStatusBarTextureAndBlend(overlay, state, textureFile, blendMode, true)
 end
 
 --- Applies appearance settings to a native Bliz-owned overlay, guarded against forbidden frames.

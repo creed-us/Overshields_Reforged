@@ -5,6 +5,7 @@ OvershieldsReforged = AceAddon:NewAddon(ADDON_NAME, "AceEvent-3.0", "AceConsole-
 local function IsSettingEnabled(value)
 	return value ~= false
 end
+ns.IsSettingEnabled = IsSettingEnabled
 
 function OvershieldsReforged:OnInitialize()
 	self:InitializeDatabase()

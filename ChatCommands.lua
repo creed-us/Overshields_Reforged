@@ -1,13 +1,11 @@
-local ADDON_NAME, _ = ...
+local ADDON_NAME, ns = ...
 
 local addon = OvershieldsReforged
 if not addon then
 	return
 end
 
-local function IsSettingEnabled(value)
-	return value ~= false
-end
+local IsSettingEnabled = ns.IsSettingEnabled
 
 --- Handles slash commands.
 function addon:HandleSlashCommand(input)
