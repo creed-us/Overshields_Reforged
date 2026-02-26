@@ -65,7 +65,7 @@ local BLEND_MODES = {
 	["MOD"] = "Mod",
 }
 
---- Lazily uilds the texture dropdown value table for bar/overlay selectors to catch late-registered LSM textures.
+--- Lazily builds the texture dropdown value table for bar/overlay selectors to catch late-registered LSM textures.
 local function TextureDropdownValues()
 	local values = {
 		["Interface\\RaidFrame\\Shield-Overlay"] = "|TInterface\\RaidFrame\\Shield-Overlay:16:32|t Default Overlay",
