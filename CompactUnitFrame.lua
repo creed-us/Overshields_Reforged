@@ -136,9 +136,7 @@ batchFrame:SetScript("OnUpdate", function()
 	local db = OvershieldsReforged.db.profile
 	if not db then return end
 
-	local processed = 0
 	for frame in next, updateQueue do
-		processed = processed + 1
 		HandleCompactUnitFrameUpdate(frame)
 	end
 
