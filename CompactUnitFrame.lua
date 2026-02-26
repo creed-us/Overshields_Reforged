@@ -96,7 +96,7 @@ local function HandleCompactUnitFrameUpdate(frame)
 		ns.ApplyAppearanceToOverAbsorbGlow(glow)
 	end
 	local maxHealth = UnitHealthMax(unit) or 0
-	local absorbValue = UnitGetTotalAbsorbs(unit)
+	local absorbValue = UnitGetTotalAbsorbs(unit) or 0
 
 	-- Update custom shield bar values
 	local absorb = GetOrCreateAbsorb(frame)
