@@ -104,11 +104,6 @@ local function ApplyAppearanceToBar(bar, glowVisible)
 			state.textureObject = texture
 		end
 
-		if state.tileSize ~= 32 then
-			bar.tileSize = 32
-			state.tileSize = 32
-		end
-
 		if state.blendMode ~= blendMode then
 			texture:SetBlendMode(blendMode)
 			state.blendMode = blendMode
