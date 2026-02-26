@@ -300,9 +300,10 @@ local function UpdateAllFrameAppearances()
 	end
 
 	-- Raid frames (1–40)
-	if IsInRaid() and profile.enableRaid ~= false then
+	local inRaid = IsInRaid()
+	if inRaid and profile.enableRaid ~= false then
 		UpdateFramePool("CompactRaidFrame", 40)
-	elseif IsInRaid() then
+	elseif inRaid then
 		HideCachedBarsByPredicate(function(frame)
 			return frame and frame.displayedUnit and string.find(frame.displayedUnit, "raid", 1, true) and not string.find(frame.displayedUnit, "pet", 1, true)
 		end)
@@ -310,7 +311,7 @@ local function UpdateAllFrameAppearances()
 
 	-- Pet frames
 	if CompactRaidFrameContainer and CompactRaidFrameContainer.displayPets and profile.enablePets ~= false then
-		local petPrefix = IsInRaid() and "CompactRaidFramePet" or "CompactPartyFramePet"
+		local petPrefix = inRaid and "CompactRaidFramePet" or "CompactPartyFramePet"
 		UpdateFramePool(petPrefix, 40)
 	elseif CompactRaidFrameContainer and CompactRaidFrameContainer.displayPets then
 		HideCachedBarsByPredicate(function(frame)
