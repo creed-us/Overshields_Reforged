@@ -36,16 +36,16 @@ function OvershieldsReforged:IsUnitContextEnabled(unit)
 		return false
 	end
 
-	if string.find(unit, "pet", 1, true) then
-		return IsSettingEnabled(profile.enablePets)
-	end
-
 	if string.find(unit, "raid", 1, true) then
 		return IsSettingEnabled(profile.enableRaid)
 	end
 
 	if string.find(unit, "party", 1, true) then
 		return IsSettingEnabled(profile.enableParty)
+	end
+
+	if string.find(unit, "pet", 1, true) then
+		return IsSettingEnabled(profile.enablePets)
 	end
 
 	return IsSettingEnabled(profile.enableParty) or IsSettingEnabled(profile.enableRaid)
