@@ -30,6 +30,9 @@ local defaults = {
 		overAbsorbGlowColor = { r = 1, g = 1, b = 1, a = 1 },
 		overAbsorbGlowTexture = "Interface\\RaidFrame\\Shield-Overshield",
 		overAbsorbGlowBlendMode = "ADD",
+		-- Non-overshield anchor behavior
+		anchorShieldToHealth = false,
+		anchorToHealthTexture = true,
 	},
 }
 
@@ -309,6 +312,36 @@ function OvershieldsReforged:SetupOptions()
 						get = function() return self.db.profile.enablePets ~= false end,
 						set = function(_, value)
 							self.db.profile.enablePets = value
+							OnAppearanceChanged()
+						end,
+					},
+					anchorHeader = {
+						type = "header",
+						name = "Shield Positioning",
+						order = 10,
+					},
+					anchorShieldToHealth = {
+						type = "toggle",
+						name = "Dynamic Anchoring",
+						desc = "If enabled, shields will switch their anchoring behavior depending on whether a unit is overshielded.",
+						order = 11,
+						width = "full",
+						get = function() return self.db.profile.anchorShieldToHealth end,
+						set = function(_, value)
+							self.db.profile.anchorShieldToHealth = value
+							OnAppearanceChanged()
+						end,
+					},
+					anchorToHealthTexture = {
+						type = "toggle",
+						name = "Fill Missing Health",
+						desc = "When enabled, shields will appear to fill missing health while a unit is not overshielded. This display method is not entirely precise in determining actual shielding value.",
+						order = 12,
+						width = "full",
+						hidden = function() return not self.db.profile.anchorShieldToHealth end,
+						get = function() return self.db.profile.anchorToHealthTexture end,
+						set = function(_, value)
+							self.db.profile.anchorToHealthTexture = value
 							OnAppearanceChanged()
 						end,
 					},

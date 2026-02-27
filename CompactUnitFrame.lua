@@ -46,22 +46,72 @@ local function GetOrCreate(cache, frame, levelOffset)
 	bar:SetFrameLevel(healthBar:GetFrameLevel() + levelOffset)
 	bar:SetFrameStrata(healthBar:GetFrameStrata())
 	bar:Hide()
+	-- Track anchor mode for conditional positioning
+	bar._anchorMode = "default"
 
 	cache[frame] = bar
 
 	return bar
 end
 
---- Updates a compact unit frame with current absorb bar values and glow state.
--- Synchronizes bar values with unit API and glow visibility.
--- Appearance is managed exclusively by AppearanceManager.
--- @param frame The compact unit frame to update
-local function HandleCompactUnitFrameUpdate(frame)
-	if not OvershieldsReforged:IsFrameContextEnabled(frame) then
-		HideCustomBars(frame)
+--- Updates the anchor and fill direction for a bar based on overshield state and user setting.
+-- Uses pixel-based positioning from healthBar texture to avoid secret number arithmetic (Midnight 11.1+).
+-- @param bar The StatusBar to update
+-- @param healthBar The parent health bar
+-- @param glowVisible true when unit has overshield
+local function UpdateBarAnchor(bar, healthBar, glowVisible)
+	local db = OvershieldsReforged.db and OvershieldsReforged.db.profile
+	if not db then return end
+
+	local useHealthAnchor = db.anchorShieldToHealth and not glowVisible
+
+	-- Fast-fail: default mode is most common (dynamic anchoring disabled)
+	if not useHealthAnchor then
+		if bar._anchorMode ~= "default" then
+			bar._anchorMode = "default"
+			bar:ClearAllPoints()
+			bar:SetAllPoints(healthBar)
+			bar:SetReverseFill(true)
+		end
 		return
 	end
 
+	-- Health anchor modes - defer texture lookup until needed
+	local useTextureAnchor = db.anchorToHealthTexture
+
+	if useTextureAnchor then
+		-- Texture mode: layout engine tracks anchor automatically
+		if bar._anchorMode == "texture" then
+			return
+		end
+		local healthTexture = healthBar:GetStatusBarTexture()
+		if healthTexture then
+			bar._anchorMode = "texture"
+			bar:ClearAllPoints()
+			bar:SetPoint("TOPLEFT", healthTexture, "TOPRIGHT", 0, 0)
+			bar:SetPoint("BOTTOMRIGHT", healthBar, "BOTTOMRIGHT", 0, 0)
+			bar:SetReverseFill(false)
+		end
+	else
+		-- Pixel mode: must update offset each frame since health changes
+		local healthTexture = healthBar:GetStatusBarTexture()
+		local offset = healthTexture and healthTexture:GetWidth() or 0
+		bar:ClearAllPoints()
+		bar:SetPoint("TOPLEFT", healthBar, "TOPLEFT", offset, 0)
+		bar:SetPoint("BOTTOMRIGHT", healthBar, "BOTTOMRIGHT", 0, 0)
+		if bar._anchorMode ~= "health" then
+			bar:SetReverseFill(false)
+			bar._anchorMode = "health"
+		end
+	end
+end
+
+--- Updates a compact unit frame with current absorb bar values and glow state.
+-- Synchronizes bar values with unit API and glow visibility.
+-- Appearance is managed exclusively by AppearanceManager.
+-- Note: IsFrameContextEnabled check is done at queue time, not here.
+-- @param frame The compact unit frame to update
+local function HandleCompactUnitFrameUpdate(frame)
 	local unit = frame.displayedUnit
 	if not unit or not UnitExists(unit) then return end
 
@@ -72,12 +122,20 @@ local function HandleCompactUnitFrameUpdate(frame)
 	if (glowVisible) then
 		ns.ApplyAppearanceToOverAbsorbGlow(glow)
 	end
-	local maxHealth = UnitHealthMax(unit) or 0
+
+	local healthBar = frame.healthBar
+	if not healthBar then return end
+
+	-- Get max health from healthBar
+	local _, maxHealth = healthBar:GetMinMaxValues()
 	local absorbValue = UnitGetTotalAbsorbs(unit) or 0
 
 	-- Update custom shield bar values
+	-- Note: In health-anchor mode, shield fills proportionally to maxHealth within the
+	-- missing health area. This is a visual compromise to avoid secret number arithmetic.
 	local absorb = GetOrCreate(containers, frame, 0)
 	if absorb then
+		UpdateBarAnchor(absorb, healthBar, glowVisible)
 		absorb:SetMinMaxValues(0, maxHealth)
 		absorb:SetValue(absorbValue)
 		absorb:SetShown(frame:IsVisible())
@@ -87,6 +145,7 @@ local function HandleCompactUnitFrameUpdate(frame)
 	-- Update custom overlay bar values
 	local overlay = GetOrCreate(overlayContainers, frame, 1)
 	if overlay then
+		UpdateBarAnchor(overlay, healthBar, glowVisible)
 		overlay:SetMinMaxValues(0, maxHealth)
 		overlay:SetValue(absorbValue)
 		overlay:SetShown(frame:IsVisible())
