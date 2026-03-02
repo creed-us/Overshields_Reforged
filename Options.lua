@@ -32,7 +32,7 @@ local defaults = {
 		overAbsorbGlowBlendMode = "ADD",
 		-- Non-overshield anchor behavior
 		anchorShieldToHealth = false,
-		anchorToHealthTexture = true,
+		anchorToHealthTexture = false,
 	},
 }
 
@@ -192,12 +192,13 @@ function OvershieldsReforged:SetupOptions()
 			type = "group",
 			name = name,
 			order = order,
-			inline = false,
+			inline = true,
 			args = {
 				color = {
 					type = "color",
 					name = "Color",
 					order = 0,
+					width = 0.5,
 					hasAlpha = true,
 					get = function()
 						local c = self.db.profile[colorKey]
@@ -223,6 +224,7 @@ function OvershieldsReforged:SetupOptions()
 					type = "select",
 					name = "Blend Mode",
 					order = 2,
+					width = 0.5,
 					values = BLEND_MODES,
 					get = function() return self.db.profile[blendModeKey] end,
 					set = function(_, value)
@@ -232,9 +234,10 @@ function OvershieldsReforged:SetupOptions()
 				},
 				reset = {
 					type = "execute",
-					name = "|TInterface\\Buttons\\UI-RefreshButton:16:16|t Reset",
+					name = "|TInterface\\Buttons\\UI-RefreshButton:20:20|tReset",
 					desc = "Reset this group to the default configuration.",
 					order = -1,
+                    width = 0.5,
 					func = function()
 						local p = defaults.profile
 						self.db.profile[colorKey]     = p[colorKey]
@@ -287,7 +290,8 @@ function OvershieldsReforged:SetupOptions()
 					},
 					enableParty = {
 						type = "toggle",
-						name = "Party",
+                        name = "Party",
+						desc = "While enabled, raid-style party frames will be modified.",
 						order = 1,
 						get = function() return self.db.profile.enableParty ~= false end,
 						set = function(_, value)
@@ -298,6 +302,7 @@ function OvershieldsReforged:SetupOptions()
 					enableRaid = {
 						type = "toggle",
 						name = "Raid",
+						desc = "While enabled, raid frames will be modified.",
 						order = 2,
 						get = function() return self.db.profile.enableRaid ~= false end,
 						set = function(_, value)
@@ -308,6 +313,7 @@ function OvershieldsReforged:SetupOptions()
 					enablePets = {
 						type = "toggle",
 						name = "Pets",
+						desc = "While enabled, raid-style pet frames will be modified.",
 						order = 3,
 						get = function() return self.db.profile.enablePets ~= false end,
 						set = function(_, value)
@@ -323,7 +329,8 @@ function OvershieldsReforged:SetupOptions()
 					anchorShieldToHealth = {
 						type = "toggle",
 						name = "Dynamic Anchoring",
-						desc = "If enabled, shields will switch their anchoring behavior depending on whether a unit is overshielded.",
+                        desc = "Switch anchoring behavior depending on whether a unit is overshielded.",
+						descStyle = "inline",
 						order = 11,
 						width = "full",
 						get = function() return self.db.profile.anchorShieldToHealth end,
@@ -335,7 +342,8 @@ function OvershieldsReforged:SetupOptions()
 					anchorToHealthTexture = {
 						type = "toggle",
 						name = "Fill Missing Health",
-						desc = "When enabled, shields will appear to fill missing health while a unit is not overshielded. This display method is not entirely precise in determining actual shielding value.",
+                        desc = "Shields will appear to fill missing health while a unit is not overshielded. This display method is not precise in determining actual shielding value while a unit does not have overshields.",
+						descStyle = "inline",
 						order = 12,
 						width = "full",
 						hidden = function() return not self.db.profile.anchorShieldToHealth end,
