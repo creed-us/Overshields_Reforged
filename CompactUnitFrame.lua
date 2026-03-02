@@ -76,8 +76,7 @@ local function UpdateBarAnchor(bar, healthBar, glowVisible)
 		return
 	end
 
-	-- Health anchor modes - defer texture lookup until needed
-	local useTextureAnchor = db.anchorToHealthTexture
+	local useTextureAnchor = db.anchorToHealthTexture and useHealthAnchor
 
 	if useTextureAnchor then
 		-- Texture mode: layout engine tracks anchor automatically
