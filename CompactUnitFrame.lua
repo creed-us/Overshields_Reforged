@@ -65,7 +65,7 @@ local function UpdateBarAnchor(bar, healthBar, glowVisible)
 
 	local useHealthAnchor = db.anchorShieldToHealth and not glowVisible
 
-	-- Fast-fail: default mode is most common (dynamic anchoring disabled)
+	-- Default mode is most common (dynamic anchoring disabled)
 	if not useHealthAnchor then
 		if bar._anchorMode ~= "default" then
 			bar._anchorMode = "default"
@@ -79,7 +79,6 @@ local function UpdateBarAnchor(bar, healthBar, glowVisible)
 	local useTextureAnchor = db.anchorToHealthTexture and useHealthAnchor
 
 	if useTextureAnchor then
-		-- Texture mode: layout engine tracks anchor automatically
 		if bar._anchorMode == "texture" then
 			return
 		end
@@ -92,7 +91,6 @@ local function UpdateBarAnchor(bar, healthBar, glowVisible)
 			bar:SetReverseFill(false)
 		end
 	else
-		-- Pixel mode: must update offset each frame since health changes
 		local healthTexture = healthBar:GetStatusBarTexture()
 		local offset = healthTexture and healthTexture:GetWidth() or 0
 		bar:ClearAllPoints()
