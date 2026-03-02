@@ -1,14 +1,10 @@
 # Overshields Reforged
 
-**Updated for World of Warcraft: Midnight, with some changes.**
-
-Overshields Reforged began as a fork of the [Overshields](https://github.com/enthh/overshields) addon by enthh, but turned into a rewrite.
-
 Overshields Reforged allows you to configure how shields & overshields appear on compact unit frames.
 
-There are a couple of options: Color (including alpha/transparency), and texture. The old options which allowed you to pick when and how the overshield tick (the thick bar indicating that current health & shields exceed maximum health) are gone due to new interface limitations in Midnight. You can, however, create different frame appearances based on whether the overshield condition is met or not.
+There are a couple of options: Color (including alpha/transparency), texture, and blend mode. There are also behavioral options that affect which compact unit frames are modified/affected by Overshields Reforged, as well as a "Dynamic Anchoring" option with one sub-option for more flexibility.
 
-Works with Blizzard's compact raid-style Party, and Raid frames.
+Works with Blizzard's **compact** raid/party/pet frames.
 
 ![Overshields Reforged raid-style party frames with options panel visible, and Non-Overshield bar configured as a red color.](./midnight_options.jpg)
 
@@ -30,9 +26,7 @@ Download the [latest release](https://github.com/creed-us/Overshields_Reforged/r
 
 ### Dependencies
 
-There is one required dependency: [Ace3](https://www.curseforge.com/wow/addons/ace3). CurseForge should prompt the installation of Ace3 when installing Overshields Reforged. Alternatively, you can download the Ace3 addon from CurseForge and extract the `.zip` to your AddOns folder in the same manner as Overshields Reforged, as a separate AddOn.
-
-It is recommended to install [LibSharedMedia](https://www.curseforge.com/wow/addons/libsharedmedia-3-0) (LSM) & [SharedMedia](https://www.curseforge.com/wow/addons/sharedmedia) to have access to extra texture options. Overshields Reforged does not add any statusbar or spark textures, but it will make use of any textures made available through LSM.
+It is recommended to install [LibSharedMedia](https://www.curseforge.com/wow/addons/libsharedmedia-3-0) (LSM) & [SharedMedia](https://www.curseforge.com/wow/addons/sharedmedia) to have access to extra texture options. Overshields Reforged does not add any statusbar or spark textures, but it will make use of any textures made available through LSM, in addition to those already available through the client.
 
 ## FAQ
 
