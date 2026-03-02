@@ -347,7 +347,13 @@ function OvershieldsReforged:SetupOptions()
 						order = 12,
 						width = "full",
 						hidden = function() return not self.db.profile.anchorShieldToHealth end,
-						get = function() return self.db.profile.anchorToHealthTexture end,
+                        get = function()
+                            if not self.db.profile.anchorShieldToHealth then
+                                return false
+                            end
+
+							return self.db.profile.anchorToHealthTexture
+						end,
 						set = function(_, value)
 							self.db.profile.anchorToHealthTexture = value
 							OnAppearanceChanged()
