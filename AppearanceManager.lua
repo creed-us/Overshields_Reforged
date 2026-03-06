@@ -48,13 +48,11 @@ local function HideCustomBars(frame)
 end
 
 local function HideCachedBarsByPredicate(predicate)
-	for frame in pairs(ns.absorbCache) do
-		if predicate(frame) then
-			HideCustomBars(frame)
-		end
-	end
+	local frames = {}
+	for frame in pairs(ns.absorbCache) do frames[frame] = true end
+	for frame in pairs(ns.overlayCache) do frames[frame] = true end
 
-	for frame in pairs(ns.overlayCache) do
+	for frame in pairs(frames) do
 		if predicate(frame) then
 			HideCustomBars(frame)
 		end
