@@ -28,12 +28,12 @@ end
 -- @return boolean true when updates should run for this unit
 function OvershieldsReforged:IsUnitContextEnabled(unit)
 	local profile = self.db and self.db.profile
-	if not profile then
+	if not profile or not unit then
 		return false
 	end
 
-	if not unit then
-		return false
+	if string.find(unit, "pet", 1, true) then
+		return IsSettingEnabled(profile.enablePets)
 	end
 
 	if string.find(unit, "raid", 1, true) then
@@ -42,10 +42,6 @@ function OvershieldsReforged:IsUnitContextEnabled(unit)
 
 	if string.find(unit, "party", 1, true) then
 		return IsSettingEnabled(profile.enableParty)
-	end
-
-	if string.find(unit, "pet", 1, true) then
-		return IsSettingEnabled(profile.enablePets)
 	end
 
 	return IsSettingEnabled(profile.enableParty) or IsSettingEnabled(profile.enableRaid)
