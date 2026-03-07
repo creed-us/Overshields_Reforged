@@ -69,7 +69,20 @@ local BLEND_MODES = {
 }
 
 --- Lazily builds the texture dropdown value table for bar/overlay selectors to catch late-registered LSM textures.
+local cachedTextureValues = nil
+local cachedGlowTextureValues = nil
+
+local function InvalidateDropdownCaches()
+	cachedTextureValues = nil
+	cachedGlowTextureValues = nil
+end
+
+if LSM then
+	LSM.RegisterCallback("OvershieldsReforged", "LibSharedMedia_Registered", InvalidateDropdownCaches)
+end
+
 local function TextureDropdownValues()
+	if cachedTextureValues then return cachedTextureValues end
 	local values = {
 		["Interface\\RaidFrame\\Shield-Overlay"] = "|TInterface\\RaidFrame\\Shield-Overlay:16:32|t Default Overlay",
 		["Interface\\RaidFrame\\Shield-Fill"] = "|TInterface\\RaidFrame\\Shield-Fill:16:32|t Default Fill",
@@ -79,6 +92,7 @@ local function TextureDropdownValues()
 			values[path] = string.format("|T%s:16:32|t %s", path, name)
 		end
 	end
+	cachedTextureValues = values
 	return values
 end
 
@@ -104,6 +118,7 @@ local function BuildGlowTextureValues(textureEntries)
 end
 
 local function OverAbsorbGlowTextureDropdownValues()
+	if cachedGlowTextureValues then return cachedGlowTextureValues end
 	local values = BuildGlowTextureValues({
 		{ "Interface\\RaidFrame\\Shield-Overshield", "Default Glow" },
 		{ "Interface\\CastingBar\\UI-CastingBar-Spark", "Cast Bar Spark" },
@@ -171,6 +186,7 @@ local function OverAbsorbGlowTextureDropdownValues()
 			end
 		end
 	end
+	cachedGlowTextureValues = values
 	return values
 end
 
