@@ -318,6 +318,18 @@ local function UpdateFramePool(container, prefix, maxCount)
 	--@end-alpha@
 end
 
+local function is_party_unit(frame)
+	return frame and frame.displayedUnit and string_find(frame.displayedUnit, "party", 1, true) and not string_find(frame.displayedUnit, "pet", 1, true)
+end
+
+local function is_raid_unit(frame)
+	return frame and frame.displayedUnit and string_find(frame.displayedUnit, "raid", 1, true) and not string_find(frame.displayedUnit, "pet", 1, true)
+end
+
+local function is_pet_unit(frame)
+	return frame and frame.displayedUnit and string_find(frame.displayedUnit, "pet", 1, true)
+end
+
 --- Iterates all visible compact unit frames and applies current appearance settings.
 -- Called after any appearance setting changes.
 local function UpdateAllFrameAppearances()
@@ -337,9 +349,7 @@ local function UpdateAllFrameAppearances()
 	if profile.enableParty ~= false then
 		UpdateFramePool(CompactPartyFrame, "CompactPartyFrameMember", 5)
 	else
-		HideCachedBarsByPredicate(function(frame)
-			return frame and frame.displayedUnit and string.find(frame.displayedUnit, "party", 1, true) and not string.find(frame.displayedUnit, "pet", 1, true)
-		end)
+		HideCachedBarsByPredicate(is_party_unit)
 	end
 
 	-- Raid frames (1–40)
@@ -347,9 +357,7 @@ local function UpdateAllFrameAppearances()
 	if inRaid and profile.enableRaid ~= false then
 		UpdateFramePool(CompactRaidFrameContainer, "CompactRaidFrame", 40)
 	elseif inRaid then
-		HideCachedBarsByPredicate(function(frame)
-			return frame and frame.displayedUnit and string.find(frame.displayedUnit, "raid", 1, true) and not string.find(frame.displayedUnit, "pet", 1, true)
-		end)
+		HideCachedBarsByPredicate(is_raid_unit)
 	end
 
 	-- Pet frames
@@ -357,9 +365,7 @@ local function UpdateAllFrameAppearances()
 		local petPrefix = inRaid and "CompactRaidFramePet" or "CompactPartyFramePet"
 		UpdateFramePool(CompactRaidFrameContainer, petPrefix, 40)
 	elseif CompactRaidFrameContainer and CompactRaidFrameContainer.displayPets then
-		HideCachedBarsByPredicate(function(frame)
-			return frame and frame.displayedUnit and string.find(frame.displayedUnit, "pet", 1, true)
-		end)
+		HideCachedBarsByPredicate(is_pet_unit)
 	end
 end
 
