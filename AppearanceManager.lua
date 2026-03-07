@@ -28,8 +28,16 @@ local function ResetStyleState(target)
 	end
 end
 
+local atlasCache = {}
+
 local function SetTextureOrAtlas(textureRegion, asset)
-	if C_Texture and C_Texture.GetAtlasInfo and C_Texture.GetAtlasInfo(asset) then
+	local isAtlas = atlasCache[asset]
+	if isAtlas == nil then
+		isAtlas = C_Texture and C_Texture.GetAtlasInfo and C_Texture.GetAtlasInfo(asset) and true or false
+		atlasCache[asset] = isAtlas
+	end
+
+	if isAtlas then
 		textureRegion:SetAtlas(asset, false, nil, true)
 		textureRegion:SetTexCoord(0, 1, 0, 1)
 		return
