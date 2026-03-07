@@ -192,6 +192,23 @@ end
 
 function OvershieldsReforged:InitializeDatabase()
 	self.db = AceDB:New("OvershieldsReforgedDB", defaults)
+
+	-- Clean up caches and re-apply appearance when the active profile changes.
+	local function OnProfileChanged()
+		if ns.ReleaseAllBars then
+			ns.ReleaseAllBars()
+		end
+		if ns.WipeStyleCache then
+			ns.WipeStyleCache()
+		end
+		if ns.UpdateAllFrameAppearances then
+			ns.UpdateAllFrameAppearances()
+		end
+	end
+
+	self.db.RegisterCallback(self, "OnProfileChanged", OnProfileChanged)
+	self.db.RegisterCallback(self, "OnProfileCopied", OnProfileChanged)
+	self.db.RegisterCallback(self, "OnProfileReset", OnProfileChanged)
 end
 
 --- Sets up the Ace3 options interface and registers it.
