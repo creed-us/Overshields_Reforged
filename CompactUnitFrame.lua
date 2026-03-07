@@ -272,3 +272,35 @@ function ns.QueueCompactUnitFrameUpdate(frame)
 	updateQueue[frame] = true
 	batchFrame:Show()
 end
+
+--- Releases all custom bars, hiding them and clearing both container caches.
+-- Called on profile change to ensure a clean slate.
+function ns.ReleaseAllBars()
+	for _, bar in next, containers do
+		bar:Hide()
+	end
+	wipe(containers)
+
+	for _, bar in next, overlayContainers do
+		bar:Hide()
+	end
+	wipe(overlayContainers)
+end
+
+--- Removes cache entries for frames that no longer display a unit or are hidden.
+-- Safe to call periodically to prevent stale entries from accumulating.
+function ns.CleanupStaleCacheEntries()
+	for frame, bar in next, containers do
+		if not frame.displayedUnit or not frame:IsShown() then
+			bar:Hide()
+			containers[frame] = nil
+		end
+	end
+
+	for frame, bar in next, overlayContainers do
+		if not frame.displayedUnit or not frame:IsShown() then
+			bar:Hide()
+			overlayContainers[frame] = nil
+		end
+	end
+end
