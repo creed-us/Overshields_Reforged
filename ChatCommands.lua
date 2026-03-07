@@ -7,6 +7,20 @@ end
 
 local IsSettingEnabled = ns.IsSettingEnabled
 
+StaticPopupDialogs["OVERSHIELDS_REFORGED_RESET"] = {
+	text = "This will reset all Overshields Reforged settings to default and reload the UI. Proceed?",
+	button1 = ACCEPT,
+	button2 = CANCEL,
+	OnAccept = function()
+		OvershieldsReforgedDB = nil
+		ReloadUI()
+	end,
+	timeout = 0,
+	whileDead = true,
+	hideOnEscape = true,
+	preferredIndex = 3,
+}
+
 --- Handles slash commands.
 function addon:HandleSlashCommand(input)
 	local commandLine = strtrim(input or ""):lower()
@@ -29,19 +43,6 @@ function addon:HandleSlashCommand(input)
 	elseif command == "options" or command == "o" then
 		self:OpenOptions()
 	elseif command == "reset" or command == "r" then
-		StaticPopupDialogs["OVERSHIELDS_REFORGED_RESET"] = {
-			text = "This will reset all Overshields Reforged settings to default and reload the UI. Proceed?",
-			button1 = ACCEPT,
-			button2 = CANCEL,
-			OnAccept = function()
-				OvershieldsReforgedDB = nil
-				ReloadUI()
-			end,
-			timeout = 0,
-			whileDead = true,
-			hideOnEscape = true,
-			preferredIndex = 3,
-		}
 		StaticPopup_Show("OVERSHIELDS_REFORGED_RESET")
 	--@alpha@
 	elseif command == "debug" or command == "d" then
