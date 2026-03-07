@@ -18,3 +18,6 @@ ChatCommands.lua
 Options.lua
 CompactUnitFrame.lua
 AppearanceManager.lua
+#@alpha@
+Debug.lua
+#@end-alpha@

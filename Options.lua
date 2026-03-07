@@ -93,10 +93,10 @@ end
 
 local function BuildGlowTextureValues(textureEntries)
 	local values = {}
-    for _, textureEntry in ipairs(textureEntries) do
+	for _, textureEntry in ipairs(textureEntries) do
 		local textureAsset = textureEntry[1]
 		local displayName = textureEntry[2]
-        if textureAsset ~= "__PLACEHOLDER" then
+		if textureAsset ~= "__PLACEHOLDER" then
 			values[textureAsset] = BuildGlowTextureOptionLabel(textureAsset, displayName)
 		end
 	end
@@ -237,7 +237,7 @@ function OvershieldsReforged:SetupOptions()
 					name = "|TInterface\\Buttons\\UI-RefreshButton:20:20|tReset",
 					desc = "Reset this group to the default configuration.",
 					order = -1,
-                    width = 0.5,
+					width = 0.5,
 					func = function()
 						local p = defaults.profile
 						self.db.profile[colorKey]     = p[colorKey]
@@ -290,7 +290,7 @@ function OvershieldsReforged:SetupOptions()
 					},
 					enableParty = {
 						type = "toggle",
-                        name = "Party",
+						name = "Party",
 						desc = "While enabled, raid-style party frames will be modified.",
 						order = 1,
 						get = function() return self.db.profile.enableParty ~= false end,
@@ -329,7 +329,7 @@ function OvershieldsReforged:SetupOptions()
 					anchorShieldToHealth = {
 						type = "toggle",
 						name = "Dynamic Anchoring",
-                        desc = "Switch anchoring behavior depending on whether a unit is overshielded.",
+						desc = "Switch anchoring behavior depending on whether a unit is overshielded.",
 						descStyle = "inline",
 						order = 11,
 						width = "full",
@@ -342,15 +342,15 @@ function OvershieldsReforged:SetupOptions()
 					anchorToHealthTexture = {
 						type = "toggle",
 						name = "Fill Missing Health",
-                        desc = "Shields will appear to fill missing health while a unit is not overshielded. This display method is not precise in determining actual shielding value while a unit does not have overshields.",
+						desc = "Shields will appear to fill missing health while a unit is not overshielded. This display method is not precise in determining actual shielding value while a unit does not have overshields.",
 						descStyle = "inline",
 						order = 12,
 						width = "full",
 						hidden = function() return not self.db.profile.anchorShieldToHealth end,
-                        get = function()
-                            if not self.db.profile.anchorShieldToHealth then
-                                return false
-                            end
+						get = function()
+							if not self.db.profile.anchorShieldToHealth then
+								return false
+							end
 
 							return self.db.profile.anchorToHealthTexture
 						end,

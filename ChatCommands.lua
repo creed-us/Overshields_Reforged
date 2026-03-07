@@ -43,11 +43,22 @@ function addon:HandleSlashCommand(input)
 			preferredIndex = 3,
 		}
 		StaticPopup_Show("OVERSHIELDS_REFORGED_RESET")
+	--@alpha@
+	elseif command == "debug" or command == "d" then
+		if ns.Debug then
+			ns.Debug:Toggle()
+		else
+			self:Print("Debug window is only available in alpha builds.")
+		end
+	--@end-alpha@
 	else
 		self:Print("Usage:")
 		self:Print("/osr version (v) - Display the addon version.")
 		self:Print("/osr status (s) - Show enable and frame-scope settings.")
 		self:Print("/osr options (o) - Open the addon options.")
 		self:Print("/osr reset (r) - Reset all settings to default and reload the UI.")
+		--@alpha@
+		self:Print("/osr debug (d) - Toggle the debug diagnostics window.")
+		--@end-alpha@
 	end
 end

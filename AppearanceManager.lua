@@ -64,6 +64,13 @@ local function ApplyStatusBarColor(bar, state, colorR, colorG, colorB, colorA)
 	if state.colorR ~= colorR or state.colorG ~= colorG or state.colorB ~= colorB or state.colorA ~= colorA then
 		bar:SetStatusBarColor(colorR, colorG, colorB, colorA)
 		state.colorR, state.colorG, state.colorB, state.colorA = colorR, colorG, colorB, colorA
+		--@alpha@
+		if ns.Debug then ns.Debug.Inc("colorApplied") end
+		--@end-alpha@
+	--@alpha@
+	else
+		if ns.Debug then ns.Debug.Inc("colorSkipped") end
+	--@end-alpha@
 	end
 end
 
@@ -73,6 +80,13 @@ local function ApplyStatusBarTextureAndBlend(bar, state, textureFile, blendMode,
 	if state.textureFile ~= textureFile then
 		bar:SetStatusBarTexture(textureFile)
 		state.textureFile = textureFile
+		--@alpha@
+		if ns.Debug then ns.Debug.Inc("textureApplied") end
+		--@end-alpha@
+	--@alpha@
+	else
+		if ns.Debug then ns.Debug.Inc("textureSkipped") end
+	--@end-alpha@
 	end
 	local texture = bar:GetStatusBarTexture()
 	if texture then
@@ -88,6 +102,13 @@ local function ApplyStatusBarTextureAndBlend(bar, state, textureFile, blendMode,
 		if state.blendMode ~= blendMode then
 			texture:SetBlendMode(blendMode)
 			state.blendMode = blendMode
+			--@alpha@
+			if ns.Debug then ns.Debug.Inc("blendApplied") end
+			--@end-alpha@
+		--@alpha@
+		else
+			if ns.Debug then ns.Debug.Inc("blendSkipped") end
+		--@end-alpha@
 		end
 	end
 end
@@ -201,6 +222,9 @@ end
 local function ApplyAppearanceToFrame(frame, glowVisible)
 	if not OvershieldsReforged:IsFrameContextEnabled(frame) then
 		HideCustomBars(frame)
+		--@alpha@
+		if ns.Debug then ns.Debug.Inc("contextDisabled") end
+		--@end-alpha@
 		return
 	end
 
@@ -220,20 +244,63 @@ local function IsGlowVisible(frame)
 	return glow:IsVisible()
 end
 
---- Iterates a pool of compact unit frames by global name prefix and applies appearance updates.
--- @param prefix Global name prefix (e.g. "CompactRaidFrame")
--- @param count Maximum frame index to check
-local function UpdateFramePool(prefix, count)
-	for i = 1, count do
-		local frame = _G[prefix .. i]
-		if frame and frame.displayedUnit then
-			if frame:IsShown() then
-				ApplyAppearanceToFrame(frame, IsGlowVisible(frame))
-			else
-				HideCustomBars(frame)
-			end
+--- Processes a single frame for appearance updates.
+-- @param frame The compact unit frame to process
+local function ProcessFrame(frame)
+	if frame and frame.displayedUnit then
+		if frame:IsShown() then
+			ApplyAppearanceToFrame(frame, IsGlowVisible(frame))
+			--@alpha@
+			if ns.Debug then ns.Debug.Inc("framesShown") end
+			--@end-alpha@
+		else
+			HideCustomBars(frame)
+			--@alpha@
+			if ns.Debug then ns.Debug.Inc("framesHidden") end
+			--@end-alpha@
 		end
 	end
+end
+
+--- Iterates frames from a container's pool or falls back to global name walking.
+-- Modern WoW (10.0+) should use frame pools; older clients have to use global names.
+-- @param container The frame container (e.g., CompactRaidFrameContainer)
+-- @param prefix Global name prefix for fallback (e.g., "CompactRaidFrame")
+-- @param maxCount Maximum frame index for fallback
+local function UpdateFramePool(container, prefix, maxCount)
+	-- Modern: iterate the container's active flow layout children (10.0+)
+	if container and container.flowFrames then
+		--@alpha@
+		if ns.Debug then ns.Debug.Set("poolPath", "flowFrames") end
+		local flowProcessed = 0
+		--@end-alpha@
+		for _, frame in ipairs(container.flowFrames) do
+			ProcessFrame(frame)
+			--@alpha@
+			flowProcessed = flowProcessed + 1
+			--@end-alpha@
+		end
+		--@alpha@
+		if ns.Debug then ns.Debug.Set("poolFramesProcessed", flowProcessed) end
+		--@end-alpha@
+		return
+	end
+
+	-- Fallback: walk global table by name prefix
+	--@alpha@
+	if ns.Debug then ns.Debug.Set("poolPath", "legacy") end
+	local legacyProcessed = 0
+	--@end-alpha@
+	for i = 1, maxCount do
+		local frame = _G[prefix .. i]
+		ProcessFrame(frame)
+		--@alpha@
+		legacyProcessed = legacyProcessed + 1
+		--@end-alpha@
+	end
+	--@alpha@
+	if ns.Debug then ns.Debug.Set("poolFramesProcessed", legacyProcessed) end
+	--@end-alpha@
 end
 
 --- Iterates all visible compact unit frames and applies current appearance settings.
@@ -244,9 +311,16 @@ local function UpdateAllFrameAppearances()
 		return
 	end
 
+	--@alpha@
+	if ns.Debug then
+		ns.Debug.Inc("fullRefreshes")
+		ns.Debug.Set("lastRefreshTime", GetTime())
+	end
+	--@end-alpha@
+
 	-- Party frames (1–5)
 	if profile.enableParty ~= false then
-		UpdateFramePool("CompactPartyFrameMember", 5)
+		UpdateFramePool(CompactPartyFrame, "CompactPartyFrameMember", 5)
 	else
 		HideCachedBarsByPredicate(function(frame)
 			return frame and frame.displayedUnit and string.find(frame.displayedUnit, "party", 1, true) and not string.find(frame.displayedUnit, "pet", 1, true)
@@ -256,7 +330,7 @@ local function UpdateAllFrameAppearances()
 	-- Raid frames (1–40)
 	local inRaid = IsInRaid()
 	if inRaid and profile.enableRaid ~= false then
-		UpdateFramePool("CompactRaidFrame", 40)
+		UpdateFramePool(CompactRaidFrameContainer, "CompactRaidFrame", 40)
 	elseif inRaid then
 		HideCachedBarsByPredicate(function(frame)
 			return frame and frame.displayedUnit and string.find(frame.displayedUnit, "raid", 1, true) and not string.find(frame.displayedUnit, "pet", 1, true)
@@ -266,7 +340,7 @@ local function UpdateAllFrameAppearances()
 	-- Pet frames
 	if CompactRaidFrameContainer and CompactRaidFrameContainer.displayPets and profile.enablePets ~= false then
 		local petPrefix = inRaid and "CompactRaidFramePet" or "CompactPartyFramePet"
-		UpdateFramePool(petPrefix, 40)
+		UpdateFramePool(CompactRaidFrameContainer, petPrefix, 40)
 	elseif CompactRaidFrameContainer and CompactRaidFrameContainer.displayPets then
 		HideCachedBarsByPredicate(function(frame)
 			return frame and frame.displayedUnit and string.find(frame.displayedUnit, "pet", 1, true)
@@ -278,3 +352,11 @@ ns.ApplyAppearanceToBar = ApplyAppearanceToBar
 ns.ApplyAppearanceToOverlay = ApplyAppearanceToOverlay
 ns.ApplyAppearanceToOverAbsorbGlow = ApplyAppearanceToOverAbsorbGlow
 ns.UpdateAllFrameAppearances = UpdateAllFrameAppearances
+
+--@alpha@
+ns.GetStyleCacheSize = function()
+	local n = 0
+	for _ in pairs(styleCache) do n = n + 1 end
+	return n
+end
+--@end-alpha@

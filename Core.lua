@@ -13,14 +13,17 @@ function OvershieldsReforged:OnInitialize()
 end
 
 function OvershieldsReforged:OnEnable()
-    -- Register chat commands via AceConsole.
-    self:RegisterChatCommand("overshieldsreforged", "HandleSlashCommand")
-    self:RegisterChatCommand("osr", "HandleSlashCommand")
+	-- Register chat commands via AceConsole.
+	self:RegisterChatCommand("overshieldsreforged", "HandleSlashCommand")
+	self:RegisterChatCommand("osr", "HandleSlashCommand")
 
-    -- Hook Bliz's heal-prediction.
-    hooksecurefunc("CompactUnitFrame_UpdateHealPrediction", function(frame)
-        ns.QueueCompactUnitFrameUpdate(frame)
-    end)
+	-- Hook Bliz's heal-prediction.
+	hooksecurefunc("CompactUnitFrame_UpdateHealPrediction", function(frame)
+		--@alpha@
+		if ns.Debug then ns.Debug.Inc("hookFires") end
+		--@end-alpha@
+		ns.QueueCompactUnitFrameUpdate(frame)
+	end)
 end
 
 --- Returns whether the addon is enabled for a unit context.
