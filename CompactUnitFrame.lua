@@ -1,5 +1,11 @@
 local _, ns = ...
 
+local CreateFrame = CreateFrame
+local UnitExists = UnitExists
+local UnitGetTotalAbsorbs = UnitGetTotalAbsorbs
+local wipe = wipe
+local next = next
+
 --- Batch update frame used to defer frame updates until OnUpdate cycle
 local batchFrame = CreateFrame("Frame", nil, UIParent)
 batchFrame:Hide()

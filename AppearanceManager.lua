@@ -1,5 +1,11 @@
 local _, ns = ...
 
+local pairs = pairs
+local string_find = string.find
+local ipairs = ipairs
+local IsInRaid = IsInRaid
+local GetTime = GetTime
+
 local styleCache = setmetatable({}, { __mode = "k" })
 
 local function GetStyleState(target)
