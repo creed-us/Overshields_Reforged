@@ -74,11 +74,11 @@ end
 -- @param bar The StatusBar to update
 -- @param healthBar The parent health bar
 -- @param glowVisible true when unit has overshield
-local function UpdateBarAnchor(bar, healthBar, glowVisible)
-	local db = OvershieldsReforged.db and OvershieldsReforged.db.profile
-	if not db then return end
+-- @param profile The active db.profile table
+local function UpdateBarAnchor(bar, healthBar, glowVisible, profile)
+	if not profile then return end
 
-	local useHealthAnchor = db.anchorShieldToHealth and not glowVisible
+	local useHealthAnchor = profile.anchorShieldToHealth and not glowVisible
 
 	-- Default mode is most common (dynamic anchoring disabled)
 	if not useHealthAnchor then
@@ -94,7 +94,7 @@ local function UpdateBarAnchor(bar, healthBar, glowVisible)
 		return
 	end
 
-	local useTextureAnchor = db.anchorToHealthTexture and useHealthAnchor
+	local useTextureAnchor = profile.anchorToHealthTexture and useHealthAnchor
 
 	if useTextureAnchor then
 		if bar._anchorMode == "texture" then
@@ -132,7 +132,8 @@ end
 -- Appearance is managed exclusively by AppearanceManager.
 -- Note: IsFrameContextEnabled check is done at queue time, not here.
 -- @param frame The compact unit frame to update
-local function HandleCompactUnitFrameUpdate(frame)
+-- @param profile The active db.profile table
+local function HandleCompactUnitFrameUpdate(frame, profile)
 	local unit = frame.displayedUnit
 	if not unit or not UnitExists(unit) then
 		--@alpha@
@@ -175,7 +176,7 @@ local function HandleCompactUnitFrameUpdate(frame)
 	-- missing health area. This is a visual compromise to avoid secret number arithmetic.
 	local absorb = GetOrCreate(containers, frame, 0)
 	if absorb then
-		UpdateBarAnchor(absorb, healthBar, glowVisible)
+		UpdateBarAnchor(absorb, healthBar, glowVisible, profile)
 		absorb:SetMinMaxValues(0, maxHealth)
 		absorb:SetValue(absorbValue)
 		absorb:SetShown(frame:IsVisible())
@@ -185,7 +186,7 @@ local function HandleCompactUnitFrameUpdate(frame)
 	-- Update custom overlay bar values
 	local overlay = GetOrCreate(overlayContainers, frame, 1)
 	if overlay then
-		UpdateBarAnchor(overlay, healthBar, glowVisible)
+		UpdateBarAnchor(overlay, healthBar, glowVisible, profile)
 		overlay:SetMinMaxValues(0, maxHealth)
 		overlay:SetValue(absorbValue)
 		overlay:SetShown(frame:IsVisible())
@@ -200,7 +201,7 @@ hooksecurefunc("CompactUnitFrameUtil_UpdateFillBar", function(frame, _, bar)
 		return
 	end
 
-	if bar == frame.totalAbsorb or bar == frame.totalAbsorbOverlay or bar == frame.overAbsorbGlow then
+	if bar == frame.overAbsorbGlow or bar == frame.totalAbsorb or bar == frame.totalAbsorbOverlay then
 		if bar and not bar:IsForbidden() then
 			bar:ClearAllPoints()
 			--@alpha@
@@ -212,15 +213,15 @@ end)
 
 --- Process queued frame updates once per cycle.
 batchFrame:SetScript("OnUpdate", function()
-	local db = OvershieldsReforged.db and OvershieldsReforged.db.profile
-	if not db then return end
+	local profile = OvershieldsReforged.db and OvershieldsReforged.db.profile
+	if not profile then return end
 
 	--@alpha@
 	local batchSize = 0
 	--@end-alpha@
 
 	for frame in next, updateQueue do
-		HandleCompactUnitFrameUpdate(frame)
+		HandleCompactUnitFrameUpdate(frame, profile)
 		--@alpha@
 		batchSize = batchSize + 1
 		--@end-alpha@
