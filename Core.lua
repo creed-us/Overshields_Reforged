@@ -37,15 +37,21 @@ function OvershieldsReforged:IsUnitContextEnabled(unit)
 		return false
 	end
 
-	if string.find(unit, "pet", 1, true) then
-		return IsSettingEnabled(profile.enablePets)
-	end
+	local frameTypePrefix = string_sub(unit, 1, 4)
 
-	if string.find(unit, "raid", 1, true) then
+	if frameTypePrefix == "raid" then
+		-- "raidpet" starts with "raid" too, so check for pet first
+		if string_sub(unit, 5, 7) == "pet" then
+			return IsSettingEnabled(profile.enablePets)
+		end
 		return IsSettingEnabled(profile.enableRaid)
 	end
 
-	if string.find(unit, "party", 1, true) then
+	if frameTypePrefix == "part" then
+		-- "partypet" starts with "part" too
+		if string_sub(unit, 6, 8) == "pet" then
+			return IsSettingEnabled(profile.enablePets)
+		end
 		return IsSettingEnabled(profile.enableParty)
 	end
 
