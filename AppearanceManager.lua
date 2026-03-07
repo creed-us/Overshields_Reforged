@@ -374,6 +374,12 @@ ns.ApplyAppearanceToOverlay = ApplyAppearanceToOverlay
 ns.ApplyAppearanceToOverAbsorbGlow = ApplyAppearanceToOverAbsorbGlow
 ns.UpdateAllFrameAppearances = UpdateAllFrameAppearances
 
+--- Wipes the style cache so all appearance values are re-applied on next update.
+-- Called on profile change to prevent stale cached appearance from persisting.
+function ns.WipeStyleCache()
+	wipe(styleCache)
+end
+
 --@alpha@
 ns.GetStyleCacheSize = function()
 	local n = 0
