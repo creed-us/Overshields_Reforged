@@ -114,15 +114,18 @@ local function UpdateBarAnchor(bar, healthBar, glowVisible)
 	else
 		local healthTexture = healthBar:GetStatusBarTexture()
 		local offset = healthTexture and healthTexture:GetWidth() or 0
-		bar:ClearAllPoints()
-		bar:SetPoint("TOPLEFT", healthBar, "TOPLEFT", offset, 0)
-		bar:SetPoint("BOTTOMRIGHT", healthBar, "BOTTOMRIGHT", 0, 0)
-		if bar._anchorMode ~= "health" then
-			--@alpha@
-			if ns.Debug then ns.Debug.Inc("anchorModeChanges") end
-			--@end-alpha@
-			bar:SetReverseFill(false)
-			bar._anchorMode = "health"
+		if bar._anchorMode ~= "health" or bar._lastOffset ~= offset then
+			bar:ClearAllPoints()
+			bar:SetPoint("TOPLEFT", healthBar, "TOPLEFT", offset, 0)
+			bar:SetPoint("BOTTOMRIGHT", healthBar, "BOTTOMRIGHT", 0, 0)
+			bar._lastOffset = offset
+			if bar._anchorMode ~= "health" then
+				--@alpha@
+				if ns.Debug then ns.Debug.Inc("anchorModeChanges") end
+				--@end-alpha@
+				bar:SetReverseFill(false)
+				bar._anchorMode = "health"
+			end
 		end
 	end
 end
