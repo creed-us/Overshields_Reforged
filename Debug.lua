@@ -18,6 +18,9 @@ local counters = {
 	peakBatchSize       = 0,
 	frameUpdates        = 0,
 	earlyExits          = 0,
+	retryAttempts       = 0,
+	retrySuccesses      = 0,
+	retryDrops          = 0,
 	-- Caches
 	barCreates          = 0,
 	barReuses           = 0,
@@ -222,6 +225,9 @@ local function BuildWindow()
 	widgets.peakBatchSize       = AddRow(scroll, "Peak Batch Size",        "Largest single batch of frames processed in one OnUpdate cycle.")
 	widgets.frameUpdates        = AddRow(scroll, "Frame Updates",          "HandleCompactUnitFrameUpdate calls that ran to completion (past all guards).")
 	widgets.earlyExits          = AddRow(scroll, "Early Exits",            "Updates aborted early (unit missing, glow forbidden, or no healthBar).")
+	widgets.retryAttempts       = AddRow(scroll, "Retry Attempts",         "Frames re-queued because healthBar was not yet available.")
+	widgets.retrySuccesses      = AddRow(scroll, "Retry Successes",        "Previously deferred frames that succeeded on a subsequent cycle.")
+	widgets.retryDrops          = AddRow(scroll, "Retry Drops",            "Frames dropped after exceeding the maximum retry count.")
 
 	-- Caches section
 	AddSectionHeader(scroll, "Caches")
@@ -297,6 +303,9 @@ local function RefreshDisplay()
 	widgets.peakBatchSize:SetText(FormatDual(s.peakBatchSize, w.peakBatchSize))
 	widgets.frameUpdates:SetText(FormatDual(s.frameUpdates, w.frameUpdates))
 	widgets.earlyExits:SetText(FormatDual(s.earlyExits, w.earlyExits))
+	widgets.retryAttempts:SetText(FormatDual(s.retryAttempts, w.retryAttempts))
+	widgets.retrySuccesses:SetText(FormatDual(s.retrySuccesses, w.retrySuccesses))
+	widgets.retryDrops:SetText(FormatDual(s.retryDrops, w.retryDrops))
 
 	-- Caches
 	widgets.absorbCacheSize:SetText(tostring(CountTable(ns.absorbCache)) .. " entries")
