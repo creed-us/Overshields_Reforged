@@ -1,4 +1,5 @@
 local _, ns = ...
+local string_sub = string.sub
 -- LibSharedMedia-3.0 optional
 local LSM = LibStub("LibSharedMedia-3.0", true)
 local AceConfig = LibStub("AceConfig-3.0")
