@@ -381,7 +381,7 @@ function ns.WipeStyleCache()
 end
 
 --@alpha@
-ns.GetStyleCacheSize = function()
+function ns.GetStyleCacheSize()
 	local n = 0
 	for _ in pairs(styleCache) do n = n + 1 end
 	return n
