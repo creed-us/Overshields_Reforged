@@ -19,6 +19,12 @@ local containers = {}
 --- Cache mapping frame → custom overlay bar StatusBar
 local overlayContainers = {}
 
+--- Tracks how many batch cycles each unready frame has been retried
+local retryCount = {}
+
+--- Maximum OnUpdate cycles to retry an unready frame before dropping it
+local MAX_RETRIES = 10
+
 --- Exports caches for use by AppearanceManager
 ns.absorbCache = containers
 ns.overlayCache = overlayContainers
@@ -214,6 +220,8 @@ hooksecurefunc("CompactUnitFrameUtil_UpdateFillBar", function(frame, _, bar)
 end)
 
 --- Process queued frame updates once per cycle.
+-- Frames whose healthBar is not yet available are retried on subsequent cycles
+-- up to MAX_RETRIES times before being dropped.
 batchFrame:SetScript("OnUpdate", function()
 	local profile = OvershieldsReforged.db and OvershieldsReforged.db.profile
 	if not profile then return end
@@ -222,11 +230,36 @@ batchFrame:SetScript("OnUpdate", function()
 	local batchSize = 0
 	--@end-alpha@
 
+	local hasRetries = false
+
 	for frame in next, updateQueue do
-		HandleCompactUnitFrameUpdate(frame, profile)
+		local success = HandleCompactUnitFrameUpdate(frame, profile)
 		--@alpha@
 		batchSize = batchSize + 1
 		--@end-alpha@
+
+		if success then
+			--@alpha@
+			if ns.Debug and retryCount[frame] then ns.Debug.Inc("retrySuccesses") end
+			--@end-alpha@
+			updateQueue[frame] = nil
+			retryCount[frame] = nil
+		else
+			local count = (retryCount[frame] or 0) + 1
+			--@alpha@
+			if ns.Debug then ns.Debug.Inc("retryAttempts") end
+			--@end-alpha@
+			if count >= MAX_RETRIES then
+				updateQueue[frame] = nil
+				retryCount[frame] = nil
+				--@alpha@
+				if ns.Debug then ns.Debug.Inc("retryDrops") end
+				--@end-alpha@
+			else
+				retryCount[frame] = count
+				hasRetries = true
+			end
+		end
 	end
 
 	--@alpha@
@@ -237,8 +270,10 @@ batchFrame:SetScript("OnUpdate", function()
 	end
 	--@end-alpha@
 
-	wipe(updateQueue)
-	batchFrame:Hide()
+	if not hasRetries then
+		wipe(updateQueue)
+		batchFrame:Hide()
+	end
 end)
 
 --- Queues a compact unit frame for appearance update.
@@ -288,6 +323,8 @@ function ns.ReleaseAllBars()
 		bar:Hide()
 	end
 	wipe(overlayContainers)
+
+	wipe(retryCount)
 end
 
 --- Removes cache entries for frames that no longer display a unit or are hidden.
