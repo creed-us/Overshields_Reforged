@@ -332,7 +332,7 @@ end
 
 --- Iterates all visible compact unit frames and applies current appearance settings.
 -- Called after any appearance setting changes.
-local function UpdateAllFrameAppearances()
+function ns.UpdateAllFrameAppearances()
 	local profile = OvershieldsReforged.db and OvershieldsReforged.db.profile
 	if not profile then
 		return
