@@ -132,7 +132,7 @@ end
 -- Uses SetTexCoord for proper tiling based on frame dimensions (Bliz method).
 -- @param bar The status bar frame to style
 -- @param glowVisible true when overAbsorb glow is active on the parent frame
-local function ApplyAppearanceToBar(bar, glowVisible)
+function ns.ApplyAppearanceToBar(bar, glowVisible)
 	if not bar or not bar.SetStatusBarColor then return end
 	local db = OvershieldsReforged.db and OvershieldsReforged.db.profile
 	if not db then return end
@@ -150,9 +150,9 @@ end
 --- Applies appearance settings to a native Bliz-owned bar.
 -- @param bar The status bar frame to style (may be Bliz-owned)
 -- @param glowVisible true when overAbsorb glow is active on the parent frame
-local function ApplyAppearanceToNativeBar(bar, glowVisible)
+function ns.ApplyAppearanceToNativeBar(bar, glowVisible)
 	if bar and not bar:IsForbidden() then
-		ApplyAppearanceToBar(bar, glowVisible)
+		ns.ApplyAppearanceToBar(bar, glowVisible)
 	end
 end
 
@@ -160,7 +160,7 @@ end
 -- Tiles horizontally and clamps vertically so the texture spans the full bar height.
 -- @param overlay The status bar frame to style
 -- @param glowVisible true when overAbsorb glow is active on the parent frame
-local function ApplyAppearanceToOverlay(overlay, glowVisible)
+function ns.ApplyAppearanceToOverlay(overlay, glowVisible)
 	if not overlay or not overlay.SetStatusBarColor then return end
 	local db = OvershieldsReforged.db and OvershieldsReforged.db.profile
 	if not db then return end
@@ -178,15 +178,15 @@ end
 --- Applies appearance settings to a native Bliz-owned overlay, guarded against forbidden frames.
 -- @param overlay The status bar frame to style (may be Bliz-owned)
 -- @param glowVisible true when overAbsorb glow is active on the parent frame
-local function ApplyAppearanceToNativeOverlay(overlay, glowVisible)
+function ns.ApplyAppearanceToNativeOverlay(overlay, glowVisible)
 	if overlay and not overlay:IsForbidden() then
-		ApplyAppearanceToOverlay(overlay, glowVisible)
+		ns.ApplyAppearanceToOverlay(overlay, glowVisible)
 	end
 end
 
 --- Applies appearance settings (color, texture, blend mode) to the overAbsorb glow texture.
 -- @param glow The Texture (or Texture-like Frame) representing the overAbsorb glow
-local function ApplyAppearanceToOverAbsorbGlow(glow)
+function ns.ApplyAppearanceToOverAbsorbGlow(glow)
 	if not glow or glow:IsForbidden() or not glow:IsVisible() then return end
 	local db = OvershieldsReforged.db.profile
 	if not db then return end
@@ -225,16 +225,16 @@ end
 
 --- Applies appearance settings to a native Bliz-owned glow, guarded against forbidden frames.
 -- @param glow The Texture representing the overAbsorb glow (may be Bliz-owned)
-local function ApplyAppearanceToNativeOverAbsorbGlow(glow)
+function ns.ApplyAppearanceToNativeOverAbsorbGlow(glow)
 	if glow and not glow:IsForbidden() then
-		ApplyAppearanceToOverAbsorbGlow(glow)
+		ns.ApplyAppearanceToOverAbsorbGlow(glow)
 	end
 end
 
 --- Applies all appearance settings to a single compact unit frame.
 -- @param frame The compact unit frame
 -- @param glowVisible true when overAbsorb glow is active
-local function ApplyAppearanceToFrame(frame, glowVisible)
+function ns.ApplyAppearanceToFrame(frame, glowVisible)
 	if not OvershieldsReforged:IsFrameContextEnabled(frame) then
 		HideCustomBars(frame)
 		--@alpha@
@@ -243,11 +243,11 @@ local function ApplyAppearanceToFrame(frame, glowVisible)
 		return
 	end
 
-	ApplyAppearanceToBar(ns.absorbCache[frame], glowVisible)
-	ApplyAppearanceToOverlay(ns.overlayCache[frame], glowVisible)
-	ApplyAppearanceToNativeBar(frame.totalAbsorb, glowVisible)
-	ApplyAppearanceToNativeOverlay(frame.totalAbsorbOverlay, glowVisible)
-	ApplyAppearanceToNativeOverAbsorbGlow(frame.overAbsorbGlow)
+	ns.ApplyAppearanceToBar(ns.absorbCache[frame], glowVisible)
+	ns.ApplyAppearanceToOverlay(ns.overlayCache[frame], glowVisible)
+	ns.ApplyAppearanceToNativeBar(frame.totalAbsorb, glowVisible)
+	ns.ApplyAppearanceToNativeOverlay(frame.totalAbsorbOverlay, glowVisible)
+	ns.ApplyAppearanceToNativeOverAbsorbGlow(frame.overAbsorbGlow)
 end
 
 --- Resolves visible glow state for a frame, guarding against forbidden access.
@@ -264,7 +264,7 @@ end
 local function ProcessFrame(frame)
 	if frame and frame.displayedUnit then
 		if frame:IsShown() then
-			ApplyAppearanceToFrame(frame, IsGlowVisible(frame))
+			ns.ApplyAppearanceToFrame(frame, IsGlowVisible(frame))
 			--@alpha@
 			if ns.Debug then ns.Debug.Inc("framesShown") end
 			--@end-alpha@
@@ -368,11 +368,6 @@ local function UpdateAllFrameAppearances()
 		HideCachedBarsByPredicate(IsPetUnit)
 	end
 end
-
-ns.ApplyAppearanceToBar = ApplyAppearanceToBar
-ns.ApplyAppearanceToOverlay = ApplyAppearanceToOverlay
-ns.ApplyAppearanceToOverAbsorbGlow = ApplyAppearanceToOverAbsorbGlow
-ns.UpdateAllFrameAppearances = UpdateAllFrameAppearances
 
 --- Wipes the style cache so all appearance values are re-applied on next update.
 -- Called on profile change to prevent stale cached appearance from persisting.
