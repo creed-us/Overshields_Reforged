@@ -47,7 +47,7 @@ function OvershieldsReforged:IsUnitContextEnabled(unit)
 		return IsSettingEnabled(profile.enableRaid)
 	end
 
-	if frameTypePrefix == "part" then
+	if frameTypePrefix == "party" then
 		-- "partypet" starts with "part" too
 		if string_sub(unit, 6, 8) == "pet" then
 			return IsSettingEnabled(profile.enablePets)
