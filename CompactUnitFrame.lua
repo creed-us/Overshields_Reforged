@@ -146,7 +146,7 @@ local function HandleCompactUnitFrameUpdate(frame, profile)
 
 	local glowVisible = glow:IsVisible()
 	if (glowVisible) then
-		ns.ApplyAppearanceToOverAbsorbGlow(glow)
+		ns.ApplyAppearanceToOverAbsorbGlow(glow, profile)
 	end
 
 	local healthBar = frame.healthBar
@@ -174,7 +174,7 @@ local function HandleCompactUnitFrameUpdate(frame, profile)
 		absorb:SetMinMaxValues(0, maxHealth)
 		absorb:SetValue(absorbValue)
 		absorb:SetShown(frame:IsVisible())
-		ns.ApplyAppearanceToBar(absorb, glowVisible)
+		ns.ApplyAppearanceToBar(absorb, glowVisible, profile)
 	end
 
 	-- Update custom overlay bar values
@@ -184,7 +184,7 @@ local function HandleCompactUnitFrameUpdate(frame, profile)
 		overlay:SetMinMaxValues(0, maxHealth)
 		overlay:SetValue(absorbValue)
 		overlay:SetShown(frame:IsVisible())
-		ns.ApplyAppearanceToOverlay(overlay, glowVisible)
+		ns.ApplyAppearanceToOverlay(overlay, glowVisible, profile)
 	end
 
 	return true
