@@ -344,3 +344,10 @@ function ns.CleanupStaleCacheEntries()
         end
     end
 end
+
+local cleanupEventFrame = CreateFrame("Frame")
+cleanupEventFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
+cleanupEventFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
+cleanupEventFrame:SetScript("OnEvent", function()
+	ns.CleanupStaleCacheEntries()
+end)
