@@ -36,6 +36,10 @@ local defaults = {
 	},
 }
 
+function ns.IsSettingEnabled(value)
+	return value ~= false
+end
+
 --- Callback invoked whenever appearance settings are modified.
 -- Triggers update of appearance for all visible compact unit frames.
 local pendingAppearanceRefreshToken = 0
