@@ -318,15 +318,15 @@ local function UpdateFramePool(container, prefix, maxCount)
 	--@end-alpha@
 end
 
-local function is_party_unit(frame)
+local function IsPartyUnit(frame)
 	return frame and frame.displayedUnit and string_find(frame.displayedUnit, "party", 1, true) and not string_find(frame.displayedUnit, "pet", 1, true)
 end
 
-local function is_raid_unit(frame)
+local function IsRaidUnit(frame)
 	return frame and frame.displayedUnit and string_find(frame.displayedUnit, "raid", 1, true) and not string_find(frame.displayedUnit, "pet", 1, true)
 end
 
-local function is_pet_unit(frame)
+local function IsPetUnit(frame)
 	return frame and frame.displayedUnit and string_find(frame.displayedUnit, "pet", 1, true)
 end
 
@@ -349,7 +349,7 @@ local function UpdateAllFrameAppearances()
 	if profile.enableParty ~= false then
 		UpdateFramePool(CompactPartyFrame, "CompactPartyFrameMember", 5)
 	else
-		HideCachedBarsByPredicate(is_party_unit)
+		HideCachedBarsByPredicate(IsPartyUnit)
 	end
 
 	-- Raid frames (1–40)
@@ -357,7 +357,7 @@ local function UpdateAllFrameAppearances()
 	if inRaid and profile.enableRaid ~= false then
 		UpdateFramePool(CompactRaidFrameContainer, "CompactRaidFrame", 40)
 	elseif inRaid then
-		HideCachedBarsByPredicate(is_raid_unit)
+		HideCachedBarsByPredicate(IsRaidUnit)
 	end
 
 	-- Pet frames
@@ -365,7 +365,7 @@ local function UpdateAllFrameAppearances()
 		local petPrefix = inRaid and "CompactRaidFramePet" or "CompactPartyFramePet"
 		UpdateFramePool(CompactRaidFrameContainer, petPrefix, 40)
 	elseif CompactRaidFrameContainer and CompactRaidFrameContainer.displayPets then
-		HideCachedBarsByPredicate(is_pet_unit)
+		HideCachedBarsByPredicate(IsPetUnit)
 	end
 end
 
