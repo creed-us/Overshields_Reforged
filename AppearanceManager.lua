@@ -47,7 +47,7 @@ local function SetTextureOrAtlas(textureRegion, asset)
 	textureRegion:SetTexCoord(0, 1, 0, 1)
 end
 
-local function HideCustomBars(frame)
+function ns.HideCustomBars(frame)
 	local absorb = ns.absorbCache[frame]
 	if absorb then
 		ResetStyleState(absorb)
@@ -64,12 +64,12 @@ end
 local function HideCachedBarsByPredicate(predicate)
 	for frame in pairs(ns.absorbCache) do
 		if predicate(frame) then
-			HideCustomBars(frame)
+			ns.HideCustomBars(frame)
 		end
 	end
 	for frame in pairs(ns.overlayCache) do
 		if predicate(frame) and not ns.absorbCache[frame] then
-			HideCustomBars(frame)
+			ns.HideCustomBars(frame)
 		end
 	end
 end
@@ -236,7 +236,7 @@ end
 -- @param glowVisible true when overAbsorb glow is active
 function ns.ApplyAppearanceToFrame(frame, glowVisible)
 	if not OvershieldsReforged:IsFrameContextEnabled(frame) then
-		HideCustomBars(frame)
+		ns.HideCustomBars(frame)
 		--@alpha@
 		if ns.Debug then ns.Debug.Inc("contextDisabled") end
 		--@end-alpha@
@@ -269,7 +269,7 @@ local function ProcessFrame(frame)
 			if ns.Debug then ns.Debug.Inc("framesShown") end
 			--@end-alpha@
 		else
-			HideCustomBars(frame)
+			ns.HideCustomBars(frame)
 			--@alpha@
 			if ns.Debug then ns.Debug.Inc("framesHidden") end
 			--@end-alpha@
