@@ -42,14 +42,14 @@ function addon:HandleSlashCommand(input)
 		self:OpenOptions()
 	elseif command == "reset" or command == "r" then
 		StaticPopup_Show("OVERSHIELDS_REFORGED_RESET")
-	--@alpha@
+		--@alpha@
 	elseif command == "debug" or command == "d" then
 		if ns.Debug then
 			ns.Debug:Toggle()
 		else
 			self:Print("Debug window is only available in alpha builds.")
 		end
-	--@end-alpha@
+		--@end-alpha@
 	else
 		self:Print("Usage:")
 		self:Print("/osr version (v) - Display the addon version.")
