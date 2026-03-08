@@ -62,7 +62,6 @@ local function OnAppearanceChanged()
 	end)
 end
 
-
 --- Static blend mode map.
 local BLEND_MODES = {
 	["ADD"] = "Add",
