@@ -29,18 +29,6 @@ local MAX_RETRIES = 10
 ns.absorbCache = containers
 ns.overlayCache = overlayContainers
 
-local function HideCustomBars(frame)
-	local absorb = containers[frame]
-	if absorb then
-		absorb:Hide()
-	end
-
-	local overlay = overlayContainers[frame]
-	if overlay then
-		overlay:Hide()
-	end
-end
-
 --- Creates or retrieves a custom StatusBar for a compact unit frame.
 -- @param cache The cache table to read/write
 -- @param frame The compact unit frame
@@ -296,7 +284,7 @@ function ns.QueueCompactUnitFrameUpdate(frame)
 	end
 
 	if not OvershieldsReforged:IsFrameContextEnabled(frame) then
-		HideCustomBars(frame)
+		ns.HideCustomBars(frame)
 		--@alpha@
 		if ns.Debug then ns.Debug.Inc("queueSkipsDisabled") end
 		--@end-alpha@
