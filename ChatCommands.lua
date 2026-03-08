@@ -5,8 +5,6 @@ if not addon then
 	return
 end
 
-local IsSettingEnabled = ns.IsSettingEnabled
-
 StaticPopupDialogs["OVERSHIELDS_REFORGED_RESET"] = {
 	text = "This will reset all Overshields Reforged settings to default and reload the UI. Proceed?",
 	button1 = ACCEPT,
@@ -37,9 +35,9 @@ function addon:HandleSlashCommand(input)
 			return
 		end
 
-		self:Print("Party: " .. (IsSettingEnabled(profile.enableParty) and "On" or "Off"))
-		self:Print("Raid: " .. (IsSettingEnabled(profile.enableRaid) and "On" or "Off"))
-		self:Print("Pets: " .. (IsSettingEnabled(profile.enablePets) and "On" or "Off"))
+		self:Print("Party: " .. (ns.IsSettingEnabled(profile.enableParty) and "On" or "Off"))
+		self:Print("Raid: " .. (ns.IsSettingEnabled(profile.enableRaid) and "On" or "Off"))
+		self:Print("Pets: " .. (ns.IsSettingEnabled(profile.enablePets) and "On" or "Off"))
 	elseif command == "options" or command == "o" then
 		self:OpenOptions()
 	elseif command == "reset" or command == "r" then
