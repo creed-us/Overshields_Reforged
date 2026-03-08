@@ -132,13 +132,14 @@ end
 -- Note: IsFrameContextEnabled check is done at queue time, not here.
 -- @param frame The compact unit frame to update
 -- @param profile The active db.profile table
+-- @return true if the frame was processed (or intentionally skipped), false if unready for retry
 local function HandleCompactUnitFrameUpdate(frame, profile)
 	local unit = frame.displayedUnit
 	if not unit or not UnitExists(unit) then
 		--@alpha@
 		if ns.Debug then ns.Debug.Inc("earlyExits") end
 		--@end-alpha@
-		return
+		return true
 	end
 
 	local glow = frame.overAbsorbGlow
@@ -146,7 +147,7 @@ local function HandleCompactUnitFrameUpdate(frame, profile)
 		--@alpha@
 		if ns.Debug then ns.Debug.Inc("earlyExits") end
 		--@end-alpha@
-		return
+		return true
 	end
 
 	local glowVisible = glow:IsVisible()
@@ -159,7 +160,7 @@ local function HandleCompactUnitFrameUpdate(frame, profile)
 		--@alpha@
 		if ns.Debug then ns.Debug.Inc("earlyExits") end
 		--@end-alpha@
-		return
+		return false
 	end
 
 	--@alpha@
@@ -191,6 +192,8 @@ local function HandleCompactUnitFrameUpdate(frame, profile)
 		overlay:SetShown(frame:IsVisible())
 		ns.ApplyAppearanceToOverlay(overlay, glowVisible)
 	end
+
+	return true
 end
 
 --- Hook into Bliz's fill bar update to prevent native absorb bars from interfering.
