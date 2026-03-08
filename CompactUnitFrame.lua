@@ -330,17 +330,17 @@ end
 --- Removes cache entries for frames that no longer display a unit or are hidden.
 -- Safe to call periodically to prevent stale entries from accumulating.
 function ns.CleanupStaleCacheEntries()
-	for frame, bar in next, containers do
-		if not frame.displayedUnit or not frame:IsShown() then
-			bar:Hide()
-			containers[frame] = nil
-		end
-	end
+    for frame, bar in next, containers do
+        if not frame.displayedUnit or not frame:IsShown() then
+            bar:Hide()
+            containers[frame] = nil
+        end
+    end
 
-	for frame, bar in next, overlayContainers do
-		if not frame.displayedUnit or not frame:IsShown() then
-			bar:Hide()
-			overlayContainers[frame] = nil
-		end
-	end
+    for frame, bar in next, overlayContainers do
+        if not frame.displayedUnit or not frame:IsShown() then
+            bar:Hide()
+            overlayContainers[frame] = nil
+        end
+    end
 end
