@@ -53,7 +53,6 @@ local function GetOrCreate(cache, frame, levelOffset)
 	bar:SetAllPoints(healthBar)
 	bar:SetReverseFill(true)
 	bar:SetFrameLevel(healthBar:GetFrameLevel() + levelOffset)
-	bar:SetFrameStrata(healthBar:GetFrameStrata())
 	bar:Hide()
 	-- Track anchor mode for conditional positioning
 	bar._anchorMode = "default"
