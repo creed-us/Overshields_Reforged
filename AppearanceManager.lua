@@ -62,19 +62,6 @@ function ns.HideCustomBars(frame)
 	end
 end
 
-local function HideCachedBarsByPredicate(predicate)
-	for frame in pairs(ns.absorbCache) do
-		if predicate(frame) then
-			ns.HideCustomBars(frame)
-		end
-	end
-	for frame in pairs(ns.overlayCache) do
-		if predicate(frame) and not ns.absorbCache[frame] then
-			ns.HideCustomBars(frame)
-		end
-	end
-end
-
 --- Applies color to a StatusBar only when the cached value has changed.
 local function ApplyStatusBarColor(bar, state, colorR, colorG, colorB, colorA)
 	if state.colorR ~= colorR or state.colorG ~= colorG or state.colorB ~= colorB or state.colorA ~= colorA then
@@ -286,6 +273,31 @@ local function ProcessFrame(frame, profile)
 	end
 end
 
+local function IsPartyUnit(frame)
+	return frame and frame.displayedUnit and string_find(frame.displayedUnit, "party", 1, true) and not string_find(frame.displayedUnit, "pet", 1, true)
+end
+
+local function IsRaidUnit(frame)
+	return frame and frame.displayedUnit and string_find(frame.displayedUnit, "raid", 1, true) and not string_find(frame.displayedUnit, "pet", 1, true)
+end
+
+local function IsPetUnit(frame)
+	return frame and frame.displayedUnit and string_find(frame.displayedUnit, "pet", 1, true)
+end
+
+local function HideCachedBarsByPredicate(predicate)
+	for frame in pairs(ns.absorbCache) do
+		if predicate(frame) then
+			ns.HideCustomBars(frame)
+		end
+	end
+	for frame in pairs(ns.overlayCache) do
+		if predicate(frame) and not ns.absorbCache[frame] then
+			ns.HideCustomBars(frame)
+		end
+	end
+end
+
 --- Iterates frames from a container's pool or falls back to global name walking.
 -- Modern WoW (10.0+) should use frame pools; older clients have to use global names.
 -- @param container The frame container (e.g., CompactRaidFrameContainer)
@@ -325,18 +337,6 @@ local function UpdateFramePool(container, prefix, maxCount, profile)
 	--@alpha@
 	if ns.Debug then ns.Debug.Set("poolFramesProcessed", legacyProcessed) end
 	--@end-alpha@
-end
-
-local function IsPartyUnit(frame)
-	return frame and frame.displayedUnit and string_find(frame.displayedUnit, "party", 1, true) and not string_find(frame.displayedUnit, "pet", 1, true)
-end
-
-local function IsRaidUnit(frame)
-	return frame and frame.displayedUnit and string_find(frame.displayedUnit, "raid", 1, true) and not string_find(frame.displayedUnit, "pet", 1, true)
-end
-
-local function IsPetUnit(frame)
-	return frame and frame.displayedUnit and string_find(frame.displayedUnit, "pet", 1, true)
 end
 
 --- Iterates all visible compact unit frames and applies current appearance settings.
