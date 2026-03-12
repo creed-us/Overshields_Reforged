@@ -14,8 +14,8 @@ embeds.xml
 #@@end-no-lib-strip@@
 
 Core.lua
-ChatCommands.lua
 Options.lua
+ChatCommands.lua
 CompactUnitFrame.lua
 AppearanceManager.lua
 #@alpha@

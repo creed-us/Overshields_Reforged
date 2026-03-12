@@ -1,5 +1,11 @@
 local _, ns = ...
 
+local CreateFrame = CreateFrame
+local UnitExists = UnitExists
+local UnitGetTotalAbsorbs = UnitGetTotalAbsorbs
+local wipe = wipe
+local next = next
+
 --- Batch update frame used to defer frame updates until OnUpdate cycle
 local batchFrame = CreateFrame("Frame", nil, UIParent)
 batchFrame:Hide()
@@ -13,21 +19,15 @@ local containers = {}
 --- Cache mapping frame → custom overlay bar StatusBar
 local overlayContainers = {}
 
+--- Tracks how many batch cycles each unready frame has been retried
+local retryCount = {}
+
+--- Maximum OnUpdate cycles to retry an unready frame before dropping it
+local MAX_RETRIES = 10
+
 --- Exports caches for use by AppearanceManager
 ns.absorbCache = containers
 ns.overlayCache = overlayContainers
-
-local function HideCustomBars(frame)
-	local absorb = containers[frame]
-	if absorb then
-		absorb:Hide()
-	end
-
-	local overlay = overlayContainers[frame]
-	if overlay then
-		overlay:Hide()
-	end
-end
 
 --- Creates or retrieves a custom StatusBar for a compact unit frame.
 -- @param cache The cache table to read/write
@@ -67,11 +67,11 @@ end
 -- @param bar The StatusBar to update
 -- @param healthBar The parent health bar
 -- @param glowVisible true when unit has overshield
-local function UpdateBarAnchor(bar, healthBar, glowVisible)
-	local db = OvershieldsReforged.db and OvershieldsReforged.db.profile
-	if not db then return end
+-- @param profile The active db.profile table
+local function UpdateBarAnchor(bar, healthBar, glowVisible, profile)
+	if not profile then return end
 
-	local useHealthAnchor = db.anchorShieldToHealth and not glowVisible
+	local useHealthAnchor = profile.anchorShieldToHealth and not glowVisible
 
 	-- Default mode is most common (dynamic anchoring disabled)
 	if not useHealthAnchor then
@@ -87,7 +87,7 @@ local function UpdateBarAnchor(bar, healthBar, glowVisible)
 		return
 	end
 
-	local useTextureAnchor = db.anchorToHealthTexture and useHealthAnchor
+	local useTextureAnchor = profile.anchorToHealthTexture and useHealthAnchor
 
 	if useTextureAnchor then
 		if bar._anchorMode == "texture" then
@@ -125,13 +125,15 @@ end
 -- Appearance is managed exclusively by AppearanceManager.
 -- Note: IsFrameContextEnabled check is done at queue time, not here.
 -- @param frame The compact unit frame to update
-local function HandleCompactUnitFrameUpdate(frame)
+-- @param profile The active db.profile table
+-- @return true if the frame was processed (or intentionally skipped), false if unready for retry
+local function HandleCompactUnitFrameUpdate(frame, profile)
 	local unit = frame.displayedUnit
 	if not unit or not UnitExists(unit) then
 		--@alpha@
 		if ns.Debug then ns.Debug.Inc("earlyExits") end
 		--@end-alpha@
-		return
+		return true
 	end
 
 	local glow = frame.overAbsorbGlow
@@ -139,12 +141,12 @@ local function HandleCompactUnitFrameUpdate(frame)
 		--@alpha@
 		if ns.Debug then ns.Debug.Inc("earlyExits") end
 		--@end-alpha@
-		return
+		return true
 	end
 
 	local glowVisible = glow:IsVisible()
 	if (glowVisible) then
-		ns.ApplyAppearanceToOverAbsorbGlow(glow)
+		ns.ApplyAppearanceToOverAbsorbGlow(glow, profile)
 	end
 
 	local healthBar = frame.healthBar
@@ -152,7 +154,7 @@ local function HandleCompactUnitFrameUpdate(frame)
 		--@alpha@
 		if ns.Debug then ns.Debug.Inc("earlyExits") end
 		--@end-alpha@
-		return
+		return false
 	end
 
 	--@alpha@
@@ -168,22 +170,24 @@ local function HandleCompactUnitFrameUpdate(frame)
 	-- missing health area. This is a visual compromise to avoid secret number arithmetic.
 	local absorb = GetOrCreate(containers, frame, 0)
 	if absorb then
-		UpdateBarAnchor(absorb, healthBar, glowVisible)
+		UpdateBarAnchor(absorb, healthBar, glowVisible, profile)
 		absorb:SetMinMaxValues(0, maxHealth)
 		absorb:SetValue(absorbValue)
 		absorb:SetShown(frame:IsVisible())
-		ns.ApplyAppearanceToBar(absorb, glowVisible)
+		ns.ApplyAppearanceToBar(absorb, glowVisible, profile)
 	end
 
 	-- Update custom overlay bar values
 	local overlay = GetOrCreate(overlayContainers, frame, 1)
 	if overlay then
-		UpdateBarAnchor(overlay, healthBar, glowVisible)
+		UpdateBarAnchor(overlay, healthBar, glowVisible, profile)
 		overlay:SetMinMaxValues(0, maxHealth)
 		overlay:SetValue(absorbValue)
 		overlay:SetShown(frame:IsVisible())
-		ns.ApplyAppearanceToOverlay(overlay, glowVisible)
+		ns.ApplyAppearanceToOverlay(overlay, glowVisible, profile)
 	end
+
+	return true
 end
 
 --- Hook into Bliz's fill bar update to prevent native absorb bars from interfering.
@@ -193,7 +197,7 @@ hooksecurefunc("CompactUnitFrameUtil_UpdateFillBar", function(frame, _, bar)
 		return
 	end
 
-	if bar == frame.totalAbsorb or bar == frame.totalAbsorbOverlay or bar == frame.overAbsorbGlow then
+	if bar == frame.overAbsorbGlow or bar == frame.totalAbsorb or bar == frame.totalAbsorbOverlay then
 		if bar and not bar:IsForbidden() then
 			bar:ClearAllPoints()
 			--@alpha@
@@ -204,19 +208,46 @@ hooksecurefunc("CompactUnitFrameUtil_UpdateFillBar", function(frame, _, bar)
 end)
 
 --- Process queued frame updates once per cycle.
+-- Frames whose healthBar is not yet available are retried on subsequent cycles
+-- up to MAX_RETRIES times before being dropped.
 batchFrame:SetScript("OnUpdate", function()
-	local db = OvershieldsReforged.db and OvershieldsReforged.db.profile
-	if not db then return end
+	local profile = OvershieldsReforged.db and OvershieldsReforged.db.profile
+	if not profile then return end
 
 	--@alpha@
 	local batchSize = 0
 	--@end-alpha@
 
+	local hasRetries = false
+
 	for frame in next, updateQueue do
-		HandleCompactUnitFrameUpdate(frame)
+		local success = HandleCompactUnitFrameUpdate(frame, profile)
 		--@alpha@
 		batchSize = batchSize + 1
 		--@end-alpha@
+
+		if success then
+			--@alpha@
+			if ns.Debug and retryCount[frame] then ns.Debug.Inc("retrySuccesses") end
+			--@end-alpha@
+			updateQueue[frame] = nil
+			retryCount[frame] = nil
+		else
+			local count = (retryCount[frame] or 0) + 1
+			--@alpha@
+			if ns.Debug then ns.Debug.Inc("retryAttempts") end
+			--@end-alpha@
+			if count >= MAX_RETRIES then
+				updateQueue[frame] = nil
+				retryCount[frame] = nil
+				--@alpha@
+				if ns.Debug then ns.Debug.Inc("retryDrops") end
+				--@end-alpha@
+			else
+				retryCount[frame] = count
+				hasRetries = true
+			end
+		end
 	end
 
 	--@alpha@
@@ -227,8 +258,10 @@ batchFrame:SetScript("OnUpdate", function()
 	end
 	--@end-alpha@
 
-	wipe(updateQueue)
-	batchFrame:Hide()
+	if not hasRetries then
+		wipe(updateQueue)
+		batchFrame:Hide()
+	end
 end)
 
 --- Queues a compact unit frame for appearance update.
@@ -251,7 +284,7 @@ function ns.QueueCompactUnitFrameUpdate(frame)
 	end
 
 	if not OvershieldsReforged:IsFrameContextEnabled(frame) then
-		HideCustomBars(frame)
+		ns.HideCustomBars(frame)
 		--@alpha@
 		if ns.Debug then ns.Debug.Inc("queueSkipsDisabled") end
 		--@end-alpha@
@@ -265,3 +298,44 @@ function ns.QueueCompactUnitFrameUpdate(frame)
 	updateQueue[frame] = true
 	batchFrame:Show()
 end
+
+--- Releases all custom bars, hiding them and clearing both container caches.
+-- Called on profile change to ensure a clean slate.
+function ns.ReleaseAllBars()
+	for _, bar in next, containers do
+		bar:Hide()
+	end
+	wipe(containers)
+
+	for _, bar in next, overlayContainers do
+		bar:Hide()
+	end
+	wipe(overlayContainers)
+
+	wipe(retryCount)
+end
+
+--- Removes cache entries for frames that no longer display a unit or are hidden.
+-- Safe to call periodically to prevent stale entries from accumulating.
+function ns.CleanupStaleCacheEntries()
+    for frame, bar in next, containers do
+        if not frame.displayedUnit or not frame:IsShown() then
+            bar:Hide()
+            containers[frame] = nil
+        end
+    end
+
+    for frame, bar in next, overlayContainers do
+        if not frame.displayedUnit or not frame:IsShown() then
+            bar:Hide()
+            overlayContainers[frame] = nil
+        end
+    end
+end
+
+local cleanupEventFrame = CreateFrame("Frame")
+cleanupEventFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
+cleanupEventFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
+cleanupEventFrame:SetScript("OnEvent", function()
+	ns.CleanupStaleCacheEntries()
+end)

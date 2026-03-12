@@ -5,7 +5,19 @@ if not addon then
 	return
 end
 
-local IsSettingEnabled = ns.IsSettingEnabled
+StaticPopupDialogs["OVERSHIELDS_REFORGED_RESET"] = {
+	text = "This will reset all Overshields Reforged settings to default and reload the UI. Proceed?",
+	button1 = ACCEPT,
+	button2 = CANCEL,
+	OnAccept = function()
+		OvershieldsReforgedDB = nil
+		ReloadUI()
+	end,
+	timeout = 0,
+	whileDead = true,
+	hideOnEscape = true,
+	preferredIndex = 3,
+}
 
 --- Handles slash commands.
 function addon:HandleSlashCommand(input)
@@ -23,34 +35,21 @@ function addon:HandleSlashCommand(input)
 			return
 		end
 
-		self:Print("Party: " .. (IsSettingEnabled(profile.enableParty) and "On" or "Off"))
-		self:Print("Raid: " .. (IsSettingEnabled(profile.enableRaid) and "On" or "Off"))
-		self:Print("Pets: " .. (IsSettingEnabled(profile.enablePets) and "On" or "Off"))
+		self:Print("Party: " .. (ns.IsSettingEnabled(profile.enableParty) and "On" or "Off"))
+		self:Print("Raid: " .. (ns.IsSettingEnabled(profile.enableRaid) and "On" or "Off"))
+		self:Print("Pets: " .. (ns.IsSettingEnabled(profile.enablePets) and "On" or "Off"))
 	elseif command == "options" or command == "o" then
 		self:OpenOptions()
 	elseif command == "reset" or command == "r" then
-		StaticPopupDialogs["OVERSHIELDS_REFORGED_RESET"] = {
-			text = "This will reset all Overshields Reforged settings to default and reload the UI. Proceed?",
-			button1 = ACCEPT,
-			button2 = CANCEL,
-			OnAccept = function()
-				OvershieldsReforgedDB = nil
-				ReloadUI()
-			end,
-			timeout = 0,
-			whileDead = true,
-			hideOnEscape = true,
-			preferredIndex = 3,
-		}
 		StaticPopup_Show("OVERSHIELDS_REFORGED_RESET")
-	--@alpha@
+		--@alpha@
 	elseif command == "debug" or command == "d" then
 		if ns.Debug then
 			ns.Debug:Toggle()
 		else
 			self:Print("Debug window is only available in alpha builds.")
 		end
-	--@end-alpha@
+		--@end-alpha@
 	else
 		self:Print("Usage:")
 		self:Print("/osr version (v) - Display the addon version.")

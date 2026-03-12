@@ -1,4 +1,5 @@
 local _, ns = ...
+local string_sub = string.sub
 -- LibSharedMedia-3.0 optional
 local LSM = LibStub("LibSharedMedia-3.0", true)
 local AceConfig = LibStub("AceConfig-3.0")
@@ -36,6 +37,10 @@ local defaults = {
 	},
 }
 
+function ns.IsSettingEnabled(value)
+	return value ~= false
+end
+
 --- Callback invoked whenever appearance settings are modified.
 -- Triggers update of appearance for all visible compact unit frames.
 local pendingAppearanceRefreshToken = 0
@@ -58,7 +63,6 @@ local function OnAppearanceChanged()
 	end)
 end
 
-
 --- Static blend mode map.
 local BLEND_MODES = {
 	["ADD"] = "Add",
@@ -69,7 +73,20 @@ local BLEND_MODES = {
 }
 
 --- Lazily builds the texture dropdown value table for bar/overlay selectors to catch late-registered LSM textures.
+local cachedTextureValues = nil
+local cachedGlowTextureValues = nil
+
+local function InvalidateDropdownCaches()
+	cachedTextureValues = nil
+	cachedGlowTextureValues = nil
+end
+
+if LSM then
+	LSM.RegisterCallback("OvershieldsReforged", "LibSharedMedia_Registered", InvalidateDropdownCaches)
+end
+
 local function TextureDropdownValues()
+	if cachedTextureValues then return cachedTextureValues end
 	local values = {
 		["Interface\\RaidFrame\\Shield-Overlay"] = "|TInterface\\RaidFrame\\Shield-Overlay:16:32|t Default Overlay",
 		["Interface\\RaidFrame\\Shield-Fill"] = "|TInterface\\RaidFrame\\Shield-Fill:16:32|t Default Fill",
@@ -79,6 +96,7 @@ local function TextureDropdownValues()
 			values[path] = string.format("|T%s:16:32|t %s", path, name)
 		end
 	end
+	cachedTextureValues = values
 	return values
 end
 
@@ -104,6 +122,7 @@ local function BuildGlowTextureValues(textureEntries)
 end
 
 local function OverAbsorbGlowTextureDropdownValues()
+	if cachedGlowTextureValues then return cachedGlowTextureValues end
 	local values = BuildGlowTextureValues({
 		{ "Interface\\RaidFrame\\Shield-Overshield", "Default Glow" },
 		{ "Interface\\CastingBar\\UI-CastingBar-Spark", "Cast Bar Spark" },
@@ -171,11 +190,29 @@ local function OverAbsorbGlowTextureDropdownValues()
 			end
 		end
 	end
+	cachedGlowTextureValues = values
 	return values
 end
 
 function OvershieldsReforged:InitializeDatabase()
 	self.db = AceDB:New("OvershieldsReforgedDB", defaults)
+
+	-- Clean up caches and re-apply appearance when the active profile changes.
+	local function OnProfileChanged()
+		if ns.ReleaseAllBars then
+			ns.ReleaseAllBars()
+		end
+		if ns.WipeStyleCache then
+			ns.WipeStyleCache()
+		end
+		if ns.UpdateAllFrameAppearances then
+			ns.UpdateAllFrameAppearances()
+		end
+	end
+
+	self.db.RegisterCallback(self, "OnProfileChanged", OnProfileChanged)
+	self.db.RegisterCallback(self, "OnProfileCopied", OnProfileChanged)
+	self.db.RegisterCallback(self, "OnProfileReset", OnProfileChanged)
 end
 
 --- Sets up the Ace3 options interface and registers it.
@@ -377,4 +414,44 @@ end
 --- Opens the addon options panel.
 function OvershieldsReforged:OpenOptions()
 	AceConfigDialog:Open("Overshields Reforged")
+end
+
+--- Returns whether the addon is enabled for a unit context.
+-- @param unit Unit token (e.g., "party1", "raid3", "partypet1")
+-- @return boolean true when updates should run for this unit
+function OvershieldsReforged:IsUnitContextEnabled(unit)
+	local profile = self.db and self.db.profile
+	if not profile or not unit then
+		return false
+	end
+
+	local frameTypePrefix = string_sub(unit, 1, 4)
+
+	if frameTypePrefix == "raid" then
+		-- "raidpet" starts with "raid" too, so check for pet first
+		if string_sub(unit, 5, 7) == "pet" then
+			return ns.IsSettingEnabled(profile.enablePets)
+		end
+		return ns.IsSettingEnabled(profile.enableRaid)
+	end
+
+	if frameTypePrefix == "part" then
+		-- "partypet" starts with "part" too
+		if string_sub(unit, 6, 8) == "pet" then
+			return ns.IsSettingEnabled(profile.enablePets)
+		end
+		return ns.IsSettingEnabled(profile.enableParty)
+	end
+
+	return ns.IsSettingEnabled(profile.enableParty) or ns.IsSettingEnabled(profile.enableRaid)
+end
+
+--- Returns whether the addon should run for the provided compact unit frame.
+-- @param frame Compact unit frame
+-- @return boolean
+function OvershieldsReforged:IsFrameContextEnabled(frame)
+	if not frame then
+		return false
+	end
+	return self:IsUnitContextEnabled(frame.displayedUnit)
 end

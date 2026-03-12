@@ -1,5 +1,12 @@
 local _, ns = ...
 
+local pairs = pairs
+local string_find = string.find
+local ipairs = ipairs
+local wipe = wipe
+local IsInRaid = IsInRaid
+local GetTime = GetTime
+
 local styleCache = setmetatable({}, { __mode = "k" })
 
 local function GetStyleState(target)
@@ -22,8 +29,16 @@ local function ResetStyleState(target)
 	end
 end
 
+local atlasCache = {}
+
 local function SetTextureOrAtlas(textureRegion, asset)
-	if C_Texture and C_Texture.GetAtlasInfo and C_Texture.GetAtlasInfo(asset) then
+	local isAtlas = atlasCache[asset]
+	if isAtlas == nil then
+		isAtlas = C_Texture and C_Texture.GetAtlasInfo and C_Texture.GetAtlasInfo(asset) and true or false
+		atlasCache[asset] = isAtlas
+	end
+
+	if isAtlas then
 		textureRegion:SetAtlas(asset, false, nil, true)
 		textureRegion:SetTexCoord(0, 1, 0, 1)
 		return
@@ -33,7 +48,7 @@ local function SetTextureOrAtlas(textureRegion, asset)
 	textureRegion:SetTexCoord(0, 1, 0, 1)
 end
 
-local function HideCustomBars(frame)
+function ns.HideCustomBars(frame)
 	local absorb = ns.absorbCache[frame]
 	if absorb then
 		ResetStyleState(absorb)
@@ -44,18 +59,6 @@ local function HideCustomBars(frame)
 	if overlay then
 		ResetStyleState(overlay)
 		overlay:Hide()
-	end
-end
-
-local function HideCachedBarsByPredicate(predicate)
-	local frames = {}
-	for frame in pairs(ns.absorbCache) do frames[frame] = true end
-	for frame in pairs(ns.overlayCache) do frames[frame] = true end
-
-	for frame in pairs(frames) do
-		if predicate(frame) then
-			HideCustomBars(frame)
-		end
 	end
 end
 
@@ -117,9 +120,10 @@ end
 -- Uses SetTexCoord for proper tiling based on frame dimensions (Bliz method).
 -- @param bar The status bar frame to style
 -- @param glowVisible true when overAbsorb glow is active on the parent frame
-local function ApplyAppearanceToBar(bar, glowVisible)
+-- @param profile Optional db.profile table; when provided, skips the global lookup
+function ns.ApplyAppearanceToBar(bar, glowVisible, profile)
 	if not bar or not bar.SetStatusBarColor then return end
-	local db = OvershieldsReforged.db and OvershieldsReforged.db.profile
+	local db = profile or OvershieldsReforged.db and OvershieldsReforged.db.profile
 	if not db then return end
 
 	local colorTable = glowVisible and db.overAbsorbColor or db.absorbColor
@@ -135,9 +139,10 @@ end
 --- Applies appearance settings to a native Bliz-owned bar.
 -- @param bar The status bar frame to style (may be Bliz-owned)
 -- @param glowVisible true when overAbsorb glow is active on the parent frame
-local function ApplyAppearanceToNativeBar(bar, glowVisible)
+-- @param profile Optional db.profile table
+function ns.ApplyAppearanceToNativeBar(bar, glowVisible, profile)
 	if bar and not bar:IsForbidden() then
-		ApplyAppearanceToBar(bar, glowVisible)
+		ns.ApplyAppearanceToBar(bar, glowVisible, profile)
 	end
 end
 
@@ -145,9 +150,10 @@ end
 -- Tiles horizontally and clamps vertically so the texture spans the full bar height.
 -- @param overlay The status bar frame to style
 -- @param glowVisible true when overAbsorb glow is active on the parent frame
-local function ApplyAppearanceToOverlay(overlay, glowVisible)
+-- @param profile Optional db.profile table; when provided, skips the global lookup
+function ns.ApplyAppearanceToOverlay(overlay, glowVisible, profile)
 	if not overlay or not overlay.SetStatusBarColor then return end
-	local db = OvershieldsReforged.db and OvershieldsReforged.db.profile
+	local db = profile or OvershieldsReforged.db and OvershieldsReforged.db.profile
 	if not db then return end
 
 	local colorTable = glowVisible and db.overAbsorbOverlayColor or db.overlayColor
@@ -163,17 +169,19 @@ end
 --- Applies appearance settings to a native Bliz-owned overlay, guarded against forbidden frames.
 -- @param overlay The status bar frame to style (may be Bliz-owned)
 -- @param glowVisible true when overAbsorb glow is active on the parent frame
-local function ApplyAppearanceToNativeOverlay(overlay, glowVisible)
+-- @param profile Optional db.profile table
+function ns.ApplyAppearanceToNativeOverlay(overlay, glowVisible, profile)
 	if overlay and not overlay:IsForbidden() then
-		ApplyAppearanceToOverlay(overlay, glowVisible)
+		ns.ApplyAppearanceToOverlay(overlay, glowVisible, profile)
 	end
 end
 
 --- Applies appearance settings (color, texture, blend mode) to the overAbsorb glow texture.
 -- @param glow The Texture (or Texture-like Frame) representing the overAbsorb glow
-local function ApplyAppearanceToOverAbsorbGlow(glow)
+-- @param profile Optional db.profile table; when provided, skips the global lookup
+function ns.ApplyAppearanceToOverAbsorbGlow(glow, profile)
 	if not glow or glow:IsForbidden() or not glow:IsVisible() then return end
-	local db = OvershieldsReforged.db.profile
+	local db = profile or OvershieldsReforged.db.profile
 	if not db then return end
 	local state = GetStyleState(glow)
 	local glowColor = db.overAbsorbGlowColor
@@ -210,29 +218,31 @@ end
 
 --- Applies appearance settings to a native Bliz-owned glow, guarded against forbidden frames.
 -- @param glow The Texture representing the overAbsorb glow (may be Bliz-owned)
-local function ApplyAppearanceToNativeOverAbsorbGlow(glow)
+-- @param profile Optional db.profile table
+function ns.ApplyAppearanceToNativeOverAbsorbGlow(glow, profile)
 	if glow and not glow:IsForbidden() then
-		ApplyAppearanceToOverAbsorbGlow(glow)
+		ns.ApplyAppearanceToOverAbsorbGlow(glow, profile)
 	end
 end
 
 --- Applies all appearance settings to a single compact unit frame.
 -- @param frame The compact unit frame
 -- @param glowVisible true when overAbsorb glow is active
-local function ApplyAppearanceToFrame(frame, glowVisible)
+-- @param profile Optional db.profile table
+function ns.ApplyAppearanceToFrame(frame, glowVisible, profile)
 	if not OvershieldsReforged:IsFrameContextEnabled(frame) then
-		HideCustomBars(frame)
+		ns.HideCustomBars(frame)
 		--@alpha@
 		if ns.Debug then ns.Debug.Inc("contextDisabled") end
 		--@end-alpha@
 		return
 	end
 
-	ApplyAppearanceToBar(ns.absorbCache[frame], glowVisible)
-	ApplyAppearanceToOverlay(ns.overlayCache[frame], glowVisible)
-	ApplyAppearanceToNativeBar(frame.totalAbsorb, glowVisible)
-	ApplyAppearanceToNativeOverlay(frame.totalAbsorbOverlay, glowVisible)
-	ApplyAppearanceToNativeOverAbsorbGlow(frame.overAbsorbGlow)
+	ns.ApplyAppearanceToBar(ns.absorbCache[frame], glowVisible, profile)
+	ns.ApplyAppearanceToOverlay(ns.overlayCache[frame], glowVisible, profile)
+	ns.ApplyAppearanceToNativeBar(frame.totalAbsorb, glowVisible, profile)
+	ns.ApplyAppearanceToNativeOverlay(frame.totalAbsorbOverlay, glowVisible, profile)
+	ns.ApplyAppearanceToNativeOverAbsorbGlow(frame.overAbsorbGlow, profile)
 end
 
 --- Resolves visible glow state for a frame, guarding against forbidden access.
@@ -246,18 +256,44 @@ end
 
 --- Processes a single frame for appearance updates.
 -- @param frame The compact unit frame to process
-local function ProcessFrame(frame)
+-- @param profile The active db.profile table
+local function ProcessFrame(frame, profile)
 	if frame and frame.displayedUnit then
 		if frame:IsShown() then
-			ApplyAppearanceToFrame(frame, IsGlowVisible(frame))
+			ns.ApplyAppearanceToFrame(frame, IsGlowVisible(frame), profile)
 			--@alpha@
 			if ns.Debug then ns.Debug.Inc("framesShown") end
 			--@end-alpha@
 		else
-			HideCustomBars(frame)
+			ns.HideCustomBars(frame)
 			--@alpha@
 			if ns.Debug then ns.Debug.Inc("framesHidden") end
 			--@end-alpha@
+		end
+	end
+end
+
+local function IsPartyUnit(frame)
+	return frame and frame.displayedUnit and string_find(frame.displayedUnit, "party", 1, true) and not string_find(frame.displayedUnit, "pet", 1, true)
+end
+
+local function IsRaidUnit(frame)
+	return frame and frame.displayedUnit and string_find(frame.displayedUnit, "raid", 1, true) and not string_find(frame.displayedUnit, "pet", 1, true)
+end
+
+local function IsPetUnit(frame)
+	return frame and frame.displayedUnit and string_find(frame.displayedUnit, "pet", 1, true)
+end
+
+local function HideCachedBarsByPredicate(predicate)
+	for frame in pairs(ns.absorbCache) do
+		if predicate(frame) then
+			ns.HideCustomBars(frame)
+		end
+	end
+	for frame in pairs(ns.overlayCache) do
+		if predicate(frame) and not ns.absorbCache[frame] then
+			ns.HideCustomBars(frame)
 		end
 	end
 end
@@ -267,7 +303,7 @@ end
 -- @param container The frame container (e.g., CompactRaidFrameContainer)
 -- @param prefix Global name prefix for fallback (e.g., "CompactRaidFrame")
 -- @param maxCount Maximum frame index for fallback
-local function UpdateFramePool(container, prefix, maxCount)
+local function UpdateFramePool(container, prefix, maxCount, profile)
 	-- Modern: iterate the container's active flow layout children (10.0+)
 	if container and container.flowFrames then
 		--@alpha@
@@ -275,7 +311,7 @@ local function UpdateFramePool(container, prefix, maxCount)
 		local flowProcessed = 0
 		--@end-alpha@
 		for _, frame in ipairs(container.flowFrames) do
-			ProcessFrame(frame)
+			ProcessFrame(frame, profile)
 			--@alpha@
 			flowProcessed = flowProcessed + 1
 			--@end-alpha@
@@ -293,7 +329,7 @@ local function UpdateFramePool(container, prefix, maxCount)
 	--@end-alpha@
 	for i = 1, maxCount do
 		local frame = _G[prefix .. i]
-		ProcessFrame(frame)
+		ProcessFrame(frame, profile)
 		--@alpha@
 		legacyProcessed = legacyProcessed + 1
 		--@end-alpha@
@@ -305,7 +341,7 @@ end
 
 --- Iterates all visible compact unit frames and applies current appearance settings.
 -- Called after any appearance setting changes.
-local function UpdateAllFrameAppearances()
+function ns.UpdateAllFrameAppearances()
 	local profile = OvershieldsReforged.db and OvershieldsReforged.db.profile
 	if not profile then
 		return
@@ -320,41 +356,36 @@ local function UpdateAllFrameAppearances()
 
 	-- Party frames (1–5)
 	if profile.enableParty ~= false then
-		UpdateFramePool(CompactPartyFrame, "CompactPartyFrameMember", 5)
+		UpdateFramePool(CompactPartyFrame, "CompactPartyFrameMember", 5, profile)
 	else
-		HideCachedBarsByPredicate(function(frame)
-			return frame and frame.displayedUnit and string.find(frame.displayedUnit, "party", 1, true) and not string.find(frame.displayedUnit, "pet", 1, true)
-		end)
+		HideCachedBarsByPredicate(IsPartyUnit)
 	end
 
 	-- Raid frames (1–40)
 	local inRaid = IsInRaid()
 	if inRaid and profile.enableRaid ~= false then
-		UpdateFramePool(CompactRaidFrameContainer, "CompactRaidFrame", 40)
+		UpdateFramePool(CompactRaidFrameContainer, "CompactRaidFrame", 40, profile)
 	elseif inRaid then
-		HideCachedBarsByPredicate(function(frame)
-			return frame and frame.displayedUnit and string.find(frame.displayedUnit, "raid", 1, true) and not string.find(frame.displayedUnit, "pet", 1, true)
-		end)
+		HideCachedBarsByPredicate(IsRaidUnit)
 	end
 
 	-- Pet frames
 	if CompactRaidFrameContainer and CompactRaidFrameContainer.displayPets and profile.enablePets ~= false then
 		local petPrefix = inRaid and "CompactRaidFramePet" or "CompactPartyFramePet"
-		UpdateFramePool(CompactRaidFrameContainer, petPrefix, 40)
+		UpdateFramePool(CompactRaidFrameContainer, petPrefix, 40, profile)
 	elseif CompactRaidFrameContainer and CompactRaidFrameContainer.displayPets then
-		HideCachedBarsByPredicate(function(frame)
-			return frame and frame.displayedUnit and string.find(frame.displayedUnit, "pet", 1, true)
-		end)
+		HideCachedBarsByPredicate(IsPetUnit)
 	end
 end
 
-ns.ApplyAppearanceToBar = ApplyAppearanceToBar
-ns.ApplyAppearanceToOverlay = ApplyAppearanceToOverlay
-ns.ApplyAppearanceToOverAbsorbGlow = ApplyAppearanceToOverAbsorbGlow
-ns.UpdateAllFrameAppearances = UpdateAllFrameAppearances
+--- Wipes the style cache so all appearance values are re-applied on next update.
+-- Called on profile change to prevent stale cached appearance from persisting.
+function ns.WipeStyleCache()
+	wipe(styleCache)
+end
 
 --@alpha@
-ns.GetStyleCacheSize = function()
+function ns.GetStyleCacheSize()
 	local n = 0
 	for _ in pairs(styleCache) do n = n + 1 end
 	return n
