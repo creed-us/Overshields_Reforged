@@ -68,11 +68,11 @@ local function ApplyStatusBarColor(bar, state, colorR, colorG, colorB, colorA)
 		bar:SetStatusBarColor(colorR, colorG, colorB, colorA)
 		state.colorR, state.colorG, state.colorB, state.colorA = colorR, colorG, colorB, colorA
 		--@alpha@
-		if ns.Debug then ns.Debug.Inc("colorApplied") end
+		ns.Debug.Inc("colorApplied")
 		--@end-alpha@
 	--@alpha@
 	else
-		if ns.Debug then ns.Debug.Inc("colorSkipped") end
+		ns.Debug.Inc("colorSkipped")
 	--@end-alpha@
 	end
 end
@@ -84,11 +84,11 @@ local function ApplyStatusBarTextureAndBlend(bar, state, textureFile, blendMode,
 		bar:SetStatusBarTexture(textureFile)
 		state.textureFile = textureFile
 		--@alpha@
-		if ns.Debug then ns.Debug.Inc("textureApplied") end
+		ns.Debug.Inc("textureApplied")
 		--@end-alpha@
 	--@alpha@
 	else
-		if ns.Debug then ns.Debug.Inc("textureSkipped") end
+		ns.Debug.Inc("textureSkipped")
 	--@end-alpha@
 	end
 	local texture = bar:GetStatusBarTexture()
@@ -106,11 +106,11 @@ local function ApplyStatusBarTextureAndBlend(bar, state, textureFile, blendMode,
 			texture:SetBlendMode(blendMode)
 			state.blendMode = blendMode
 			--@alpha@
-			if ns.Debug then ns.Debug.Inc("blendApplied") end
+			ns.Debug.Inc("blendApplied")
 			--@end-alpha@
 		--@alpha@
 		else
-			if ns.Debug then ns.Debug.Inc("blendSkipped") end
+			ns.Debug.Inc("blendSkipped")
 		--@end-alpha@
 		end
 	end
@@ -233,7 +233,7 @@ function ns.ApplyAppearanceToFrame(frame, glowVisible, profile)
 	if not OvershieldsReforged:IsFrameContextEnabled(frame) then
 		ns.HideCustomBars(frame)
 		--@alpha@
-		if ns.Debug then ns.Debug.Inc("contextDisabled") end
+		ns.Debug.Inc("contextDisabled")
 		--@end-alpha@
 		return
 	end
@@ -262,12 +262,12 @@ local function ProcessFrame(frame, profile)
 		if frame:IsShown() then
 			ns.ApplyAppearanceToFrame(frame, IsGlowVisible(frame), profile)
 			--@alpha@
-			if ns.Debug then ns.Debug.Inc("framesShown") end
+			ns.Debug.Inc("framesShown")
 			--@end-alpha@
 		else
 			ns.HideCustomBars(frame)
 			--@alpha@
-			if ns.Debug then ns.Debug.Inc("framesHidden") end
+			ns.Debug.Inc("framesHidden")
 			--@end-alpha@
 		end
 	end
@@ -307,7 +307,7 @@ local function UpdateFramePool(container, prefix, maxCount, profile)
 	-- Modern: iterate the container's active flow layout children (10.0+)
 	if container and container.flowFrames then
 		--@alpha@
-		if ns.Debug then ns.Debug.Set("poolPath", "flowFrames") end
+		ns.Debug.Set("poolPath", "flowFrames")
 		local flowProcessed = 0
 		--@end-alpha@
 		for _, frame in ipairs(container.flowFrames) do
@@ -317,14 +317,14 @@ local function UpdateFramePool(container, prefix, maxCount, profile)
 			--@end-alpha@
 		end
 		--@alpha@
-		if ns.Debug then ns.Debug.Set("poolFramesProcessed", flowProcessed) end
+		ns.Debug.Set("poolFramesProcessed", flowProcessed)
 		--@end-alpha@
 		return
 	end
 
 	-- Fallback: walk global table by name prefix
 	--@alpha@
-	if ns.Debug then ns.Debug.Set("poolPath", "legacy") end
+	ns.Debug.Set("poolPath", "legacy")
 	local legacyProcessed = 0
 	--@end-alpha@
 	for i = 1, maxCount do
@@ -335,7 +335,7 @@ local function UpdateFramePool(container, prefix, maxCount, profile)
 		--@end-alpha@
 	end
 	--@alpha@
-	if ns.Debug then ns.Debug.Set("poolFramesProcessed", legacyProcessed) end
+	ns.Debug.Set("poolFramesProcessed", legacyProcessed)
 	--@end-alpha@
 end
 
@@ -348,10 +348,8 @@ function ns.UpdateAllFrameAppearances()
 	end
 
 	--@alpha@
-	if ns.Debug then
-		ns.Debug.Inc("fullRefreshes")
-		ns.Debug.Set("lastRefreshTime", GetTime())
-	end
+	ns.Debug.Inc("fullRefreshes")
+	ns.Debug.Set("lastRefreshTime", GetTime())
 	--@end-alpha@
 
 	-- Party frames (1–5)

@@ -44,11 +44,7 @@ function addon:HandleSlashCommand(input)
 		StaticPopup_Show("OVERSHIELDS_REFORGED_RESET")
 		--@alpha@
 	elseif command == "debug" or command == "d" then
-		if ns.Debug then
-			ns.Debug:Toggle()
-		else
-			self:Print("Debug window is only available in alpha builds.")
-		end
+		ns.Debug:Toggle()
 		--@end-alpha@
 	else
 		self:Print("Usage:")

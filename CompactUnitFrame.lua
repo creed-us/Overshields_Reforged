@@ -37,7 +37,7 @@ ns.overlayCache = overlayContainers
 local function GetOrCreate(cache, frame, levelOffset)
 	if cache[frame] then
 		--@alpha@
-		if ns.Debug then ns.Debug.Inc("barReuses") end
+		ns.Debug.Inc("barReuses")
 		--@end-alpha@
 		return cache[frame]
 	end
@@ -46,7 +46,7 @@ local function GetOrCreate(cache, frame, levelOffset)
 	if not healthBar then return nil end
 
 	--@alpha@
-	if ns.Debug then ns.Debug.Inc("barCreates") end
+	ns.Debug.Inc("barCreates")
 	--@end-alpha@
 
 	local bar = CreateFrame("StatusBar", nil, healthBar)
@@ -62,61 +62,93 @@ local function GetOrCreate(cache, frame, levelOffset)
 	return bar
 end
 
+local function ResolveShieldState(frame, glowVisible)
+	if glowVisible then
+		return "overshielded"
+	end
+
+	local nativeAbsorb = frame and frame.totalAbsorb
+	if nativeAbsorb and not nativeAbsorb:IsForbidden() and nativeAbsorb:IsShown() then
+		return "shielded"
+	end
+
+	local nativeOverlay = frame and frame.totalAbsorbOverlay
+	if nativeOverlay and not nativeOverlay:IsForbidden() and nativeOverlay:IsShown() then
+		return "shielded"
+	end
+
+	return "unshielded"
+end
+
+local function ResolveAnchorMode(profile, shieldState)
+	if not profile then
+		return "default"
+	end
+
+	if shieldState == "overshielded" then
+		return profile.anchorModeOvershielded or "frame_right"
+	end
+
+	if shieldState == "shielded" then
+		return profile.anchorModeShielded or "health_right"
+	end
+
+	return "default"
+end
+
 --- Updates the anchor and fill direction for a bar based on overshield state and user setting.
--- Uses pixel-based positioning from healthBar texture to avoid secret number arithmetic (Midnight 11.1+).
+-- Uses condition-specific anchor mode settings for shielded and overshielded states.
 -- @param bar The StatusBar to update
+-- @param frame The compact unit frame
 -- @param healthBar The parent health bar
--- @param glowVisible true when unit has overshield
+-- @param shieldState One of: "unshielded", "shielded", "overshielded"
 -- @param profile The active db.profile table
-local function UpdateBarAnchor(bar, healthBar, glowVisible, profile)
-	if not profile then return end
+local function UpdateBarAnchor(bar, frame, healthBar, shieldState, profile)
+	if not bar or not frame or not healthBar then return end
 
-	local useHealthAnchor = profile.anchorShieldToHealth and not glowVisible
+	local targetMode = ResolveAnchorMode(profile, shieldState)
+	local healthTexture = healthBar:GetStatusBarTexture()
+	if targetMode ~= "health_left"
+		and targetMode ~= "health_right"
+		and targetMode ~= "frame_left"
+		and targetMode ~= "frame_right" then
+		targetMode = "default"
+	end
 
-	-- Default mode is most common (dynamic anchoring disabled)
-	if not useHealthAnchor then
-		if bar._anchorMode ~= "default" then
-			--@alpha@
-			if ns.Debug then ns.Debug.Inc("anchorModeChanges") end
-			--@end-alpha@
-			bar._anchorMode = "default"
-			bar:ClearAllPoints()
-			bar:SetAllPoints(healthBar)
-			bar:SetReverseFill(true)
-		end
+	if (targetMode == "health_left" or targetMode == "health_right") and not healthTexture then
+		targetMode = "default"
+	end
+
+	if bar._anchorMode == targetMode then
 		return
 	end
 
-	local useTextureAnchor = profile.anchorToHealthTexture and useHealthAnchor
+	--@alpha@
+	ns.Debug.Inc("anchorModeChanges")
+	--@end-alpha@
 
-	if useTextureAnchor then
-		if bar._anchorMode == "texture" then
-			return
-		end
-		local healthTexture = healthBar:GetStatusBarTexture()
-		if healthTexture then
-			--@alpha@
-			if ns.Debug then ns.Debug.Inc("anchorModeChanges") end
-			--@end-alpha@
-			bar._anchorMode = "texture"
-			bar:ClearAllPoints()
-			bar:SetPoint("TOPLEFT", healthTexture, "TOPRIGHT", 0, 0)
-			bar:SetPoint("BOTTOMRIGHT", healthBar, "BOTTOMRIGHT", 0, 0)
-			bar:SetReverseFill(false)
-		end
+	bar._anchorMode = targetMode
+	bar:ClearAllPoints()
+
+	if targetMode == "health_left" then
+		bar:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, 0)
+		bar:SetPoint("BOTTOMRIGHT", healthTexture, "BOTTOMRIGHT", 0, 0)
+		bar:SetReverseFill(true)
+	elseif targetMode == "health_right" then
+		bar:SetPoint("TOPLEFT", healthTexture, "TOPRIGHT", 0, 0)
+		bar:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 0, 0)
+		bar:SetReverseFill(false)
+	elseif targetMode == "frame_left" then
+		bar:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, 0)
+		bar:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 0, 0)
+		bar:SetReverseFill(false)
+	elseif targetMode == "frame_right" then
+		bar:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, 0)
+		bar:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 0, 0)
+		bar:SetReverseFill(true)
 	else
-		local healthTexture = healthBar:GetStatusBarTexture()
-		local offset = healthTexture and healthTexture:GetWidth() or 0
-		bar:ClearAllPoints()
-		bar:SetPoint("TOPLEFT", healthBar, "TOPLEFT", offset, 0)
-		bar:SetPoint("BOTTOMRIGHT", healthBar, "BOTTOMRIGHT", 0, 0)
-		if bar._anchorMode ~= "health" then
-			--@alpha@
-			if ns.Debug then ns.Debug.Inc("anchorModeChanges") end
-			--@end-alpha@
-			bar:SetReverseFill(false)
-			bar._anchorMode = "health"
-		end
+		bar:SetAllPoints(healthBar)
+		bar:SetReverseFill(true)
 	end
 end
 
@@ -131,7 +163,7 @@ local function HandleCompactUnitFrameUpdate(frame, profile)
 	local unit = frame.displayedUnit
 	if not unit or not UnitExists(unit) then
 		--@alpha@
-		if ns.Debug then ns.Debug.Inc("earlyExits") end
+		ns.Debug.Inc("earlyExits")
 		--@end-alpha@
 		return true
 	end
@@ -139,7 +171,7 @@ local function HandleCompactUnitFrameUpdate(frame, profile)
 	local glow = frame.overAbsorbGlow
 	if not glow or glow:IsForbidden() then
 		--@alpha@
-		if ns.Debug then ns.Debug.Inc("earlyExits") end
+		ns.Debug.Inc("earlyExits")
 		--@end-alpha@
 		return true
 	end
@@ -152,25 +184,24 @@ local function HandleCompactUnitFrameUpdate(frame, profile)
 	local healthBar = frame.healthBar
 	if not healthBar then
 		--@alpha@
-		if ns.Debug then ns.Debug.Inc("earlyExits") end
+		ns.Debug.Inc("earlyExits")
 		--@end-alpha@
 		return false
 	end
 
 	--@alpha@
-	if ns.Debug then ns.Debug.Inc("frameUpdates") end
+	ns.Debug.Inc("frameUpdates")
 	--@end-alpha@
 
 	-- Get max health from healthBar
 	local _, maxHealth = healthBar:GetMinMaxValues()
 	local absorbValue = UnitGetTotalAbsorbs(unit) or 0
+	local shieldState = ResolveShieldState(frame, glowVisible)
 
-	-- Update custom shield bar values
-	-- Note: In health-anchor mode, shield fills proportionally to maxHealth within the
-	-- missing health area. This is a visual compromise to avoid secret number arithmetic.
+	-- Update custom shield bar values using state-specific anchor modes.
 	local absorb = GetOrCreate(containers, frame, 0)
 	if absorb then
-		UpdateBarAnchor(absorb, healthBar, glowVisible, profile)
+		UpdateBarAnchor(absorb, frame, healthBar, shieldState, profile)
 		absorb:SetMinMaxValues(0, maxHealth)
 		absorb:SetValue(absorbValue)
 		absorb:SetShown(frame:IsVisible())
@@ -180,7 +211,7 @@ local function HandleCompactUnitFrameUpdate(frame, profile)
 	-- Update custom overlay bar values
 	local overlay = GetOrCreate(overlayContainers, frame, 1)
 	if overlay then
-		UpdateBarAnchor(overlay, healthBar, glowVisible, profile)
+		UpdateBarAnchor(overlay, frame, healthBar, shieldState, profile)
 		overlay:SetMinMaxValues(0, maxHealth)
 		overlay:SetValue(absorbValue)
 		overlay:SetShown(frame:IsVisible())
@@ -201,7 +232,7 @@ hooksecurefunc("CompactUnitFrameUtil_UpdateFillBar", function(frame, _, bar)
 		if bar and not bar:IsForbidden() then
 			bar:ClearAllPoints()
 			--@alpha@
-			if ns.Debug then ns.Debug.Inc("nativeBarsSuppressed") end
+			ns.Debug.Inc("nativeBarsSuppressed")
 			--@end-alpha@
 		end
 	end
@@ -228,20 +259,20 @@ batchFrame:SetScript("OnUpdate", function()
 
 		if success then
 			--@alpha@
-			if ns.Debug and retryCount[frame] then ns.Debug.Inc("retrySuccesses") end
+			if retryCount[frame] then ns.Debug.Inc("retrySuccesses") end
 			--@end-alpha@
 			updateQueue[frame] = nil
 			retryCount[frame] = nil
 		else
 			local count = (retryCount[frame] or 0) + 1
 			--@alpha@
-			if ns.Debug then ns.Debug.Inc("retryAttempts") end
+			ns.Debug.Inc("retryAttempts")
 			--@end-alpha@
 			if count >= MAX_RETRIES then
 				updateQueue[frame] = nil
 				retryCount[frame] = nil
 				--@alpha@
-				if ns.Debug then ns.Debug.Inc("retryDrops") end
+				ns.Debug.Inc("retryDrops")
 				--@end-alpha@
 			else
 				retryCount[frame] = count
@@ -251,11 +282,9 @@ batchFrame:SetScript("OnUpdate", function()
 	end
 
 	--@alpha@
-	if ns.Debug then
-		ns.Debug.Inc("batchCycles")
-		ns.Debug.Inc("batchFramesTotal", batchSize)
-		ns.Debug.Max("peakBatchSize", batchSize)
-	end
+	ns.Debug.Inc("batchCycles")
+	ns.Debug.Inc("batchFramesTotal", batchSize)
+	ns.Debug.Max("peakBatchSize", batchSize)
 	--@end-alpha@
 
 	if not hasRetries then
@@ -273,12 +302,12 @@ function ns.QueueCompactUnitFrameUpdate(frame)
 	end
 
 	--@alpha@
-	if ns.Debug then ns.Debug.Inc("queueAttempts") end
+	ns.Debug.Inc("queueAttempts")
 	--@end-alpha@
 
 	if updateQueue[frame] then
 		--@alpha@
-		if ns.Debug then ns.Debug.Inc("queueSkipsDuplicate") end
+		ns.Debug.Inc("queueSkipsDuplicate")
 		--@end-alpha@
 		return
 	end
@@ -286,13 +315,13 @@ function ns.QueueCompactUnitFrameUpdate(frame)
 	if not OvershieldsReforged:IsFrameContextEnabled(frame) then
 		ns.HideCustomBars(frame)
 		--@alpha@
-		if ns.Debug then ns.Debug.Inc("queueSkipsDisabled") end
+		ns.Debug.Inc("queueSkipsDisabled")
 		--@end-alpha@
 		return
 	end
 
 	--@alpha@
-	if ns.Debug then ns.Debug.Inc("queueAdds") end
+	ns.Debug.Inc("queueAdds")
 	--@end-alpha@
 
 	updateQueue[frame] = true

@@ -31,7 +31,10 @@ local defaults = {
 		overAbsorbGlowColor = { r = 1, g = 1, b = 1, a = 1 },
 		overAbsorbGlowTexture = "Interface\\RaidFrame\\Shield-Overshield",
 		overAbsorbGlowBlendMode = "ADD",
-		-- Non-overshield anchor behavior
+		-- Conditional anchor behavior
+		anchorModeShielded = "frame_right",
+		anchorModeOvershielded = "frame_right",
+		-- Legacy keys retained for one compatibility window
 		anchorShieldToHealth = false,
 		anchorToHealthTexture = false,
 	},
@@ -71,6 +74,43 @@ local BLEND_MODES = {
 	["DISABLE"] = "Disable",
 	["MOD"] = "Mod",
 }
+
+local ANCHOR_MODES = {
+	["health_left"] = "Health Bar Left",
+	["health_right"] = "Health Bar Right",
+	["frame_left"] = "Unit Frame Left",
+	["frame_right"] = "Unit Frame Right (Default)",
+}
+
+local function IsValidAnchorMode(value)
+	return ANCHOR_MODES[value] ~= nil
+end
+
+local function NormalizeAnchorModeSettings(profile)
+	if not profile then
+		return
+	end
+
+	if profile.anchorModeShielded == nil then
+		if profile.anchorShieldToHealth then
+			profile.anchorModeShielded = "health_right"
+		else
+			profile.anchorModeShielded = defaults.profile.anchorModeShielded
+		end
+	end
+
+	if profile.anchorModeOvershielded == nil then
+		profile.anchorModeOvershielded = defaults.profile.anchorModeOvershielded
+	end
+
+	if not IsValidAnchorMode(profile.anchorModeShielded) then
+		profile.anchorModeShielded = defaults.profile.anchorModeShielded
+	end
+
+	if not IsValidAnchorMode(profile.anchorModeOvershielded) then
+		profile.anchorModeOvershielded = defaults.profile.anchorModeOvershielded
+	end
+end
 
 --- Lazily builds the texture dropdown value table for bar/overlay selectors to catch late-registered LSM textures.
 local cachedTextureValues = nil
@@ -196,9 +236,11 @@ end
 
 function OvershieldsReforged:InitializeDatabase()
 	self.db = AceDB:New("OvershieldsReforgedDB", defaults)
+	NormalizeAnchorModeSettings(self.db and self.db.profile)
 
 	-- Clean up caches and re-apply appearance when the active profile changes.
 	local function OnProfileChanged()
+		NormalizeAnchorModeSettings(self.db and self.db.profile)
 		if ns.ReleaseAllBars then
 			ns.ReleaseAllBars()
 		end
@@ -363,36 +405,43 @@ function OvershieldsReforged:SetupOptions()
 						name = "Shield Positioning",
 						order = 10,
 					},
-					anchorShieldToHealth = {
-						type = "toggle",
-						name = "Dynamic Anchoring",
-						desc = "Switch anchoring behavior depending on whether a unit is overshielded.",
+					anchorModeShielded = {
+						type = "select",
+						name = "Shielded Anchor",
+						desc = "Choose where shield bars and overlays are anchored while the unit has absorbs and is not overshielded.",
 						descStyle = "inline",
 						order = 11,
 						width = "full",
-						get = function() return self.db.profile.anchorShieldToHealth end,
+						values = ANCHOR_MODES,
+						get = function()
+							local value = self.db.profile.anchorModeShielded
+							if not IsValidAnchorMode(value) then
+								return defaults.profile.anchorModeShielded
+							end
+							return value
+						end,
 						set = function(_, value)
-							self.db.profile.anchorShieldToHealth = value
+							self.db.profile.anchorModeShielded = value
 							OnAppearanceChanged()
 						end,
 					},
-					anchorToHealthTexture = {
-						type = "toggle",
-						name = "Fill Missing Health",
-						desc = "Shields will appear to fill missing health while a unit is not overshielded. This display method is not precise in determining actual shielding value while a unit does not have overshields.",
+					anchorModeOvershielded = {
+						type = "select",
+						name = "Overshielded Anchor",
+						desc = "Choose where shield bars and overlays are anchored while the unit is overshielded.",
 						descStyle = "inline",
 						order = 12,
 						width = "full",
-						hidden = function() return not self.db.profile.anchorShieldToHealth end,
+						values = ANCHOR_MODES,
 						get = function()
-							if not self.db.profile.anchorShieldToHealth then
-								return false
+							local value = self.db.profile.anchorModeOvershielded
+							if not IsValidAnchorMode(value) then
+								return defaults.profile.anchorModeOvershielded
 							end
-
-							return self.db.profile.anchorToHealthTexture
+							return value
 						end,
 						set = function(_, value)
-							self.db.profile.anchorToHealthTexture = value
+							self.db.profile.anchorModeOvershielded = value
 							OnAppearanceChanged()
 						end,
 					},

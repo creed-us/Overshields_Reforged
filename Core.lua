@@ -15,7 +15,7 @@ function OvershieldsReforged:OnEnable()
 	-- Hook Bliz's heal-prediction.
 	hooksecurefunc("CompactUnitFrame_UpdateHealPrediction", function(frame)
 		--@alpha@
-		if ns.Debug then ns.Debug.Inc("hookFires") end
+		ns.Debug.Inc("hookFires")
 		--@end-alpha@
 		ns.QueueCompactUnitFrameUpdate(frame)
 	end)
