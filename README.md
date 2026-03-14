@@ -10,7 +10,7 @@ Works with Blizzard's **compact** raid/party/pet frames.
 
 ## How to Use
 
-Run **/overshieldsreforged options** or **/osr o** in your chat or press **Esc** and go to **Options > AddOns > Overshields Reforged**.
+Run **/overshieldsreforged options** or **/osr o** in your chat or press **Esc** and go to **Options → AddOns → Overshields Reforged**.
 
 Run **/overshieldsreforged reset** or **/osr r** in your chat to reset all Overshields Reforged options. _This is recommended for users updating to the Midnight version._
 
