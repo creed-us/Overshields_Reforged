@@ -77,7 +77,7 @@ local BLEND_MODES = {
 
 local ANCHOR_MODES = {
 	["health_left"] = "Health Bar Left",
-	["health_right"] = "Health Bar Right",
+	["health_right"] = "Health Bar Right (Vanilla)",
 	["frame_left"] = "Unit Frame Left",
 	["frame_right"] = "Unit Frame Right (Default)",
 }
@@ -408,7 +408,7 @@ function OvershieldsReforged:SetupOptions()
 					anchorModeShielded = {
 						type = "select",
 						name = "Shielded Anchor",
-						desc = "Choose where shield bars and overlays are anchored while the unit has absorbs and is not overshielded.",
+						desc = "Choose where shield bars and overlays are anchored while the unit has absorbs and is not overshielded. Health Bar Right uses Blizzard-style sizing/placement.",
 						descStyle = "inline",
 						order = 11,
 						width = "full",

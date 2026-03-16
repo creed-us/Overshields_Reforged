@@ -116,6 +116,53 @@ local function ApplyStatusBarTextureAndBlend(bar, state, textureFile, blendMode,
 	end
 end
 
+local function ApplyTextureRegionStyle(region, state, colorTable, textureFile, blendMode, applyTiling)
+	if not region or not state or not colorTable then return end
+
+	local colorR = colorTable.r or 1
+	local colorG = colorTable.g or 1
+	local colorB = colorTable.b or 1
+	local colorA = colorTable.a or 1
+
+	if region.SetVertexColor and (
+		state.colorR ~= colorR
+		or state.colorG ~= colorG
+		or state.colorB ~= colorB
+		or state.colorA ~= colorA
+	) then
+		region:SetVertexColor(colorR, colorG, colorB, colorA)
+		state.colorR, state.colorG, state.colorB, state.colorA = colorR, colorG, colorB, colorA
+	end
+
+	if region.SetTexture and state.textureFile ~= textureFile then
+		SetTextureOrAtlas(region, textureFile)
+		state.textureFile = textureFile
+	end
+
+	if region.SetTexCoord and state.texCoordReset ~= true then
+		region:SetTexCoord(0, 1, 0, 1)
+		state.texCoordReset = true
+	end
+
+	if region.SetHorizTile and region.SetVertTile then
+		local desiredHoriz = applyTiling and true or false
+		local desiredVert = false
+		if state.horizTile ~= desiredHoriz then
+			region:SetHorizTile(desiredHoriz)
+			state.horizTile = desiredHoriz
+		end
+		if state.vertTile ~= desiredVert then
+			region:SetVertTile(desiredVert)
+			state.vertTile = desiredVert
+		end
+	end
+
+	if region.SetBlendMode and state.blendMode ~= blendMode then
+		region:SetBlendMode(blendMode)
+		state.blendMode = blendMode
+	end
+end
+
 --- Applies appearance settings (color, texture, blend mode, and tiling) to a status bar.
 -- Uses SetTexCoord for proper tiling based on frame dimensions (Bliz method).
 -- @param bar The status bar frame to style
@@ -141,8 +188,28 @@ end
 -- @param glowVisible true when overAbsorb glow is active on the parent frame
 -- @param profile Optional db.profile table
 function ns.ApplyAppearanceToNativeBar(bar, glowVisible, profile)
-	if bar and not bar:IsForbidden() then
+	if not bar or bar:IsForbidden() then
+		return
+	end
+
+	if bar.SetStatusBarColor then
 		ns.ApplyAppearanceToBar(bar, glowVisible, profile)
+		return
+	end
+
+	local db = profile or OvershieldsReforged.db and OvershieldsReforged.db.profile
+	if not db then return end
+
+	local colorTable = glowVisible and db.overAbsorbColor or db.absorbColor
+	local textureFile = (glowVisible and db.overAbsorbTexture or db.absorbTexture) or "Interface\\RaidFrame\\Shield-Fill"
+	local blendMode = (glowVisible and db.overAbsorbBlendMode or db.absorbBlendMode) or "ADD"
+	local state = GetStyleState(bar)
+	ApplyTextureRegionStyle(bar, state, colorTable, textureFile, blendMode, false)
+
+	-- Some native absorb implementations expose the visual texture via .fill
+	if bar.fill and not bar.fill:IsForbidden() then
+		local fillState = GetStyleState(bar.fill)
+		ApplyTextureRegionStyle(bar.fill, fillState, colorTable, textureFile, blendMode, false)
 	end
 end
 
@@ -171,9 +238,23 @@ end
 -- @param glowVisible true when overAbsorb glow is active on the parent frame
 -- @param profile Optional db.profile table
 function ns.ApplyAppearanceToNativeOverlay(overlay, glowVisible, profile)
-	if overlay and not overlay:IsForbidden() then
-		ns.ApplyAppearanceToOverlay(overlay, glowVisible, profile)
+	if not overlay or overlay:IsForbidden() then
+		return
 	end
+
+	if overlay.SetStatusBarColor then
+		ns.ApplyAppearanceToOverlay(overlay, glowVisible, profile)
+		return
+	end
+
+	local db = profile or OvershieldsReforged.db and OvershieldsReforged.db.profile
+	if not db then return end
+
+	local colorTable = glowVisible and db.overAbsorbOverlayColor or db.overlayColor
+	local textureFile = (glowVisible and db.overAbsorbOverlayTexture or db.overlayTexture) or "Interface\\RaidFrame\\Shield-Overlay"
+	local blendMode = (glowVisible and db.overAbsorbOverlayBlendMode or db.overlayBlendMode) or "BLEND"
+	local state = GetStyleState(overlay)
+	ApplyTextureRegionStyle(overlay, state, colorTable, textureFile, blendMode, true)
 end
 
 --- Applies appearance settings (color, texture, blend mode) to the overAbsorb glow texture.

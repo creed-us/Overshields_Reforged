@@ -96,6 +96,12 @@ local function ResolveAnchorMode(profile, shieldState)
 	return "default"
 end
 
+local function ShouldUseNativeVisualOnly(profile, shieldState)
+	return profile
+		and shieldState == "shielded"
+		and profile.anchorModeShielded == "health_right"
+end
+
 --- Updates the anchor and fill direction for a bar based on overshield state and user setting.
 -- Uses condition-specific anchor mode settings for shielded and overshielded states.
 -- @param bar The StatusBar to update
@@ -193,18 +199,26 @@ local function HandleCompactUnitFrameUpdate(frame, profile)
 	ns.Debug.Inc("frameUpdates")
 	--@end-alpha@
 
-	-- Get max health from healthBar
+	local shieldState = ResolveShieldState(frame, glowVisible)
+	local useNativeVisualOnly = ShouldUseNativeVisualOnly(profile, shieldState)
+
+	if useNativeVisualOnly then
+		ns.HideCustomBars(frame)
+		ns.ApplyAppearanceToNativeBar(frame.totalAbsorb, false, profile)
+		ns.ApplyAppearanceToNativeOverlay(frame.totalAbsorbOverlay, false, profile)
+		return true
+	end
+
 	local _, maxHealth = healthBar:GetMinMaxValues()
 	local absorbValue = UnitGetTotalAbsorbs(unit) or 0
-	local shieldState = ResolveShieldState(frame, glowVisible)
 
 	-- Update custom shield bar values using state-specific anchor modes.
 	local absorb = GetOrCreate(containers, frame, 0)
 	if absorb then
 		UpdateBarAnchor(absorb, frame, healthBar, shieldState, profile)
+		absorb:SetShown(frame:IsVisible())
 		absorb:SetMinMaxValues(0, maxHealth)
 		absorb:SetValue(absorbValue)
-		absorb:SetShown(frame:IsVisible())
 		ns.ApplyAppearanceToBar(absorb, glowVisible, profile)
 	end
 
@@ -212,9 +226,9 @@ local function HandleCompactUnitFrameUpdate(frame, profile)
 	local overlay = GetOrCreate(overlayContainers, frame, 1)
 	if overlay then
 		UpdateBarAnchor(overlay, frame, healthBar, shieldState, profile)
+		overlay:SetShown(frame:IsVisible())
 		overlay:SetMinMaxValues(0, maxHealth)
 		overlay:SetValue(absorbValue)
-		overlay:SetShown(frame:IsVisible())
 		ns.ApplyAppearanceToOverlay(overlay, glowVisible, profile)
 	end
 
@@ -225,6 +239,17 @@ end
 -- Clears anchor points on non-forbidden frames to suppress the native bar layout.
 hooksecurefunc("CompactUnitFrameUtil_UpdateFillBar", function(frame, _, bar)
 	if not OvershieldsReforged:IsFrameContextEnabled(frame) then
+		return
+	end
+
+	local profile = OvershieldsReforged.db and OvershieldsReforged.db.profile
+	if not profile then
+		return
+	end
+
+	local glow = frame and frame.overAbsorbGlow
+	local glowVisible = glow and not glow:IsForbidden() and glow:IsVisible() or false
+	if profile.anchorModeShielded == "health_right" and not glowVisible then
 		return
 	end
 
