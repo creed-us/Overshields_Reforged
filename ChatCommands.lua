@@ -27,13 +27,16 @@ function addon:HandleSlashCommand(input)
 	argument = strtrim(argument or "")
 
 	if command == "version" or command == "v" then
-		self:Print("Version: " .. (C_AddOns.GetAddOnMetadata(ADDON_NAME, "Version") or "unknown"))
-	elseif command == "status" or command == "s" then
-		local profile = self.db and self.db.profile
-		if not profile then
-			self:Print("Status unavailable (database not initialized).")
-			return
-		end
+        self:Print("Version: " .. (C_AddOns.GetAddOnMetadata(ADDON_NAME, "Version") or "unknown"))
+        return
+	end
+
+    if command == "status" or command == "s" then
+        local profile = self.db and self.db.profile
+        if not profile then
+            self:Print("Status unavailable (database not initialized).")
+            return
+        end
 
 		self:Print("Party: " .. (ns.IsSettingEnabled(profile.enableParty) and "On" or "Off"))
 		self:Print("Raid: " .. (ns.IsSettingEnabled(profile.enableRaid) and "On" or "Off"))
