@@ -470,29 +470,7 @@ end
 -- @return boolean true when updates should run for this unit
 function OvershieldsReforged:IsUnitContextEnabled(unit)
 	local profile = self.db and self.db.profile
-	if not profile or not unit then
-		return false
-	end
-
-	local frameTypePrefix = string_sub(unit, 1, 4)
-
-	if frameTypePrefix == "raid" then
-		-- "raidpet" starts with "raid" too, so check for pet first
-		if string_sub(unit, 5, 7) == "pet" then
-			return ns.IsSettingEnabled(profile.enablePets)
-		end
-		return ns.IsSettingEnabled(profile.enableRaid)
-	end
-
-	if frameTypePrefix == "part" then
-		-- "partypet" starts with "part" too
-		if string_sub(unit, 6, 8) == "pet" then
-			return ns.IsSettingEnabled(profile.enablePets)
-		end
-		return ns.IsSettingEnabled(profile.enableParty)
-	end
-
-	return ns.IsSettingEnabled(profile.enableParty) or ns.IsSettingEnabled(profile.enableRaid)
+	return ns.IsUnitContextEnabledFromProfile(profile, unit)
 end
 
 --- Returns whether the addon should run for the provided compact unit frame.
