@@ -32,7 +32,7 @@ local defaults = {
 		overAbsorbGlowTexture = "Interface\\RaidFrame\\Shield-Overshield",
 		overAbsorbGlowBlendMode = "ADD",
 		-- Conditional anchor behavior
-		anchorModeShielded = "frame_right",
+		anchorModeShielded = "health_right",
 		anchorModeOvershielded = "frame_right",
 		-- Legacy keys retained for one compatibility window
 		anchorShieldToHealth = false,
