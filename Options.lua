@@ -3,12 +3,12 @@ local _, ns = ...
 local LSM = LibStub("LibSharedMedia-3.0", true)
 local AceConfig = LibStub("AceConfig-3.0")
 local AceConfigDialog = LibStub("AceConfigDialog-3.0")
-local AceConfigRegistry = LibStub("AceConfigRegistry-3.0")
 local AceDB = LibStub("AceDB-3.0")
 
 -- Used by both AceDB and the per-group reset buttons in the options UI.
 local defaults = {
 	profile = {
+		-- Frames for modification
 		enableParty = true,
 		enableRaid = true,
 		enablePets = false,
@@ -40,15 +40,15 @@ local defaults = {
 }
 
 StaticPopupDialogs["OVERSHIELDS_REFORGED_RELOAD_ANCHOR"] = {
-    text = "It is recommended to reload the UI when changing anchoring behavior. Reload now?",
-    button1 = ACCEPT,
-    button2 = CANCEL,
+	text = "It is recommended to reload the UI when changing anchoring behavior. Reload now?",
+	button1 = ACCEPT,
+	button2 = CANCEL,
 	OnAccept = function ()
 		ReloadUI()
-    end,
-    timeout = 30,
-    whileDead = true,
-    hideOnEscape = true,
+	end,
+	timeout = 30,
+	whileDead = true,
+	hideOnEscape = true,
 	preferredIndex = 2,
 }
 
@@ -89,9 +89,9 @@ local BLEND_MODES = {
 
 local ANCHOR_MODES = {
 	["health_left"] = "Health Bar Left",
-	["health_right"] = "Health Bar Right (Vanilla)",
+	["health_right"] = "Health Bar Right (Vanilla/Default)",
 	["frame_left"] = "Unit Frame Left",
-	["frame_right"] = "Unit Frame Right (Default)",
+	["frame_right"] = "Unit Frame Right",
 }
 
 local function IsValidAnchorMode(value)
