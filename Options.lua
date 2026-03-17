@@ -33,9 +33,6 @@ local defaults = {
 		-- Conditional anchor behavior
 		anchorModeShielded = "health_right",
 		anchorModeOvershielded = "frame_right",
-		-- Legacy keys retained for one compatibility window
-		anchorShieldToHealth = false,
-		anchorToHealthTexture = false,
 	},
 }
 
@@ -246,12 +243,38 @@ local function OverAbsorbGlowTextureDropdownValues()
 	return values
 end
 
+local CURRENT_DB_VERSION = 1
+
+--[[local function MigrateDB(db)
+	-- Get current or update to 0 if nil/NaN
+	local currentVersion = db.version or 0
+end]]
+
+local function MigrateProfile(profile)
+	-- Get current or update to 0 if nil/NaNs
+    local currentProfileVersion = profile.profileVersion or 0
+
+	if currentProfileVersion < 1 then
+		profile.anchorShieldToHealth = nil
+		profile.anchorToHealthTexture = nil
+		profile.showAbsorbText = nil
+		profile.shieldedHealthAnchorOverlap = nil
+		profile.absorbTextFormat = nil
+	end
+
+	-- Version of the current profile
+	profile.profileVersion = CURRENT_DB_VERSION
+end
+
 function OvershieldsReforged:InitializeDatabase()
-	self.db = AceDB:New("OvershieldsReforgedDB", defaults)
+	self.db = AceDB:New("OvershieldsReforgedDB", defaults, true)
+    --MigrateDB(self.db)
+	MigrateProfile(self.db.profile)
 	NormalizeAnchorModeSettings(self.db and self.db.profile)
 
 	-- Clean up caches and re-apply appearance when the active profile changes.
 	local function OnProfileChanged()
+		MigrateProfile(self.db.profile)
 		NormalizeAnchorModeSettings(self.db and self.db.profile)
 		if ns.ReleaseAllBars then
 			ns.ReleaseAllBars()
