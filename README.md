@@ -6,7 +6,7 @@ There are a couple of options: Color (including alpha/transparency), texture, an
 
 Works with Blizzard's **compact** raid/party/pet frames.
 
-![Overshields Reforged raid-style party frames with options panel visible, and Non-Overshield bar configured as a red color.](./midnight_options.jpg)
+![Overshields Reforged options panel visible, showcasing some of the options available.](./Overshields.png)
 
 ## How to Use
 
