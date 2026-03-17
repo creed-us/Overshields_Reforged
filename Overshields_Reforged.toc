@@ -14,6 +14,9 @@ embeds.xml
 #@@end-no-lib-strip@@
 
 Core.lua
+UnitContext.lua
+ShieldState.lua
+AnchorStrategy.lua
 Options.lua
 ChatCommands.lua
 CompactUnitFrame.lua

@@ -1,15 +1,14 @@
 local _, ns = ...
-local string_sub = string.sub
 -- LibSharedMedia-3.0 optional
 local LSM = LibStub("LibSharedMedia-3.0", true)
 local AceConfig = LibStub("AceConfig-3.0")
 local AceConfigDialog = LibStub("AceConfigDialog-3.0")
-local AceConfigRegistry = LibStub("AceConfigRegistry-3.0")
 local AceDB = LibStub("AceDB-3.0")
 
 -- Used by both AceDB and the per-group reset buttons in the options UI.
 local defaults = {
 	profile = {
+		-- Frames for modification
 		enableParty = true,
 		enableRaid = true,
 		enablePets = false,
@@ -31,10 +30,23 @@ local defaults = {
 		overAbsorbGlowColor = { r = 1, g = 1, b = 1, a = 1 },
 		overAbsorbGlowTexture = "Interface\\RaidFrame\\Shield-Overshield",
 		overAbsorbGlowBlendMode = "ADD",
-		-- Non-overshield anchor behavior
-		anchorShieldToHealth = false,
-		anchorToHealthTexture = false,
+		-- Conditional anchor behavior
+		anchorModeShielded = "health_right",
+		anchorModeOvershielded = "frame_right",
 	},
+}
+
+StaticPopupDialogs["OVERSHIELDS_REFORGED_RELOAD_ANCHOR"] = {
+	text = "It is recommended to reload the UI when changing anchoring behavior. Reload now?",
+	button1 = ACCEPT,
+	button2 = CANCEL,
+	OnAccept = function ()
+		ReloadUI()
+	end,
+	timeout = 30,
+	whileDead = true,
+	hideOnEscape = true,
+	preferredIndex = 2,
 }
 
 function ns.IsSettingEnabled(value)
@@ -71,6 +83,43 @@ local BLEND_MODES = {
 	["DISABLE"] = "Disable",
 	["MOD"] = "Mod",
 }
+
+local ANCHOR_MODES = {
+	["health_left"] = "Health Bar Left",
+	["health_right"] = "Health Bar Right (Vanilla Default)",
+	["frame_left"] = "Unit Frame Left",
+	["frame_right"] = "Unit Frame Right (Overshield Default)",
+}
+
+local function IsValidAnchorMode(value)
+	return ANCHOR_MODES[value] ~= nil
+end
+
+local function NormalizeAnchorModeSettings(profile)
+	if not profile then
+		return
+	end
+
+	if profile.anchorModeShielded == nil then
+		if profile.anchorShieldToHealth then
+			profile.anchorModeShielded = "health_right"
+		else
+			profile.anchorModeShielded = defaults.profile.anchorModeShielded
+		end
+	end
+
+	if profile.anchorModeOvershielded == nil then
+		profile.anchorModeOvershielded = defaults.profile.anchorModeOvershielded
+	end
+
+	if not IsValidAnchorMode(profile.anchorModeShielded) then
+		profile.anchorModeShielded = defaults.profile.anchorModeShielded
+	end
+
+	if not IsValidAnchorMode(profile.anchorModeOvershielded) then
+		profile.anchorModeOvershielded = defaults.profile.anchorModeOvershielded
+	end
+end
 
 --- Lazily builds the texture dropdown value table for bar/overlay selectors to catch late-registered LSM textures.
 local cachedTextureValues = nil
@@ -194,11 +243,39 @@ local function OverAbsorbGlowTextureDropdownValues()
 	return values
 end
 
+local CURRENT_DB_VERSION = 1
+
+--[[local function MigrateDB(db)
+	-- Get current or update to 0 if nil/NaN
+	local currentVersion = db.version or 0
+end]]
+
+local function MigrateProfile(profile)
+	-- Get current or update to 0 if nil/NaNs
+    local currentProfileVersion = profile.profileVersion or 0
+
+	if currentProfileVersion < 1 then
+		profile.anchorShieldToHealth = nil
+		profile.anchorToHealthTexture = nil
+		profile.showAbsorbText = nil
+		profile.shieldedHealthAnchorOverlap = nil
+		profile.absorbTextFormat = nil
+	end
+
+	-- Version of the current profile
+	profile.profileVersion = CURRENT_DB_VERSION
+end
+
 function OvershieldsReforged:InitializeDatabase()
-	self.db = AceDB:New("OvershieldsReforgedDB", defaults)
+	self.db = AceDB:New("OvershieldsReforgedDB", defaults, true)
+    --MigrateDB(self.db)
+	MigrateProfile(self.db.profile)
+	NormalizeAnchorModeSettings(self.db and self.db.profile)
 
 	-- Clean up caches and re-apply appearance when the active profile changes.
 	local function OnProfileChanged()
+		MigrateProfile(self.db.profile)
+		NormalizeAnchorModeSettings(self.db and self.db.profile)
 		if ns.ReleaseAllBars then
 			ns.ReleaseAllBars()
 		end
@@ -363,37 +440,46 @@ function OvershieldsReforged:SetupOptions()
 						name = "Shield Positioning",
 						order = 10,
 					},
-					anchorShieldToHealth = {
-						type = "toggle",
-						name = "Dynamic Anchoring",
-						desc = "Switch anchoring behavior depending on whether a unit is overshielded.",
+					anchorModeShielded = {
+						type = "select",
+						name = "Shielded Anchor",
+						desc = "Choose where shield bars and overlays are anchored while the unit has absorbs and is not overshielded. Health Bar Right uses Blizzard-style sizing/placement.",
 						descStyle = "inline",
 						order = 11,
 						width = "full",
-						get = function() return self.db.profile.anchorShieldToHealth end,
+						values = ANCHOR_MODES,
+						get = function()
+							local value = self.db.profile.anchorModeShielded
+							if not IsValidAnchorMode(value) then
+								return defaults.profile.anchorModeShielded
+							end
+							return value
+						end,
 						set = function(_, value)
-							self.db.profile.anchorShieldToHealth = value
+							self.db.profile.anchorModeShielded = value
 							OnAppearanceChanged()
+							StaticPopup_Show("OVERSHIELDS_REFORGED_RELOAD_ANCHOR")
 						end,
 					},
-					anchorToHealthTexture = {
-						type = "toggle",
-						name = "Fill Missing Health",
-						desc = "Shields will appear to fill missing health while a unit is not overshielded. This display method is not precise in determining actual shielding value while a unit does not have overshields.",
+					anchorModeOvershielded = {
+						type = "select",
+						name = "Overshielded Anchor",
+						desc = "Choose where shield bars and overlays are anchored while the unit is overshielded.",
 						descStyle = "inline",
 						order = 12,
 						width = "full",
-						hidden = function() return not self.db.profile.anchorShieldToHealth end,
+						values = ANCHOR_MODES,
 						get = function()
-							if not self.db.profile.anchorShieldToHealth then
-								return false
+							local value = self.db.profile.anchorModeOvershielded
+							if not IsValidAnchorMode(value) then
+								return defaults.profile.anchorModeOvershielded
 							end
-
-							return self.db.profile.anchorToHealthTexture
+							return value
 						end,
 						set = function(_, value)
-							self.db.profile.anchorToHealthTexture = value
+							self.db.profile.anchorModeOvershielded = value
 							OnAppearanceChanged()
+							StaticPopup_Show("OVERSHIELDS_REFORGED_RELOAD_ANCHOR")
 						end,
 					},
 				},
@@ -421,29 +507,7 @@ end
 -- @return boolean true when updates should run for this unit
 function OvershieldsReforged:IsUnitContextEnabled(unit)
 	local profile = self.db and self.db.profile
-	if not profile or not unit then
-		return false
-	end
-
-	local frameTypePrefix = string_sub(unit, 1, 4)
-
-	if frameTypePrefix == "raid" then
-		-- "raidpet" starts with "raid" too, so check for pet first
-		if string_sub(unit, 5, 7) == "pet" then
-			return ns.IsSettingEnabled(profile.enablePets)
-		end
-		return ns.IsSettingEnabled(profile.enableRaid)
-	end
-
-	if frameTypePrefix == "part" then
-		-- "partypet" starts with "part" too
-		if string_sub(unit, 6, 8) == "pet" then
-			return ns.IsSettingEnabled(profile.enablePets)
-		end
-		return ns.IsSettingEnabled(profile.enableParty)
-	end
-
-	return ns.IsSettingEnabled(profile.enableParty) or ns.IsSettingEnabled(profile.enableRaid)
+	return ns.IsUnitContextEnabledFromProfile(profile, unit)
 end
 
 --- Returns whether the addon should run for the provided compact unit frame.

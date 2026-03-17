@@ -1,7 +1,6 @@
 local _, ns = ...
 
 local pairs = pairs
-local string_find = string.find
 local ipairs = ipairs
 local wipe = wipe
 local IsInRaid = IsInRaid
@@ -68,11 +67,11 @@ local function ApplyStatusBarColor(bar, state, colorR, colorG, colorB, colorA)
 		bar:SetStatusBarColor(colorR, colorG, colorB, colorA)
 		state.colorR, state.colorG, state.colorB, state.colorA = colorR, colorG, colorB, colorA
 		--@alpha@
-		if ns.Debug then ns.Debug.Inc("colorApplied") end
+		ns.Debug.Inc("colorApplied")
 		--@end-alpha@
 	--@alpha@
 	else
-		if ns.Debug then ns.Debug.Inc("colorSkipped") end
+		ns.Debug.Inc("colorSkipped")
 	--@end-alpha@
 	end
 end
@@ -84,11 +83,11 @@ local function ApplyStatusBarTextureAndBlend(bar, state, textureFile, blendMode,
 		bar:SetStatusBarTexture(textureFile)
 		state.textureFile = textureFile
 		--@alpha@
-		if ns.Debug then ns.Debug.Inc("textureApplied") end
+		ns.Debug.Inc("textureApplied")
 		--@end-alpha@
 	--@alpha@
 	else
-		if ns.Debug then ns.Debug.Inc("textureSkipped") end
+		ns.Debug.Inc("textureSkipped")
 	--@end-alpha@
 	end
 	local texture = bar:GetStatusBarTexture()
@@ -106,13 +105,60 @@ local function ApplyStatusBarTextureAndBlend(bar, state, textureFile, blendMode,
 			texture:SetBlendMode(blendMode)
 			state.blendMode = blendMode
 			--@alpha@
-			if ns.Debug then ns.Debug.Inc("blendApplied") end
+			ns.Debug.Inc("blendApplied")
 			--@end-alpha@
 		--@alpha@
 		else
-			if ns.Debug then ns.Debug.Inc("blendSkipped") end
+			ns.Debug.Inc("blendSkipped")
 		--@end-alpha@
 		end
+	end
+end
+
+local function ApplyTextureRegionStyle(region, state, colorTable, textureFile, blendMode, applyTiling)
+	if not region or not state or not colorTable then return end
+
+	local colorR = colorTable.r or 1
+	local colorG = colorTable.g or 1
+	local colorB = colorTable.b or 1
+	local colorA = colorTable.a or 1
+
+	if region.SetVertexColor and (
+		state.colorR ~= colorR
+		or state.colorG ~= colorG
+		or state.colorB ~= colorB
+		or state.colorA ~= colorA
+	) then
+		region:SetVertexColor(colorR, colorG, colorB, colorA)
+		state.colorR, state.colorG, state.colorB, state.colorA = colorR, colorG, colorB, colorA
+	end
+
+	if region.SetTexture and state.textureFile ~= textureFile then
+		SetTextureOrAtlas(region, textureFile)
+		state.textureFile = textureFile
+	end
+
+	if region.SetTexCoord and state.texCoordReset ~= true then
+		region:SetTexCoord(0, 1, 0, 1)
+		state.texCoordReset = true
+	end
+
+	if region.SetHorizTile and region.SetVertTile then
+		local desiredHoriz = applyTiling and true or false
+		local desiredVert = false
+		if state.horizTile ~= desiredHoriz then
+			region:SetHorizTile(desiredHoriz)
+			state.horizTile = desiredHoriz
+		end
+		if state.vertTile ~= desiredVert then
+			region:SetVertTile(desiredVert)
+			state.vertTile = desiredVert
+		end
+	end
+
+	if region.SetBlendMode and state.blendMode ~= blendMode then
+		region:SetBlendMode(blendMode)
+		state.blendMode = blendMode
 	end
 end
 
@@ -141,8 +187,28 @@ end
 -- @param glowVisible true when overAbsorb glow is active on the parent frame
 -- @param profile Optional db.profile table
 function ns.ApplyAppearanceToNativeBar(bar, glowVisible, profile)
-	if bar and not bar:IsForbidden() then
+	if not bar or bar:IsForbidden() then
+		return
+	end
+
+	if bar.SetStatusBarColor then
 		ns.ApplyAppearanceToBar(bar, glowVisible, profile)
+		return
+	end
+
+	local db = profile or OvershieldsReforged.db and OvershieldsReforged.db.profile
+	if not db then return end
+
+	local colorTable = glowVisible and db.overAbsorbColor or db.absorbColor
+	local textureFile = (glowVisible and db.overAbsorbTexture or db.absorbTexture) or "Interface\\RaidFrame\\Shield-Fill"
+	local blendMode = (glowVisible and db.overAbsorbBlendMode or db.absorbBlendMode) or "ADD"
+	local state = GetStyleState(bar)
+	ApplyTextureRegionStyle(bar, state, colorTable, textureFile, blendMode, false)
+
+	-- Some native absorb implementations expose the visual texture via .fill
+	if bar.fill and not bar.fill:IsForbidden() then
+		local fillState = GetStyleState(bar.fill)
+		ApplyTextureRegionStyle(bar.fill, fillState, colorTable, textureFile, blendMode, false)
 	end
 end
 
@@ -171,9 +237,23 @@ end
 -- @param glowVisible true when overAbsorb glow is active on the parent frame
 -- @param profile Optional db.profile table
 function ns.ApplyAppearanceToNativeOverlay(overlay, glowVisible, profile)
-	if overlay and not overlay:IsForbidden() then
-		ns.ApplyAppearanceToOverlay(overlay, glowVisible, profile)
+	if not overlay or overlay:IsForbidden() then
+		return
 	end
+
+	if overlay.SetStatusBarColor then
+		ns.ApplyAppearanceToOverlay(overlay, glowVisible, profile)
+		return
+	end
+
+	local db = profile or OvershieldsReforged.db and OvershieldsReforged.db.profile
+	if not db then return end
+
+	local colorTable = glowVisible and db.overAbsorbOverlayColor or db.overlayColor
+	local textureFile = (glowVisible and db.overAbsorbOverlayTexture or db.overlayTexture) or "Interface\\RaidFrame\\Shield-Overlay"
+	local blendMode = (glowVisible and db.overAbsorbOverlayBlendMode or db.overlayBlendMode) or "BLEND"
+	local state = GetStyleState(overlay)
+	ApplyTextureRegionStyle(overlay, state, colorTable, textureFile, blendMode, true)
 end
 
 --- Applies appearance settings (color, texture, blend mode) to the overAbsorb glow texture.
@@ -225,6 +305,18 @@ function ns.ApplyAppearanceToNativeOverAbsorbGlow(glow, profile)
 	end
 end
 
+local function IsNativeVisualOnlyShielded(frame, glowVisible, profile)
+	if not frame or not profile or glowVisible then
+		return false
+	end
+
+	if profile.anchorModeShielded ~= "health_right" then
+		return false
+	end
+
+	return ns.ResolveShieldState(frame, glowVisible) == "shielded"
+end
+
 --- Applies all appearance settings to a single compact unit frame.
 -- @param frame The compact unit frame
 -- @param glowVisible true when overAbsorb glow is active
@@ -233,22 +325,34 @@ function ns.ApplyAppearanceToFrame(frame, glowVisible, profile)
 	if not OvershieldsReforged:IsFrameContextEnabled(frame) then
 		ns.HideCustomBars(frame)
 		--@alpha@
-		if ns.Debug then ns.Debug.Inc("contextDisabled") end
+		ns.Debug.Inc("contextDisabled")
 		--@end-alpha@
 		return
 	end
 
-	ns.ApplyAppearanceToBar(ns.absorbCache[frame], glowVisible, profile)
-	ns.ApplyAppearanceToOverlay(ns.overlayCache[frame], glowVisible, profile)
-	ns.ApplyAppearanceToNativeBar(frame.totalAbsorb, glowVisible, profile)
-	ns.ApplyAppearanceToNativeOverlay(frame.totalAbsorbOverlay, glowVisible, profile)
-	ns.ApplyAppearanceToNativeOverAbsorbGlow(frame.overAbsorbGlow, profile)
+	local db = profile or OvershieldsReforged.db and OvershieldsReforged.db.profile
+	if not db then
+		return
+	end
+
+	if IsNativeVisualOnlyShielded(frame, glowVisible, db) then
+		ns.HideCustomBars(frame)
+		ns.ApplyAppearanceToNativeBar(frame.totalAbsorb, false, db)
+		ns.ApplyAppearanceToNativeOverlay(frame.totalAbsorbOverlay, false, db)
+		ns.ApplyAppearanceToNativeOverAbsorbGlow(frame.overAbsorbGlow, db)
+		return
+	end
+
+	ns.ApplyAppearanceToBar(ns.absorbCache[frame], glowVisible, db)
+	ns.ApplyAppearanceToOverlay(ns.overlayCache[frame], glowVisible, db)
+	ns.ApplyAppearanceToNativeOverAbsorbGlow(frame.overAbsorbGlow, db)
 end
 
 --- Resolves visible glow state for a frame, guarding against forbidden access.
 -- @param frame The compact unit frame
 -- @return boolean true if the overAbsorb glow is visible
 local function IsGlowVisible(frame)
+	if not frame or frame:IsForbidden() then return false end
 	local glow = frame.overAbsorbGlow
 	if not glow or glow:IsForbidden() then return false end
 	return glow:IsVisible()
@@ -258,31 +362,31 @@ end
 -- @param frame The compact unit frame to process
 -- @param profile The active db.profile table
 local function ProcessFrame(frame, profile)
-	if frame and frame.displayedUnit then
+	if frame and not frame:IsForbidden() and frame.displayedUnit then
 		if frame:IsShown() then
 			ns.ApplyAppearanceToFrame(frame, IsGlowVisible(frame), profile)
 			--@alpha@
-			if ns.Debug then ns.Debug.Inc("framesShown") end
+			ns.Debug.Inc("framesShown")
 			--@end-alpha@
 		else
 			ns.HideCustomBars(frame)
 			--@alpha@
-			if ns.Debug then ns.Debug.Inc("framesHidden") end
+			ns.Debug.Inc("framesHidden")
 			--@end-alpha@
 		end
 	end
 end
 
 local function IsPartyUnit(frame)
-	return frame and frame.displayedUnit and string_find(frame.displayedUnit, "party", 1, true) and not string_find(frame.displayedUnit, "pet", 1, true)
+	return frame and ns.GetUnitContext(frame.displayedUnit) == "party"
 end
 
 local function IsRaidUnit(frame)
-	return frame and frame.displayedUnit and string_find(frame.displayedUnit, "raid", 1, true) and not string_find(frame.displayedUnit, "pet", 1, true)
+	return frame and ns.GetUnitContext(frame.displayedUnit) == "raid"
 end
 
 local function IsPetUnit(frame)
-	return frame and frame.displayedUnit and string_find(frame.displayedUnit, "pet", 1, true)
+	return frame and ns.GetUnitContext(frame.displayedUnit) == "pet"
 end
 
 local function HideCachedBarsByPredicate(predicate)
@@ -307,7 +411,7 @@ local function UpdateFramePool(container, prefix, maxCount, profile)
 	-- Modern: iterate the container's active flow layout children (10.0+)
 	if container and container.flowFrames then
 		--@alpha@
-		if ns.Debug then ns.Debug.Set("poolPath", "flowFrames") end
+		ns.Debug.Set("poolPath", "flowFrames")
 		local flowProcessed = 0
 		--@end-alpha@
 		for _, frame in ipairs(container.flowFrames) do
@@ -317,14 +421,14 @@ local function UpdateFramePool(container, prefix, maxCount, profile)
 			--@end-alpha@
 		end
 		--@alpha@
-		if ns.Debug then ns.Debug.Set("poolFramesProcessed", flowProcessed) end
+		ns.Debug.Set("poolFramesProcessed", flowProcessed)
 		--@end-alpha@
 		return
 	end
 
 	-- Fallback: walk global table by name prefix
 	--@alpha@
-	if ns.Debug then ns.Debug.Set("poolPath", "legacy") end
+	ns.Debug.Set("poolPath", "legacy")
 	local legacyProcessed = 0
 	--@end-alpha@
 	for i = 1, maxCount do
@@ -335,7 +439,7 @@ local function UpdateFramePool(container, prefix, maxCount, profile)
 		--@end-alpha@
 	end
 	--@alpha@
-	if ns.Debug then ns.Debug.Set("poolFramesProcessed", legacyProcessed) end
+	ns.Debug.Set("poolFramesProcessed", legacyProcessed)
 	--@end-alpha@
 end
 
@@ -348,10 +452,8 @@ function ns.UpdateAllFrameAppearances()
 	end
 
 	--@alpha@
-	if ns.Debug then
-		ns.Debug.Inc("fullRefreshes")
-		ns.Debug.Set("lastRefreshTime", GetTime())
-	end
+	ns.Debug.Inc("fullRefreshes")
+	ns.Debug.Set("lastRefreshTime", GetTime())
 	--@end-alpha@
 
 	-- Party frames (1–5)
@@ -382,6 +484,7 @@ end
 -- Called on profile change to prevent stale cached appearance from persisting.
 function ns.WipeStyleCache()
 	wipe(styleCache)
+	wipe(atlasCache)
 end
 
 --@alpha@

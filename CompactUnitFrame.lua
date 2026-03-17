@@ -3,6 +3,7 @@ local _, ns = ...
 local CreateFrame = CreateFrame
 local UnitExists = UnitExists
 local UnitGetTotalAbsorbs = UnitGetTotalAbsorbs
+local GetTime = GetTime
 local wipe = wipe
 local next = next
 
@@ -24,6 +25,8 @@ local retryCount = {}
 
 --- Maximum OnUpdate cycles to retry an unready frame before dropping it
 local MAX_RETRIES = 10
+local CACHE_CLEANUP_INTERVAL = 5
+local lastCleanupAt = 0
 
 --- Exports caches for use by AppearanceManager
 ns.absorbCache = containers
@@ -37,7 +40,7 @@ ns.overlayCache = overlayContainers
 local function GetOrCreate(cache, frame, levelOffset)
 	if cache[frame] then
 		--@alpha@
-		if ns.Debug then ns.Debug.Inc("barReuses") end
+		ns.Debug.Inc("barReuses")
 		--@end-alpha@
 		return cache[frame]
 	end
@@ -46,7 +49,7 @@ local function GetOrCreate(cache, frame, levelOffset)
 	if not healthBar then return nil end
 
 	--@alpha@
-	if ns.Debug then ns.Debug.Inc("barCreates") end
+	ns.Debug.Inc("barCreates")
 	--@end-alpha@
 
 	local bar = CreateFrame("StatusBar", nil, healthBar)
@@ -62,61 +65,106 @@ local function GetOrCreate(cache, frame, levelOffset)
 	return bar
 end
 
---- Updates the anchor and fill direction for a bar based on overshield state and user setting.
--- Uses pixel-based positioning from healthBar texture to avoid secret number arithmetic (Midnight 11.1+).
--- @param bar The StatusBar to update
--- @param healthBar The parent health bar
--- @param glowVisible true when unit has overshield
--- @param profile The active db.profile table
-local function UpdateBarAnchor(bar, healthBar, glowVisible, profile)
-	if not profile then return end
-
-	local useHealthAnchor = profile.anchorShieldToHealth and not glowVisible
-
-	-- Default mode is most common (dynamic anchoring disabled)
-	if not useHealthAnchor then
-		if bar._anchorMode ~= "default" then
-			--@alpha@
-			if ns.Debug then ns.Debug.Inc("anchorModeChanges") end
-			--@end-alpha@
-			bar._anchorMode = "default"
-			bar:ClearAllPoints()
-			bar:SetAllPoints(healthBar)
-			bar:SetReverseFill(true)
-		end
+local function SuppressNativeAbsorbVisuals(frame)
+	if not frame then
 		return
 	end
 
-	local useTextureAnchor = profile.anchorToHealthTexture and useHealthAnchor
+	local nativeAbsorb = frame.totalAbsorb
+	if nativeAbsorb and not nativeAbsorb:IsForbidden() then
+		nativeAbsorb:Hide()
+		if nativeAbsorb.overlay and not nativeAbsorb.overlay:IsForbidden() then
+			nativeAbsorb.overlay:Hide()
+		end
+	end
 
-	if useTextureAnchor then
-		if bar._anchorMode == "texture" then
-			return
-		end
-		local healthTexture = healthBar:GetStatusBarTexture()
-		if healthTexture then
-			--@alpha@
-			if ns.Debug then ns.Debug.Inc("anchorModeChanges") end
-			--@end-alpha@
-			bar._anchorMode = "texture"
-			bar:ClearAllPoints()
-			bar:SetPoint("TOPLEFT", healthTexture, "TOPRIGHT", 0, 0)
-			bar:SetPoint("BOTTOMRIGHT", healthBar, "BOTTOMRIGHT", 0, 0)
-			bar:SetReverseFill(false)
-		end
-	else
-		local healthTexture = healthBar:GetStatusBarTexture()
-		local offset = healthTexture and healthTexture:GetWidth() or 0
-		bar:ClearAllPoints()
-		bar:SetPoint("TOPLEFT", healthBar, "TOPLEFT", offset, 0)
-		bar:SetPoint("BOTTOMRIGHT", healthBar, "BOTTOMRIGHT", 0, 0)
-		if bar._anchorMode ~= "health" then
-			--@alpha@
-			if ns.Debug then ns.Debug.Inc("anchorModeChanges") end
-			--@end-alpha@
-			bar:SetReverseFill(false)
-			bar._anchorMode = "health"
-		end
+	local nativeOverlay = frame.totalAbsorbOverlay
+	if nativeOverlay and not nativeOverlay:IsForbidden() then
+		nativeOverlay:Hide()
+	end
+end
+
+function ns.EnforceNativeAbsorbVisibility(frame, profile)
+	if not frame or frame:IsForbidden() then
+		return
+	end
+
+	if not OvershieldsReforged:IsFrameContextEnabled(frame) then
+		return
+	end
+
+	local db = profile or OvershieldsReforged.db and OvershieldsReforged.db.profile
+	if not db then
+		return
+	end
+
+	local glow = frame.overAbsorbGlow
+	local glowVisible = glow and not glow:IsForbidden() and glow:IsVisible() or false
+	if glowVisible then
+		SuppressNativeAbsorbVisuals(frame)
+		return
+	end
+
+	local shieldState = ns.ResolveShieldState(frame, glowVisible)
+	if not ns.ShouldUseNativeVisualOnly(db, shieldState) then
+		SuppressNativeAbsorbVisuals(frame)
+	end
+end
+
+local function ApplyNativeVisualOnlyShielded(frame, profile)
+	ns.HideCustomBars(frame)
+	ns.ApplyAppearanceToNativeBar(frame.totalAbsorb, false, profile)
+	ns.ApplyAppearanceToNativeOverlay(frame.totalAbsorbOverlay, false, profile)
+end
+
+--- Updates the anchor and fill direction for a bar based on overshield state and user setting.
+-- Uses condition-specific anchor mode settings for shielded and overshielded states.
+-- @param bar The StatusBar to update
+-- @param frame The compact unit frame
+-- @param healthBar The parent health bar
+-- @param targetMode Normalized anchor mode string
+-- @param healthTexture The health bar status bar texture (or nil)
+local function UpdateBarAnchor(bar, frame, healthBar, targetMode, healthTexture)
+	if not bar or not frame or not healthBar then return end
+
+	if bar._anchorMode == targetMode then
+		return
+	end
+
+	--@alpha@
+	ns.Debug.Inc("anchorModeChanges")
+	--@end-alpha@
+
+	bar._anchorMode = targetMode
+	bar:ClearAllPoints()
+	ns.ApplyAnchorStrategy(bar, frame, healthBar, targetMode, healthTexture)
+end
+
+local function ApplyCustomBars(frame, profile, healthBar, unit, shieldState, glowVisible)
+	local _, maxHealth = healthBar:GetMinMaxValues()
+	local absorbValue = UnitGetTotalAbsorbs(unit) or 0
+	local frameVisible = frame:IsVisible()
+	local healthTexture = healthBar:GetStatusBarTexture()
+	local targetMode = ns.NormalizeAnchorMode(ns.ResolveAnchorMode(profile, shieldState), healthTexture)
+
+	-- Update custom shield bar values using state-specific anchor modes.
+	local absorb = GetOrCreate(containers, frame, 0)
+	if absorb then
+		UpdateBarAnchor(absorb, frame, healthBar, targetMode, healthTexture)
+		absorb:SetShown(frameVisible)
+		absorb:SetMinMaxValues(0, maxHealth)
+		absorb:SetValue(absorbValue)
+		ns.ApplyAppearanceToBar(absorb, glowVisible, profile)
+	end
+
+	-- Update custom overlay bar values
+	local overlay = GetOrCreate(overlayContainers, frame, 1)
+	if overlay then
+		UpdateBarAnchor(overlay, frame, healthBar, targetMode, healthTexture)
+		overlay:SetShown(frameVisible)
+		overlay:SetMinMaxValues(0, maxHealth)
+		overlay:SetValue(absorbValue)
+		ns.ApplyAppearanceToOverlay(overlay, glowVisible, profile)
 	end
 end
 
@@ -128,10 +176,14 @@ end
 -- @param profile The active db.profile table
 -- @return true if the frame was processed (or intentionally skipped), false if unready for retry
 local function HandleCompactUnitFrameUpdate(frame, profile)
+	if not frame or frame:IsForbidden() then
+		return true
+	end
+
 	local unit = frame.displayedUnit
 	if not unit or not UnitExists(unit) then
 		--@alpha@
-		if ns.Debug then ns.Debug.Inc("earlyExits") end
+		ns.Debug.Inc("earlyExits")
 		--@end-alpha@
 		return true
 	end
@@ -139,7 +191,7 @@ local function HandleCompactUnitFrameUpdate(frame, profile)
 	local glow = frame.overAbsorbGlow
 	if not glow or glow:IsForbidden() then
 		--@alpha@
-		if ns.Debug then ns.Debug.Inc("earlyExits") end
+		ns.Debug.Inc("earlyExits")
 		--@end-alpha@
 		return true
 	end
@@ -152,60 +204,28 @@ local function HandleCompactUnitFrameUpdate(frame, profile)
 	local healthBar = frame.healthBar
 	if not healthBar then
 		--@alpha@
-		if ns.Debug then ns.Debug.Inc("earlyExits") end
+		ns.Debug.Inc("earlyExits")
 		--@end-alpha@
 		return false
 	end
 
 	--@alpha@
-	if ns.Debug then ns.Debug.Inc("frameUpdates") end
+	ns.Debug.Inc("frameUpdates")
 	--@end-alpha@
 
-	-- Get max health from healthBar
-	local _, maxHealth = healthBar:GetMinMaxValues()
-	local absorbValue = UnitGetTotalAbsorbs(unit) or 0
+	local shieldState = ns.ResolveShieldState(frame, glowVisible)
+	local useNativeVisualOnly = ns.ShouldUseNativeVisualOnly(profile, shieldState)
 
-	-- Update custom shield bar values
-	-- Note: In health-anchor mode, shield fills proportionally to maxHealth within the
-	-- missing health area. This is a visual compromise to avoid secret number arithmetic.
-	local absorb = GetOrCreate(containers, frame, 0)
-	if absorb then
-		UpdateBarAnchor(absorb, healthBar, glowVisible, profile)
-		absorb:SetMinMaxValues(0, maxHealth)
-		absorb:SetValue(absorbValue)
-		absorb:SetShown(frame:IsVisible())
-		ns.ApplyAppearanceToBar(absorb, glowVisible, profile)
+	if useNativeVisualOnly then
+		ApplyNativeVisualOnlyShielded(frame, profile)
+		return true
 	end
 
-	-- Update custom overlay bar values
-	local overlay = GetOrCreate(overlayContainers, frame, 1)
-	if overlay then
-		UpdateBarAnchor(overlay, healthBar, glowVisible, profile)
-		overlay:SetMinMaxValues(0, maxHealth)
-		overlay:SetValue(absorbValue)
-		overlay:SetShown(frame:IsVisible())
-		ns.ApplyAppearanceToOverlay(overlay, glowVisible, profile)
-	end
+	SuppressNativeAbsorbVisuals(frame)
+	ApplyCustomBars(frame, profile, healthBar, unit, shieldState, glowVisible)
 
 	return true
 end
-
---- Hook into Bliz's fill bar update to prevent native absorb bars from interfering.
--- Clears anchor points on non-forbidden frames to suppress the native bar layout.
-hooksecurefunc("CompactUnitFrameUtil_UpdateFillBar", function(frame, _, bar)
-	if not OvershieldsReforged:IsFrameContextEnabled(frame) then
-		return
-	end
-
-	if bar == frame.overAbsorbGlow or bar == frame.totalAbsorb or bar == frame.totalAbsorbOverlay then
-		if bar and not bar:IsForbidden() then
-			bar:ClearAllPoints()
-			--@alpha@
-			if ns.Debug then ns.Debug.Inc("nativeBarsSuppressed") end
-			--@end-alpha@
-		end
-	end
-end)
 
 --- Process queued frame updates once per cycle.
 -- Frames whose healthBar is not yet available are retried on subsequent cycles
@@ -213,6 +233,12 @@ end)
 batchFrame:SetScript("OnUpdate", function()
 	local profile = OvershieldsReforged.db and OvershieldsReforged.db.profile
 	if not profile then return end
+
+	local now = GetTime()
+	if now - lastCleanupAt >= CACHE_CLEANUP_INTERVAL then
+		ns.CleanupStaleCacheEntries()
+		lastCleanupAt = now
+	end
 
 	--@alpha@
 	local batchSize = 0
@@ -228,20 +254,20 @@ batchFrame:SetScript("OnUpdate", function()
 
 		if success then
 			--@alpha@
-			if ns.Debug and retryCount[frame] then ns.Debug.Inc("retrySuccesses") end
+			if retryCount[frame] then ns.Debug.Inc("retrySuccesses") end
 			--@end-alpha@
 			updateQueue[frame] = nil
 			retryCount[frame] = nil
 		else
 			local count = (retryCount[frame] or 0) + 1
 			--@alpha@
-			if ns.Debug then ns.Debug.Inc("retryAttempts") end
+			ns.Debug.Inc("retryAttempts")
 			--@end-alpha@
 			if count >= MAX_RETRIES then
 				updateQueue[frame] = nil
 				retryCount[frame] = nil
 				--@alpha@
-				if ns.Debug then ns.Debug.Inc("retryDrops") end
+				ns.Debug.Inc("retryDrops")
 				--@end-alpha@
 			else
 				retryCount[frame] = count
@@ -251,11 +277,9 @@ batchFrame:SetScript("OnUpdate", function()
 	end
 
 	--@alpha@
-	if ns.Debug then
-		ns.Debug.Inc("batchCycles")
-		ns.Debug.Inc("batchFramesTotal", batchSize)
-		ns.Debug.Max("peakBatchSize", batchSize)
-	end
+	ns.Debug.Inc("batchCycles")
+	ns.Debug.Inc("batchFramesTotal", batchSize)
+	ns.Debug.Max("peakBatchSize", batchSize)
 	--@end-alpha@
 
 	if not hasRetries then
@@ -268,17 +292,17 @@ end)
 -- Frames are batched and processed during the next OnUpdate cycle for efficiency.
 -- @param frame The compact unit frame to queue for update
 function ns.QueueCompactUnitFrameUpdate(frame)
-	if not frame then
+	if not frame or frame:IsForbidden() then
 		return
 	end
 
 	--@alpha@
-	if ns.Debug then ns.Debug.Inc("queueAttempts") end
+	ns.Debug.Inc("queueAttempts")
 	--@end-alpha@
 
 	if updateQueue[frame] then
 		--@alpha@
-		if ns.Debug then ns.Debug.Inc("queueSkipsDuplicate") end
+		ns.Debug.Inc("queueSkipsDuplicate")
 		--@end-alpha@
 		return
 	end
@@ -286,13 +310,13 @@ function ns.QueueCompactUnitFrameUpdate(frame)
 	if not OvershieldsReforged:IsFrameContextEnabled(frame) then
 		ns.HideCustomBars(frame)
 		--@alpha@
-		if ns.Debug then ns.Debug.Inc("queueSkipsDisabled") end
+		ns.Debug.Inc("queueSkipsDisabled")
 		--@end-alpha@
 		return
 	end
 
 	--@alpha@
-	if ns.Debug then ns.Debug.Inc("queueAdds") end
+	ns.Debug.Inc("queueAdds")
 	--@end-alpha@
 
 	updateQueue[frame] = true

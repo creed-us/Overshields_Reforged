@@ -13,10 +13,23 @@ function OvershieldsReforged:OnEnable()
 	self:RegisterChatCommand("osr", "HandleSlashCommand")
 
 	-- Hook Bliz's heal-prediction.
-	hooksecurefunc("CompactUnitFrame_UpdateHealPrediction", function(frame)
+    hooksecurefunc("CompactUnitFrame_UpdateHealPrediction", function(frame)
+		local profile = OvershieldsReforged.db and OvershieldsReforged.db.profile
+		if profile and profile.anchorModeShielded == "health_right" then
+			ns.EnforceNativeAbsorbVisibility(frame, profile)
+		end
+
 		--@alpha@
-		if ns.Debug then ns.Debug.Inc("hookFires") end
+		ns.Debug.Inc("hookFires")
 		--@end-alpha@
 		ns.QueueCompactUnitFrameUpdate(frame)
 	end)
+
+	-- Initial appearance pass to style any frames already visible when loading.
+	-- Defer to next frame to ensure frame containers are fully initialized.
+	if C_Timer and C_Timer.After then
+		C_Timer.After(0, function()
+			ns.UpdateAllFrameAppearances()
+		end)
+	end
 end
