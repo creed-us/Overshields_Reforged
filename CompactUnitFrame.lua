@@ -73,33 +73,42 @@ local function ResolveShieldState(frame, glowVisible)
 	end
 
 	local nativeOverlay = frame and frame.totalAbsorbOverlay
-	if nativeOverlay and not nativeOverlay:IsForbidden() and nativeOverlay:IsShown() then
-		return "shielded"
+	if nativeOverlay and not nativeOverlay:IsForbidden() then
+		nativeOverlay:Hide()
 	end
-
-	return "unshielded"
 end
 
-local function ResolveAnchorMode(profile, shieldState)
-	if not profile then
-		return "default"
+function ns.EnforceNativeAbsorbVisibility(frame, profile)
+	if not frame or frame:IsForbidden() then
+		return
 	end
 
-	if shieldState == "overshielded" then
-		return profile.anchorModeOvershielded or "frame_right"
+	if not OvershieldsReforged:IsFrameContextEnabled(frame) then
+		return
 	end
 
-	if shieldState == "shielded" then
-		return profile.anchorModeShielded or "health_right"
+	local db = profile or OvershieldsReforged.db and OvershieldsReforged.db.profile
+	if not db then
+		return
 	end
 
-	return "default"
+	local glow = frame.overAbsorbGlow
+	local glowVisible = glow and not glow:IsForbidden() and glow:IsVisible() or false
+	if glowVisible then
+		SuppressNativeAbsorbVisuals(frame)
+		return
+	end
+
+	local shieldState = ns.ResolveShieldState(frame, glowVisible)
+	if not ns.ShouldUseNativeVisualOnly(db, shieldState) then
+		SuppressNativeAbsorbVisuals(frame)
+	end
 end
 
-local function ShouldUseNativeVisualOnly(profile, shieldState)
-	return profile
-		and shieldState == "shielded"
-		and profile.anchorModeShielded == "health_right"
+local function ApplyNativeVisualOnlyShielded(frame, profile)
+	ns.HideCustomBars(frame)
+	ns.ApplyAppearanceToNativeBar(frame.totalAbsorb, false, profile)
+	ns.ApplyAppearanceToNativeOverlay(frame.totalAbsorbOverlay, false, profile)
 end
 
 --- Updates the anchor and fill direction for a bar based on overshield state and user setting.
