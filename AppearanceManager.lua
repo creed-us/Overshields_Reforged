@@ -1,7 +1,6 @@
 local _, ns = ...
 
 local pairs = pairs
-local string_find = string.find
 local ipairs = ipairs
 local wipe = wipe
 local IsInRaid = IsInRaid
