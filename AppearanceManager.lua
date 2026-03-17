@@ -306,6 +306,18 @@ function ns.ApplyAppearanceToNativeOverAbsorbGlow(glow, profile)
 	end
 end
 
+local function IsNativeVisualOnlyShielded(frame, glowVisible, profile)
+	if not frame or not profile or glowVisible then
+		return false
+	end
+
+	if profile.anchorModeShielded ~= "health_right" then
+		return false
+	end
+
+	return ns.ResolveShieldState(frame, glowVisible) == "shielded"
+end
+
 --- Applies all appearance settings to a single compact unit frame.
 -- @param frame The compact unit frame
 -- @param glowVisible true when overAbsorb glow is active
@@ -319,11 +331,22 @@ function ns.ApplyAppearanceToFrame(frame, glowVisible, profile)
 		return
 	end
 
-	ns.ApplyAppearanceToBar(ns.absorbCache[frame], glowVisible, profile)
-	ns.ApplyAppearanceToOverlay(ns.overlayCache[frame], glowVisible, profile)
-	ns.ApplyAppearanceToNativeBar(frame.totalAbsorb, glowVisible, profile)
-	ns.ApplyAppearanceToNativeOverlay(frame.totalAbsorbOverlay, glowVisible, profile)
-	ns.ApplyAppearanceToNativeOverAbsorbGlow(frame.overAbsorbGlow, profile)
+	local db = profile or OvershieldsReforged.db and OvershieldsReforged.db.profile
+	if not db then
+		return
+	end
+
+	if IsNativeVisualOnlyShielded(frame, glowVisible, db) then
+		ns.HideCustomBars(frame)
+		ns.ApplyAppearanceToNativeBar(frame.totalAbsorb, false, db)
+		ns.ApplyAppearanceToNativeOverlay(frame.totalAbsorbOverlay, false, db)
+		ns.ApplyAppearanceToNativeOverAbsorbGlow(frame.overAbsorbGlow, db)
+		return
+	end
+
+	ns.ApplyAppearanceToBar(ns.absorbCache[frame], glowVisible, db)
+	ns.ApplyAppearanceToOverlay(ns.overlayCache[frame], glowVisible, db)
+	ns.ApplyAppearanceToNativeOverAbsorbGlow(frame.overAbsorbGlow, db)
 end
 
 --- Resolves visible glow state for a frame, guarding against forbidden access.
