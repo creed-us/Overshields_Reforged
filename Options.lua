@@ -457,7 +457,7 @@ function OvershieldsReforged:SetupOptions()
 						end,
 						set = function(_, value)
 							self.db.profile.anchorModeShielded = value
-                            OnAppearanceChanged()
+							OnAppearanceChanged()
 							StaticPopup_Show("OVERSHIELDS_REFORGED_RELOAD_ANCHOR")
 						end,
 					},
@@ -478,7 +478,7 @@ function OvershieldsReforged:SetupOptions()
 						end,
 						set = function(_, value)
 							self.db.profile.anchorModeOvershielded = value
-                            OnAppearanceChanged()
+							OnAppearanceChanged()
 							StaticPopup_Show("OVERSHIELDS_REFORGED_RELOAD_ANCHOR")
 						end,
 					},
