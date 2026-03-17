@@ -355,15 +355,15 @@ local function ProcessFrame(frame, profile)
 end
 
 local function IsPartyUnit(frame)
-	return frame and frame.displayedUnit and string_find(frame.displayedUnit, "party", 1, true) and not string_find(frame.displayedUnit, "pet", 1, true)
+	return frame and ns.GetUnitContext(frame.displayedUnit) == "party"
 end
 
 local function IsRaidUnit(frame)
-	return frame and frame.displayedUnit and string_find(frame.displayedUnit, "raid", 1, true) and not string_find(frame.displayedUnit, "pet", 1, true)
+	return frame and ns.GetUnitContext(frame.displayedUnit) == "raid"
 end
 
 local function IsPetUnit(frame)
-	return frame and frame.displayedUnit and string_find(frame.displayedUnit, "pet", 1, true)
+	return frame and ns.GetUnitContext(frame.displayedUnit) == "pet"
 end
 
 local function HideCachedBarsByPredicate(predicate)
