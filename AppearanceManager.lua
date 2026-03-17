@@ -462,6 +462,7 @@ end
 -- Called on profile change to prevent stale cached appearance from persisting.
 function ns.WipeStyleCache()
 	wipe(styleCache)
+	wipe(atlasCache)
 end
 
 --@alpha@
