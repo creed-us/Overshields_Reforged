@@ -86,9 +86,9 @@ local BLEND_MODES = {
 
 local ANCHOR_MODES = {
 	["health_left"] = "Health Bar Left",
-	["health_right"] = "Health Bar Right (Vanilla/Default)",
+	["health_right"] = "Health Bar Right (Vanilla Default)",
 	["frame_left"] = "Unit Frame Left",
-	["frame_right"] = "Unit Frame Right",
+	["frame_right"] = "Unit Frame Right (Overshield Default)",
 }
 
 local function IsValidAnchorMode(value)
