@@ -1,5 +1,4 @@
 local _, ns = ...
-local string_sub = string.sub
 -- LibSharedMedia-3.0 optional
 local LSM = LibStub("LibSharedMedia-3.0", true)
 local AceConfig = LibStub("AceConfig-3.0")
@@ -38,6 +37,19 @@ local defaults = {
 		anchorShieldToHealth = false,
 		anchorToHealthTexture = false,
 	},
+}
+
+StaticPopupDialogs["OVERSHIELDS_REFORGED_RELOAD_ANCHOR"] = {
+    text = "It is recommended to reload the UI when changing anchoring behavior. Reload now?",
+    button1 = ACCEPT,
+    button2 = CANCEL,
+	OnAccept = function ()
+		ReloadUI()
+    end,
+    timeout = 30,
+    whileDead = true,
+    hideOnEscape = true,
+	preferredIndex = 2,
 }
 
 function ns.IsSettingEnabled(value)
@@ -422,7 +434,8 @@ function OvershieldsReforged:SetupOptions()
 						end,
 						set = function(_, value)
 							self.db.profile.anchorModeShielded = value
-							OnAppearanceChanged()
+                            OnAppearanceChanged()
+							StaticPopup_Show("OVERSHIELDS_REFORGED_RELOAD_ANCHOR")
 						end,
 					},
 					anchorModeOvershielded = {
@@ -442,7 +455,8 @@ function OvershieldsReforged:SetupOptions()
 						end,
 						set = function(_, value)
 							self.db.profile.anchorModeOvershielded = value
-							OnAppearanceChanged()
+                            OnAppearanceChanged()
+							StaticPopup_Show("OVERSHIELDS_REFORGED_RELOAD_ANCHOR")
 						end,
 					},
 				},
