@@ -330,6 +330,7 @@ end
 -- @param frame The compact unit frame
 -- @return boolean true if the overAbsorb glow is visible
 local function IsGlowVisible(frame)
+	if not frame or frame:IsForbidden() then return false end
 	local glow = frame.overAbsorbGlow
 	if not glow or glow:IsForbidden() then return false end
 	return glow:IsVisible()
@@ -339,7 +340,7 @@ end
 -- @param frame The compact unit frame to process
 -- @param profile The active db.profile table
 local function ProcessFrame(frame, profile)
-	if frame and frame.displayedUnit then
+	if frame and not frame:IsForbidden() and frame.displayedUnit then
 		if frame:IsShown() then
 			ns.ApplyAppearanceToFrame(frame, IsGlowVisible(frame), profile)
 			--@alpha@
