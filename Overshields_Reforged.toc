@@ -13,6 +13,8 @@
 embeds.xml
 #@@end-no-lib-strip@@
 
+Constants.lua
+Utilities.lua
 Core.lua
 UnitContext.lua
 ShieldState.lua
