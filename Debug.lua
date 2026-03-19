@@ -47,7 +47,7 @@ local counters = {
 local windowCounters = {}
 
 local function ResetTable(t, source)
-	for k in pairs(source) do
+	for k in ns.pairs(source) do
 		local v = source[k]
 		if type(v) == "number" then
 			t[k] = 0
@@ -98,13 +98,13 @@ Debug.windowCounters = windowCounters
 
 local function CountTable(t)
 	local n = 0
-	for _ in pairs(t) do n = n + 1 end
+	for _ in ns.pairs(t) do n = n + 1 end
 	return n
 end
 
 local function CountFramesByContext(cache)
 	local party, raid, pet, other = 0, 0, 0, 0
-	for frame in pairs(cache) do
+	for frame in ns.pairs(cache) do
 		local unit = frame.displayedUnit
 		if unit then
 			if string.find(unit, "pet", 1, true) then
@@ -131,7 +131,7 @@ end
 
 local function FormatTimestamp(t)
 	if t == 0 then return "never" end
-	return string.format("%.1fs ago", GetTime() - t)
+	return string.format("%.1fs ago", ns.GetTime() - t)
 end
 
 -------------------------------------------------------------------------------
@@ -266,7 +266,7 @@ local function BuildWindow()
 
 	AddButton(controlGroup, "Clear All", function()
 		ResetTable(windowCounters, counters)
-		for k, v in pairs(counters) do
+		for k, v in ns.pairs(counters) do
 			if type(v) == "number" then
 				counters[k] = 0
 			elseif type(v) == "string" then
@@ -357,7 +357,7 @@ function Debug:Close()
 		debugFrame:Release()
 		debugFrame = nil
 	end
-	wipe(widgets)
+	ns.wipe(widgets)
 end
 
 function Debug:Toggle()

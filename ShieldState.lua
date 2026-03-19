@@ -6,12 +6,12 @@ function ns.ResolveShieldState(frame, glowVisible)
 	end
 
 	local nativeAbsorb = frame and frame.totalAbsorb
-	if nativeAbsorb and not nativeAbsorb:IsForbidden() and nativeAbsorb:IsShown() then
+	if not ns.FrameIsForbidden(nativeAbsorb) and nativeAbsorb:IsShown() then
 		return "shielded"
 	end
 
 	local nativeOverlay = frame and frame.totalAbsorbOverlay
-	if nativeOverlay and not nativeOverlay:IsForbidden() and nativeOverlay:IsShown() then
+	if not ns.FrameIsForbidden(nativeOverlay) and nativeOverlay:IsShown() then
 		return "shielded"
 	end
 

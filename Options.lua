@@ -49,10 +49,6 @@ StaticPopupDialogs["OVERSHIELDS_REFORGED_RELOAD_ANCHOR"] = {
 	preferredIndex = 2,
 }
 
-function ns.IsSettingEnabled(value)
-	return value ~= false
-end
-
 --- Callback invoked whenever appearance settings are modified.
 -- Triggers update of appearance for all visible compact unit frames.
 local pendingAppearanceRefreshToken = 0
@@ -141,7 +137,7 @@ local function TextureDropdownValues()
 		["Interface\\RaidFrame\\Shield-Fill"] = "|TInterface\\RaidFrame\\Shield-Fill:16:32|t Default Fill",
 	}
 	if LSM then
-		for name, path in pairs(LSM:HashTable("statusbar")) do
+		for name, path in ns.pairs(LSM:HashTable("statusbar")) do
 			values[path] = string.format("|T%s:16:32|t %s", path, name)
 		end
 	end
@@ -160,7 +156,7 @@ end
 
 local function BuildGlowTextureValues(textureEntries)
 	local values = {}
-	for _, textureEntry in ipairs(textureEntries) do
+	for _, textureEntry in ns.ipairs(textureEntries) do
 		local textureAsset = textureEntry[1]
 		local displayName = textureEntry[2]
 		if textureAsset ~= "__PLACEHOLDER" then
@@ -230,8 +226,8 @@ local function OverAbsorbGlowTextureDropdownValues()
 			"spark",
 			"pip",
 		}
-		for _, mediaType in ipairs(mediaTypes) do
-			for name, path in pairs(LSM:HashTable(mediaType) or {}) do
+		for _, mediaType in ns.ipairs(mediaTypes) do
+			for name, path in ns.pairs(LSM:HashTable(mediaType) or {}) do
 				local lowerName = name:lower()
 				if lowerName:find("spark") or lowerName:find("pip") then
 					values[path] = BuildGlowTextureOptionLabel(path, name)
@@ -279,8 +275,8 @@ function OvershieldsReforged:InitializeDatabase()
 		if ns.ReleaseAllBars then
 			ns.ReleaseAllBars()
 		end
-		if ns.WipeStyleCache then
-			ns.WipeStyleCache()
+		if ns.wipeStyleCache then
+			ns.wipeStyleCache()
 		end
 		if ns.UpdateAllFrameAppearances then
 			ns.UpdateAllFrameAppearances()

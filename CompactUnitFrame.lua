@@ -1,14 +1,7 @@
 local _, ns = ...
 
-local CreateFrame = CreateFrame
-local UnitExists = UnitExists
-local UnitGetTotalAbsorbs = UnitGetTotalAbsorbs
-local GetTime = GetTime
-local wipe = wipe
-local next = next
-
 --- Batch update frame used to defer frame updates until OnUpdate cycle
-local batchFrame = CreateFrame("Frame", nil, UIParent)
+local batchFrame = ns.CreateFrame("Frame", nil, UIParent)
 batchFrame:Hide()
 
 --- Queue of frames pending updates in current batch
@@ -52,7 +45,7 @@ local function GetOrCreate(cache, frame, levelOffset)
 	ns.Debug.Inc("barCreates")
 	--@end-alpha@
 
-	local bar = CreateFrame("StatusBar", nil, healthBar)
+	local bar = ns.CreateFrame("StatusBar", nil, healthBar)
 	bar:SetAllPoints(healthBar)
 	bar:SetReverseFill(true)
 	bar:SetFrameLevel(healthBar:GetFrameLevel() + levelOffset)
@@ -71,21 +64,21 @@ local function SuppressNativeAbsorbVisuals(frame)
 	end
 
 	local nativeAbsorb = frame.totalAbsorb
-	if nativeAbsorb and not nativeAbsorb:IsForbidden() then
+	if not ns.FrameIsForbidden(nativeAbsorb) then
 		nativeAbsorb:Hide()
-		if nativeAbsorb.overlay and not nativeAbsorb.overlay:IsForbidden() then
+		if not ns.FrameIsForbidden(nativeAbsorb.overlay) then
 			nativeAbsorb.overlay:Hide()
 		end
 	end
 
 	local nativeOverlay = frame.totalAbsorbOverlay
-	if nativeOverlay and not nativeOverlay:IsForbidden() then
+	if not ns.FrameIsForbidden(nativeOverlay) then
 		nativeOverlay:Hide()
 	end
 end
 
 function ns.EnforceNativeAbsorbVisibility(frame, profile)
-	if not frame or frame:IsForbidden() then
+	if ns.FrameIsForbidden(frame) then
 		return
 	end
 
@@ -98,21 +91,19 @@ function ns.EnforceNativeAbsorbVisibility(frame, profile)
 		return
 	end
 
-	local glow = frame.overAbsorbGlow
-	local glowVisible = glow and not glow:IsForbidden() and glow:IsVisible() or false
-	if glowVisible then
+	if ns.IsGlowVisible(frame) then
 		SuppressNativeAbsorbVisuals(frame)
 		return
 	end
 
-	local shieldState = ns.ResolveShieldState(frame, glowVisible)
+	local shieldState = ns.ResolveShieldState(frame)
 	if not ns.ShouldUseNativeVisualOnly(db, shieldState) then
 		SuppressNativeAbsorbVisuals(frame)
 	end
 end
 
 local function ApplyNativeVisualOnlyShielded(frame, profile)
-	ns.HideCustomBars(frame)
+	ns.HideCustomBars(frame, styleCache)
 	ns.ApplyAppearanceToNativeBar(frame.totalAbsorb, false, profile)
 	ns.ApplyAppearanceToNativeOverlay(frame.totalAbsorbOverlay, false, profile)
 end
@@ -140,9 +131,9 @@ local function UpdateBarAnchor(bar, frame, healthBar, targetMode, healthTexture)
 	ns.ApplyAnchorStrategy(bar, frame, healthBar, targetMode, healthTexture)
 end
 
-local function ApplyCustomBars(frame, profile, healthBar, unit, shieldState, glowVisible)
+local function ApplyCustomBars(frame, profile, healthBar, unit, shieldState)
 	local _, maxHealth = healthBar:GetMinMaxValues()
-	local absorbValue = UnitGetTotalAbsorbs(unit) or 0
+	local absorbValue = ns.UnitGetTotalAbsorbs(unit) or 0
 	local frameVisible = frame:IsVisible()
 	local healthTexture = healthBar:GetStatusBarTexture()
 	local targetMode = ns.NormalizeAnchorMode(ns.ResolveAnchorMode(profile, shieldState), healthTexture)
@@ -154,7 +145,7 @@ local function ApplyCustomBars(frame, profile, healthBar, unit, shieldState, glo
 		absorb:SetShown(frameVisible)
 		absorb:SetMinMaxValues(0, maxHealth)
 		absorb:SetValue(absorbValue)
-		ns.ApplyAppearanceToBar(absorb, glowVisible, profile)
+		ns.ApplyAppearanceToBar(absorb, profile)
 	end
 
 	-- Update custom overlay bar values
@@ -164,7 +155,7 @@ local function ApplyCustomBars(frame, profile, healthBar, unit, shieldState, glo
 		overlay:SetShown(frameVisible)
 		overlay:SetMinMaxValues(0, maxHealth)
 		overlay:SetValue(absorbValue)
-		ns.ApplyAppearanceToOverlay(overlay, glowVisible, profile)
+		ns.ApplyAppearanceToOverlay(overlay, profile)
 	end
 end
 
@@ -176,12 +167,12 @@ end
 -- @param profile The active db.profile table
 -- @return true if the frame was processed (or intentionally skipped), false if unready for retry
 local function HandleCompactUnitFrameUpdate(frame, profile)
-	if not frame or frame:IsForbidden() then
+	if ns.FrameIsForbidden(frame) then
 		return true
 	end
 
 	local unit = frame.displayedUnit
-	if not unit or not UnitExists(unit) then
+	if not unit or not ns.UnitExists(unit) then
 		--@alpha@
 		ns.Debug.Inc("earlyExits")
 		--@end-alpha@
@@ -189,15 +180,14 @@ local function HandleCompactUnitFrameUpdate(frame, profile)
 	end
 
 	local glow = frame.overAbsorbGlow
-	if not glow or glow:IsForbidden() then
+	if ns.FrameIsForbidden(glow) then
 		--@alpha@
 		ns.Debug.Inc("earlyExits")
 		--@end-alpha@
 		return true
 	end
 
-	local glowVisible = glow:IsVisible()
-	if (glowVisible) then
+	if ns.IsGlowVisible(frame) then
 		ns.ApplyAppearanceToOverAbsorbGlow(glow, profile)
 	end
 
@@ -213,7 +203,7 @@ local function HandleCompactUnitFrameUpdate(frame, profile)
 	ns.Debug.Inc("frameUpdates")
 	--@end-alpha@
 
-	local shieldState = ns.ResolveShieldState(frame, glowVisible)
+	local shieldState = ns.ResolveShieldState(frame)
 	local useNativeVisualOnly = ns.ShouldUseNativeVisualOnly(profile, shieldState)
 
 	if useNativeVisualOnly then
@@ -222,7 +212,7 @@ local function HandleCompactUnitFrameUpdate(frame, profile)
 	end
 
 	SuppressNativeAbsorbVisuals(frame)
-	ApplyCustomBars(frame, profile, healthBar, unit, shieldState, glowVisible)
+	ApplyCustomBars(frame, profile, healthBar, unit, shieldState)
 
 	return true
 end
@@ -234,7 +224,7 @@ batchFrame:SetScript("OnUpdate", function()
 	local profile = OvershieldsReforged.db and OvershieldsReforged.db.profile
 	if not profile then return end
 
-	local now = GetTime()
+	local now = ns.GetTime()
 	if now - lastCleanupAt >= CACHE_CLEANUP_INTERVAL then
 		ns.CleanupStaleCacheEntries()
 		lastCleanupAt = now
@@ -246,7 +236,7 @@ batchFrame:SetScript("OnUpdate", function()
 
 	local hasRetries = false
 
-	for frame in next, updateQueue do
+	for frame in ns.next, updateQueue do
 		local success = HandleCompactUnitFrameUpdate(frame, profile)
 		--@alpha@
 		batchSize = batchSize + 1
@@ -283,7 +273,7 @@ batchFrame:SetScript("OnUpdate", function()
 	--@end-alpha@
 
 	if not hasRetries then
-		wipe(updateQueue)
+		ns.wipe(updateQueue)
 		batchFrame:Hide()
 	end
 end)
@@ -292,7 +282,7 @@ end)
 -- Frames are batched and processed during the next OnUpdate cycle for efficiency.
 -- @param frame The compact unit frame to queue for update
 function ns.QueueCompactUnitFrameUpdate(frame)
-	if not frame or frame:IsForbidden() then
+	if ns.FrameIsForbidden(frame) then
 		return
 	end
 
@@ -308,7 +298,7 @@ function ns.QueueCompactUnitFrameUpdate(frame)
 	end
 
 	if not OvershieldsReforged:IsFrameContextEnabled(frame) then
-		ns.HideCustomBars(frame)
+		ns.HideCustomBars(frame, styleCache)
 		--@alpha@
 		ns.Debug.Inc("queueSkipsDisabled")
 		--@end-alpha@
@@ -326,30 +316,30 @@ end
 --- Releases all custom bars, hiding them and clearing both container caches.
 -- Called on profile change to ensure a clean slate.
 function ns.ReleaseAllBars()
-	for _, bar in next, containers do
+	for _, bar in ns.next, containers do
 		bar:Hide()
 	end
-	wipe(containers)
+	ns.wipe(containers)
 
-	for _, bar in next, overlayContainers do
+	for _, bar in ns.next, overlayContainers do
 		bar:Hide()
 	end
-	wipe(overlayContainers)
+	ns.wipe(overlayContainers)
 
-	wipe(retryCount)
+	ns.wipe(retryCount)
 end
 
 --- Removes cache entries for frames that no longer display a unit or are hidden.
 -- Safe to call periodically to prevent stale entries from accumulating.
 function ns.CleanupStaleCacheEntries()
-	for frame, bar in next, containers do
+	for frame, bar in ns.next, containers do
 		if not frame.displayedUnit or not frame:IsShown() then
 			bar:Hide()
 			containers[frame] = nil
 		end
 	end
 
-	for frame, bar in next, overlayContainers do
+	for frame, bar in ns.next, overlayContainers do
 		if not frame.displayedUnit or not frame:IsShown() then
 			bar:Hide()
 			overlayContainers[frame] = nil
@@ -357,7 +347,7 @@ function ns.CleanupStaleCacheEntries()
 	end
 end
 
-local cleanupEventFrame = CreateFrame("Frame")
+local cleanupEventFrame = ns.CreateFrame("Frame")
 cleanupEventFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
 cleanupEventFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
 cleanupEventFrame:SetScript("OnEvent", function()

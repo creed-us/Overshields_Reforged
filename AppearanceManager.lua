@@ -1,12 +1,9 @@
 local _, ns = ...
 
-local pairs = pairs
-local ipairs = ipairs
-local wipe = wipe
-local IsInRaid = IsInRaid
-local GetTime = GetTime
-
 local styleCache = setmetatable({}, { __mode = "k" })
+ns.StyleCache = styleCache
+
+local atlasCache = {}
 
 local function GetStyleState(target)
 	if not target then
@@ -21,14 +18,6 @@ local function GetStyleState(target)
 
 	return state
 end
-
-local function ResetStyleState(target)
-	if target then
-		styleCache[target] = nil
-	end
-end
-
-local atlasCache = {}
 
 local function SetTextureOrAtlas(textureRegion, asset)
 	local isAtlas = atlasCache[asset]
@@ -45,20 +34,6 @@ local function SetTextureOrAtlas(textureRegion, asset)
 
 	textureRegion:SetTexture(asset)
 	textureRegion:SetTexCoord(0, 1, 0, 1)
-end
-
-function ns.HideCustomBars(frame)
-	local absorb = ns.absorbCache[frame]
-	if absorb then
-		ResetStyleState(absorb)
-		absorb:Hide()
-	end
-
-	local overlay = ns.overlayCache[frame]
-	if overlay then
-		ResetStyleState(overlay)
-		overlay:Hide()
-	end
 end
 
 --- Applies color to a StatusBar only when the cached value has changed.
@@ -206,7 +181,7 @@ function ns.ApplyAppearanceToNativeBar(bar, glowVisible, profile)
 	ApplyTextureRegionStyle(bar, state, colorTable, textureFile, blendMode, false)
 
 	-- Some native absorb implementations expose the visual texture via .fill
-	if bar.fill and not bar.fill:IsForbidden() then
+	if not ns.FrameIsForbidden(bar.fill) then
 		local fillState = GetStyleState(bar.fill)
 		ApplyTextureRegionStyle(bar.fill, fillState, colorTable, textureFile, blendMode, false)
 	end
@@ -237,7 +212,7 @@ end
 -- @param glowVisible true when overAbsorb glow is active on the parent frame
 -- @param profile Optional db.profile table
 function ns.ApplyAppearanceToNativeOverlay(overlay, glowVisible, profile)
-	if not overlay or overlay:IsForbidden() then
+	if ns.FrameIsForbidden(overlay) then
 		return
 	end
 
@@ -260,7 +235,7 @@ end
 -- @param glow The Texture (or Texture-like Frame) representing the overAbsorb glow
 -- @param profile Optional db.profile table; when provided, skips the global lookup
 function ns.ApplyAppearanceToOverAbsorbGlow(glow, profile)
-	if not glow or glow:IsForbidden() or not glow:IsVisible() then return end
+	if ns.FrameIsForbidden(glow) or not glow:IsVisible() then return end
 	local db = profile or OvershieldsReforged.db.profile
 	if not db then return end
 	local state = GetStyleState(glow)
@@ -300,7 +275,7 @@ end
 -- @param glow The Texture representing the overAbsorb glow (may be Bliz-owned)
 -- @param profile Optional db.profile table
 function ns.ApplyAppearanceToNativeOverAbsorbGlow(glow, profile)
-	if glow and not glow:IsForbidden() then
+	if not ns.FrameIsForbidden(glow) then
 		ns.ApplyAppearanceToOverAbsorbGlow(glow, profile)
 	end
 end
@@ -323,57 +298,44 @@ end
 -- @param profile Optional db.profile table
 function ns.ApplyAppearanceToFrame(frame, glowVisible, profile)
 	if not OvershieldsReforged:IsFrameContextEnabled(frame) then
-		ns.HideCustomBars(frame)
+		ns.HideCustomBars(frame, styleCache)
 		--@alpha@
 		ns.Debug.Inc("contextDisabled")
 		--@end-alpha@
 		return
 	end
 
-	local db = profile or OvershieldsReforged.db and OvershieldsReforged.db.profile
-	if not db then
+	if not profile then return end
+
+	if IsNativeVisualOnlyShielded(frame, profile) then
+		ns.HideCustomBars(frame, styleCache)
+		ns.ApplyAppearanceToNativeBar(frame.totalAbsorb, profile)
+		ns.ApplyAppearanceToNativeOverlay(frame.totalAbsorbOverlay, profile)
+		ns.ApplyAppearanceToNativeOverAbsorbGlow(frame.overAbsorbGlow, profile)
 		return
 	end
 
-	if IsNativeVisualOnlyShielded(frame, glowVisible, db) then
-		ns.HideCustomBars(frame)
-		ns.ApplyAppearanceToNativeBar(frame.totalAbsorb, false, db)
-		ns.ApplyAppearanceToNativeOverlay(frame.totalAbsorbOverlay, false, db)
-		ns.ApplyAppearanceToNativeOverAbsorbGlow(frame.overAbsorbGlow, db)
-		return
-	end
-
-	ns.ApplyAppearanceToBar(ns.absorbCache[frame], glowVisible, db)
-	ns.ApplyAppearanceToOverlay(ns.overlayCache[frame], glowVisible, db)
-	ns.ApplyAppearanceToNativeOverAbsorbGlow(frame.overAbsorbGlow, db)
-end
-
---- Resolves visible glow state for a frame, guarding against forbidden access.
--- @param frame The compact unit frame
--- @return boolean true if the overAbsorb glow is visible
-local function IsGlowVisible(frame)
-	if not frame or frame:IsForbidden() then return false end
-	local glow = frame.overAbsorbGlow
-	if not glow or glow:IsForbidden() then return false end
-	return glow:IsVisible()
+	ns.ApplyAppearanceToBar(ns.absorbCache[frame], profile)
+	ns.ApplyAppearanceToOverlay(ns.overlayCache[frame], profile)
+	ns.ApplyAppearanceToNativeOverAbsorbGlow(frame.overAbsorbGlow, profile)
 end
 
 --- Processes a single frame for appearance updates.
 -- @param frame The compact unit frame to process
 -- @param profile The active db.profile table
 local function ProcessFrame(frame, profile)
-	if frame and not frame:IsForbidden() and frame.displayedUnit then
-		if frame:IsShown() then
-			ns.ApplyAppearanceToFrame(frame, IsGlowVisible(frame), profile)
-			--@alpha@
-			ns.Debug.Inc("framesShown")
-			--@end-alpha@
-		else
-			ns.HideCustomBars(frame)
-			--@alpha@
-			ns.Debug.Inc("framesHidden")
-			--@end-alpha@
-		end
+    if ns.FrameIsForbidden(frame) or not frame.displayedUnit then return end
+
+	if frame:IsShown() then
+		ns.ApplyAppearanceToFrame(frame, profile)
+		--@alpha@
+		ns.Debug.Inc("framesShown")
+		--@end-alpha@
+	else
+		ns.HideCustomBars(frame, styleCache)
+		--@alpha@
+		ns.Debug.Inc("framesHidden")
+		--@end-alpha@
 	end
 end
 
@@ -390,14 +352,14 @@ local function IsPetUnit(frame)
 end
 
 local function HideCachedBarsByPredicate(predicate)
-	for frame in pairs(ns.absorbCache) do
+	for frame in ns.pairs(ns.absorbCache) do
 		if predicate(frame) then
-			ns.HideCustomBars(frame)
+			ns.HideCustomBars(frame, styleCache)
 		end
 	end
-	for frame in pairs(ns.overlayCache) do
+	for frame in ns.pairs(ns.overlayCache) do
 		if predicate(frame) and not ns.absorbCache[frame] then
-			ns.HideCustomBars(frame)
+			ns.HideCustomBars(frame, styleCache)
 		end
 	end
 end
@@ -414,7 +376,7 @@ local function UpdateFramePool(container, prefix, maxCount, profile)
 		ns.Debug.Set("poolPath", "flowFrames")
 		local flowProcessed = 0
 		--@end-alpha@
-		for _, frame in ipairs(container.flowFrames) do
+		for _, frame in ns.ipairs(container.flowFrames) do
 			ProcessFrame(frame, profile)
 			--@alpha@
 			flowProcessed = flowProcessed + 1
@@ -453,44 +415,43 @@ function ns.UpdateAllFrameAppearances()
 
 	--@alpha@
 	ns.Debug.Inc("fullRefreshes")
-	ns.Debug.Set("lastRefreshTime", GetTime())
+	ns.Debug.Set("lastRefreshTime", ns.GetTime())
 	--@end-alpha@
 
 	-- Party frames (1–5)
-	if profile.enableParty ~= false then
+	if ns.IsSettingEnabled(profile.enableParty) then
 		UpdateFramePool(CompactPartyFrame, "CompactPartyFrameMember", 5, profile)
 	else
 		HideCachedBarsByPredicate(IsPartyUnit)
 	end
 
 	-- Raid frames (1–40)
-	local inRaid = IsInRaid()
-	if inRaid and profile.enableRaid ~= false then
+	if ns.IsInRaid() and ns.IsSettingEnabled(profile.enableRaid) then
 		UpdateFramePool(CompactRaidFrameContainer, "CompactRaidFrame", 40, profile)
-	elseif inRaid then
+	elseif ns.IsInRaid() then
 		HideCachedBarsByPredicate(IsRaidUnit)
 	end
 
 	-- Pet frames
-	if CompactRaidFrameContainer and CompactRaidFrameContainer.displayPets and profile.enablePets ~= false then
-		local petPrefix = inRaid and "CompactRaidFramePet" or "CompactPartyFramePet"
+	if CompactRaidFrameContainer and CompactRaidFrameContainer.displayPets and ns.IsSettingEnabled(profile.enablePets) then
+		local petPrefix = ns.IsInRaid() and "CompactRaidFramePet" or "CompactPartyFramePet"
 		UpdateFramePool(CompactRaidFrameContainer, petPrefix, 40, profile)
 	elseif CompactRaidFrameContainer and CompactRaidFrameContainer.displayPets then
 		HideCachedBarsByPredicate(IsPetUnit)
 	end
 end
 
---- Wipes the style cache so all appearance values are re-applied on next update.
+--- ns.wipes the style cache so all appearance values are re-applied on ns.next update.
 -- Called on profile change to prevent stale cached appearance from persisting.
-function ns.WipeStyleCache()
-	wipe(styleCache)
-	wipe(atlasCache)
+function ns.wipeStyleCache()
+	ns.wipe(styleCache)
+	ns.wipe(atlasCache)
 end
 
 --@alpha@
 function ns.GetStyleCacheSize()
 	local n = 0
-	for _ in pairs(styleCache) do n = n + 1 end
+	for _ in ns.pairs(styleCache) do n = n + 1 end
 	return n
 end
 --@end-alpha@
