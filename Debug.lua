@@ -41,6 +41,9 @@ local counters = {
 	lastRefreshTime     = 0,
 	poolPath            = "none",
 	poolFramesProcessed = 0,
+	-- Hibernate
+	hibernateEvals      = 0,
+	hibernateTransitions = 0,
 }
 
 -- Window-scoped counters mirror the same keys (reset on window open)
@@ -245,7 +248,7 @@ local function BuildWindow()
 	widgets.blendRatio          = AddRow(scroll, "Blend Applied / Skipped",   "SetBlendMode calls (applied) vs. cache-hit skips.")
 	widgets.contextDisabled     = AddRow(scroll, "Context Disabled",          "ApplyAppearanceToFrame early returns because IsFrameContextEnabled was false.")
 	widgets.anchorModeChanges   = AddRow(scroll, "Anchor Mode Changes",      "Bar _anchorMode transitions (default/health_left/health_right/frame_left/frame_right).")
-	widgets.nativeBarsSuppressed = AddRow(scroll, "Native Bars Suppressed",   "CompactUnitFrameUtil_UpdateFillBar hook ClearAllPoints calls on Bliz bars.")
+	widgets.nativeBarsSuppressed = AddRow(scroll, "Native Bars Suppressed",   "SuppressNativeAbsorbVisuals calls that hid Blizzard's native absorb bars.")
 	widgets.fullRefreshes       = AddRow(scroll, "Full Refreshes",           "UpdateAllFrameAppearances invocations (triggered by settings changes).")
 	widgets.lastRefreshTime     = AddRow(scroll, "Last Refresh",             "Time since the last full appearance refresh.")
 	widgets.poolPath            = AddRow(scroll, "Pool Iteration Path",      "Which API path UpdateFramePool used last: pools, frameReservations, or legacy.")
@@ -256,6 +259,12 @@ local function BuildWindow()
 	widgets.partyFrames   = AddRow(scroll, "Party",             "Frames in absorb cache with a party unit token.")
 	widgets.raidFrames    = AddRow(scroll, "Raid",              "Frames in absorb cache with a raid unit token.")
 	widgets.petFrames     = AddRow(scroll, "Pet",               "Frames in absorb cache with a pet unit token.")
+
+	-- Hibernate section
+	AddSectionHeader(scroll, "Hibernate")
+	widgets.hibernateState       = AddRow(scroll, "State",        "Current effective hibernate state and override mode.")
+	widgets.hibernateEvals       = AddRow(scroll, "Evaluations",  "Total calls to EvaluateHibernation (event-driven context checks).")
+	widgets.hibernateTransitions = AddRow(scroll, "Transitions",  "State changes between hibernating and active.")
 
 	-- Controls section
 	AddSectionHeader(scroll, "Controls")
@@ -334,6 +343,20 @@ local function RefreshDisplay()
 	widgets.partyFrames:SetText(tostring(party))
 	widgets.raidFrames:SetText(tostring(raid))
 	widgets.petFrames:SetText(tostring(pet))
+
+	-- Hibernate
+	local hState = ns.hibernating and "|cffff8800On|r" or "|cff00ff00Off|r"
+	local hMode
+	if ns.hibernateOverride == true then
+		hMode = "manual"
+	elseif ns.hibernateOverride == false then
+		hMode = "manual override"
+	else
+		hMode = "auto"
+	end
+	widgets.hibernateState:SetText(hState .. " (" .. hMode .. ")")
+	widgets.hibernateEvals:SetText(FormatDual(s.hibernateEvals, w.hibernateEvals))
+	widgets.hibernateTransitions:SetText(FormatDual(s.hibernateTransitions, w.hibernateTransitions))
 end
 
 -------------------------------------------------------------------------------
