@@ -19,11 +19,33 @@ local retryCount = {}
 --- Maximum OnUpdate cycles to retry an unready frame before dropping it
 local MAX_RETRIES = 10
 local CACHE_CLEANUP_INTERVAL = 5
+local FULL_REFRESH_RECOVERY_DELAY = 0.25
 local lastCleanupAt = 0
+local pendingRecoveryRefreshToken = 0
 
 --- Exports caches for use by AppearanceManager
 ns.absorbCache = containers
 ns.overlayCache = overlayContainers
+
+local function ScheduleRecoveryRefresh()
+	if not ns.UpdateAllFrameAppearances then
+		return
+	end
+
+	if not C_Timer or not C_Timer.After then
+		ns.UpdateAllFrameAppearances()
+		return
+	end
+
+	pendingRecoveryRefreshToken = pendingRecoveryRefreshToken + 1
+	local refreshToken = pendingRecoveryRefreshToken
+	C_Timer.After(FULL_REFRESH_RECOVERY_DELAY, function()
+		if refreshToken ~= pendingRecoveryRefreshToken then
+			return
+		end
+		ns.UpdateAllFrameAppearances()
+	end)
+end
 
 --- Creates or retrieves a custom StatusBar for a compact unit frame.
 -- @param cache The cache table to read/write
@@ -63,6 +85,10 @@ local function SuppressNativeAbsorbVisuals(frame)
 		return
 	end
 
+	--@alpha@
+	ns.Debug.Inc("nativeBarsSuppressed")
+	--@end-alpha@
+
 	local nativeAbsorb = frame.totalAbsorb
 	if not ns.FrameIsForbidden(nativeAbsorb) then
 		nativeAbsorb:Hide()
@@ -91,19 +117,20 @@ function ns.EnforceNativeAbsorbVisibility(frame, profile)
 		return
 	end
 
-	if ns.IsGlowVisible(frame) then
+	local glowVisible = ns.IsGlowVisible(frame)
+	if glowVisible then
 		SuppressNativeAbsorbVisuals(frame)
 		return
 	end
 
-	local shieldState = ns.ResolveShieldState(frame)
+	local shieldState = ns.ResolveShieldState(frame, glowVisible)
 	if not ns.ShouldUseNativeVisualOnly(db, shieldState) then
 		SuppressNativeAbsorbVisuals(frame)
 	end
 end
 
 local function ApplyNativeVisualOnlyShielded(frame, profile)
-	ns.HideCustomBars(frame, styleCache)
+	ns.HideCustomBars(frame, ns.StyleCache)
 	ns.ApplyAppearanceToNativeBar(frame.totalAbsorb, false, profile)
 	ns.ApplyAppearanceToNativeOverlay(frame.totalAbsorbOverlay, false, profile)
 end
@@ -131,9 +158,9 @@ local function UpdateBarAnchor(bar, frame, healthBar, targetMode, healthTexture)
 	ns.ApplyAnchorStrategy(bar, frame, healthBar, targetMode, healthTexture)
 end
 
-local function ApplyCustomBars(frame, profile, healthBar, unit, shieldState)
+local function ApplyCustomBars(frame, profile, healthBar, unit, shieldState, glowVisible, absorbValue)
 	local _, maxHealth = healthBar:GetMinMaxValues()
-	local absorbValue = ns.UnitGetTotalAbsorbs(unit) or 0
+	absorbValue = absorbValue or (ns.UnitGetTotalAbsorbs(unit) or 0)
 	local frameVisible = frame:IsVisible()
 	local healthTexture = healthBar:GetStatusBarTexture()
 	local targetMode = ns.NormalizeAnchorMode(ns.ResolveAnchorMode(profile, shieldState), healthTexture)
@@ -145,7 +172,7 @@ local function ApplyCustomBars(frame, profile, healthBar, unit, shieldState)
 		absorb:SetShown(frameVisible)
 		absorb:SetMinMaxValues(0, maxHealth)
 		absorb:SetValue(absorbValue)
-		ns.ApplyAppearanceToBar(absorb, profile)
+		ns.ApplyAppearanceToBar(absorb, glowVisible, profile)
 	end
 
 	-- Update custom overlay bar values
@@ -155,7 +182,7 @@ local function ApplyCustomBars(frame, profile, healthBar, unit, shieldState)
 		overlay:SetShown(frameVisible)
 		overlay:SetMinMaxValues(0, maxHealth)
 		overlay:SetValue(absorbValue)
-		ns.ApplyAppearanceToOverlay(overlay, profile)
+		ns.ApplyAppearanceToOverlay(overlay, glowVisible, profile)
 	end
 end
 
@@ -168,6 +195,12 @@ end
 -- @return true if the frame was processed (or intentionally skipped), false if unready for retry
 local function HandleCompactUnitFrameUpdate(frame, profile)
 	if ns.FrameIsForbidden(frame) then
+		return true
+	end
+
+	if not OvershieldsReforged:IsFrameContextEnabled(frame) then
+		ns.HideCustomBars(frame, ns.StyleCache)
+		ns.RestoreNativeAbsorbVisuals(frame)
 		return true
 	end
 
@@ -187,9 +220,12 @@ local function HandleCompactUnitFrameUpdate(frame, profile)
 		return true
 	end
 
-	if ns.IsGlowVisible(frame) then
+	local glowVisible = ns.IsGlowVisible(frame)
+	if glowVisible then
 		ns.ApplyAppearanceToOverAbsorbGlow(glow, profile)
 	end
+
+	local absorbValue = ns.UnitGetTotalAbsorbs(unit) or 0
 
 	local healthBar = frame.healthBar
 	if not healthBar then
@@ -203,7 +239,7 @@ local function HandleCompactUnitFrameUpdate(frame, profile)
 	ns.Debug.Inc("frameUpdates")
 	--@end-alpha@
 
-	local shieldState = ns.ResolveShieldState(frame)
+	local shieldState = ns.ResolveShieldState(frame, glowVisible)
 	local useNativeVisualOnly = ns.ShouldUseNativeVisualOnly(profile, shieldState)
 
 	if useNativeVisualOnly then
@@ -212,7 +248,7 @@ local function HandleCompactUnitFrameUpdate(frame, profile)
 	end
 
 	SuppressNativeAbsorbVisuals(frame)
-	ApplyCustomBars(frame, profile, healthBar, unit, shieldState)
+	ApplyCustomBars(frame, profile, healthBar, unit, shieldState, glowVisible, absorbValue)
 
 	return true
 end
@@ -256,6 +292,7 @@ batchFrame:SetScript("OnUpdate", function()
 			if count >= MAX_RETRIES then
 				updateQueue[frame] = nil
 				retryCount[frame] = nil
+				ScheduleRecoveryRefresh()
 				--@alpha@
 				ns.Debug.Inc("retryDrops")
 				--@end-alpha@
@@ -282,6 +319,8 @@ end)
 -- Frames are batched and processed during the next OnUpdate cycle for efficiency.
 -- @param frame The compact unit frame to queue for update
 function ns.QueueCompactUnitFrameUpdate(frame)
+	if ns.hibernating then return end
+
 	if ns.FrameIsForbidden(frame) then
 		return
 	end
@@ -290,17 +329,20 @@ function ns.QueueCompactUnitFrameUpdate(frame)
 	ns.Debug.Inc("queueAttempts")
 	--@end-alpha@
 
-	if updateQueue[frame] then
+	if not OvershieldsReforged:IsFrameContextEnabled(frame) then
+		updateQueue[frame] = nil
+		retryCount[frame] = nil
+		ns.HideCustomBars(frame, ns.StyleCache)
+		ns.RestoreNativeAbsorbVisuals(frame)
 		--@alpha@
-		ns.Debug.Inc("queueSkipsDuplicate")
+		ns.Debug.Inc("queueSkipsDisabled")
 		--@end-alpha@
 		return
 	end
 
-	if not OvershieldsReforged:IsFrameContextEnabled(frame) then
-		ns.HideCustomBars(frame, styleCache)
+	if updateQueue[frame] then
 		--@alpha@
-		ns.Debug.Inc("queueSkipsDisabled")
+		ns.Debug.Inc("queueSkipsDuplicate")
 		--@end-alpha@
 		return
 	end
@@ -326,21 +368,24 @@ function ns.ReleaseAllBars()
 	end
 	ns.wipe(overlayContainers)
 
+	ns.wipe(updateQueue)
 	ns.wipe(retryCount)
+	pendingRecoveryRefreshToken = pendingRecoveryRefreshToken + 1
+	batchFrame:Hide()
 end
 
 --- Removes cache entries for frames that no longer display a unit or are hidden.
 -- Safe to call periodically to prevent stale entries from accumulating.
 function ns.CleanupStaleCacheEntries()
 	for frame, bar in ns.next, containers do
-		if not frame.displayedUnit or not frame:IsShown() then
+		if ns.FrameIsForbidden(frame) or not frame.displayedUnit or not frame:IsShown() then
 			bar:Hide()
 			containers[frame] = nil
 		end
 	end
 
 	for frame, bar in ns.next, overlayContainers do
-		if not frame.displayedUnit or not frame:IsShown() then
+		if ns.FrameIsForbidden(frame) or not frame.displayedUnit or not frame:IsShown() then
 			bar:Hide()
 			overlayContainers[frame] = nil
 		end
