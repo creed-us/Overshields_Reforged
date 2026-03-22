@@ -13,6 +13,8 @@ function OvershieldsReforged:OnEnable()
 
 	-- Hook Bliz's heal-prediction.
     hooksecurefunc("CompactUnitFrame_UpdateHealPrediction", function(frame)
+		if ns.hibernating then return end
+
 		local profile = OvershieldsReforged.db and OvershieldsReforged.db.profile
 		if profile and profile.anchorModeShielded == "health_right" then
 			ns.EnforceNativeAbsorbVisibility(frame, profile)
@@ -28,6 +30,22 @@ function OvershieldsReforged:OnEnable()
 	-- Defer to next frame to ensure frame containers are fully initialized.
 	if C_Timer and C_Timer.After then
 		C_Timer.After(0, function()
+			ns.UpdateAllFrameAppearances()
+		end)
+	end
+
+	-- Set initial hibernate state after all setup is complete.
+	if ns.EvaluateHibernation then
+		ns.EvaluateHibernation()
+	end
+
+	-- Re-apply appearance after Blizzard UI refreshes
+	if not self._appearanceEventFrame then
+		self._appearanceEventFrame = CreateFrame("Frame")
+		self._appearanceEventFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
+		self._appearanceEventFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
+		self._appearanceEventFrame:SetScript("OnEvent", function()
+			if ns.hibernating then return end
 			ns.UpdateAllFrameAppearances()
 		end)
 	end
