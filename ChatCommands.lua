@@ -41,6 +41,17 @@ function addon:HandleSlashCommand(input)
         self:Print("Party: " .. (ns.IsSettingEnabled(profile.enableParty) and "On" or "Off"))
         self:Print("Raid: " .. (ns.IsSettingEnabled(profile.enableRaid) and "On" or "Off"))
         self:Print("Pets: " .. (ns.IsSettingEnabled(profile.enablePets) and "On" or "Off"))
+
+        local hibernateState = ns.hibernating and "|cffff8800On|r" or "|cff00ff00Off|r"
+        local hibernateMode
+        if ns.hibernateOverride == true then
+            hibernateMode = "manual"
+        elseif ns.hibernateOverride == false then
+            hibernateMode = "manual override"
+        else
+            hibernateMode = "auto"
+        end
+        self:Print(string.format("Hibernate: %s (%s)", hibernateState, hibernateMode))
         return
     end
 
@@ -54,6 +65,29 @@ function addon:HandleSlashCommand(input)
         return
 	end
 
+	if command == "hibernate" or command == "h" then
+		if argument == "on" then
+			ns.SetHibernateOverride(true)
+		elseif argument == "off" then
+			ns.SetHibernateOverride(false)
+		elseif argument == "auto" then
+			ns.SetHibernateOverride(nil)
+		else
+			local state = ns.hibernating and "|cffff8800On|r" or "|cff00ff00Off|r"
+			local mode
+			if ns.hibernateOverride == true then
+				mode = "manual"
+			elseif ns.hibernateOverride == false then
+				mode = "manual override"
+			else
+				mode = "auto"
+			end
+			self:Print(string.format("Hibernate: %s (%s)", state, mode))
+			self:Print("Usage: /osr hibernate [on||off||auto]")
+		end
+		return
+	end
+
 	--@alpha@
 	if command == "debug" or command == "d" then
         ns.Debug:Toggle()
@@ -65,6 +99,7 @@ function addon:HandleSlashCommand(input)
 	self:Print("/osr version (v) - Display the addon version.")
 	self:Print("/osr status (s) - Show enable and frame-scope settings.")
 	self:Print("/osr options (o) - Open the addon options.")
+	self:Print("/osr hibernate (h) [on||off||auto] - View or control hibernate mode.")
 	self:Print("/osr reset (r) - Reset all settings to default and reload the UI.")
 	--@alpha@
 	self:Print("/osr debug (d) - Toggle the debug diagnostics window.")
