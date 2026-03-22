@@ -327,7 +327,7 @@ local function ProcessFrame(frame, profile)
     if ns.FrameIsForbidden(frame) or not frame.displayedUnit then return end
 
 	if frame:IsShown() then
-		ns.ApplyAppearanceToFrame(frame, profile)
+		ns.QueueCompactUnitFrameUpdate(frame)
 		--@alpha@
 		ns.Debug.Inc("framesShown")
 		--@end-alpha@
