@@ -1,6 +1,10 @@
 local _, ns = ...
 
 function ns.ResolveShieldState(frame, glowVisible)
+	if glowVisible == nil then
+		glowVisible = ns.IsGlowVisible(frame)
+	end
+
 	if glowVisible then
 		return "overshielded"
 	end
