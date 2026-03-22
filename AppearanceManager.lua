@@ -355,11 +355,13 @@ local function HideCachedBarsByPredicate(predicate)
 	for frame in ns.pairs(ns.absorbCache) do
 		if predicate(frame) then
 			ns.HideCustomBars(frame, styleCache)
+			ns.RestoreNativeAbsorbVisuals(frame)
 		end
 	end
 	for frame in ns.pairs(ns.overlayCache) do
 		if predicate(frame) and not ns.absorbCache[frame] then
 			ns.HideCustomBars(frame, styleCache)
+			ns.RestoreNativeAbsorbVisuals(frame)
 		end
 	end
 end
