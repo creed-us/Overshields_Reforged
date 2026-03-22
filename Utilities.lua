@@ -30,6 +30,26 @@ function ns.HideCustomBars(frame, styleCache)
 	end
 end
 
+--- Restores native Blizzard absorb bar visibility for a frame.
+-- Called when the addon stops managing a frame so Blizzard visuals are not left hidden.
+-- @param frame The compact unit frame
+function ns.RestoreNativeAbsorbVisuals(frame)
+	if not frame or ns.FrameIsForbidden(frame) then return end
+
+	local nativeAbsorb = frame.totalAbsorb
+	if not ns.FrameIsForbidden(nativeAbsorb) then
+		nativeAbsorb:Show()
+		if not ns.FrameIsForbidden(nativeAbsorb.overlay) then
+			nativeAbsorb.overlay:Show()
+		end
+	end
+
+	local nativeOverlay = frame.totalAbsorbOverlay
+	if not ns.FrameIsForbidden(nativeOverlay) then
+		nativeOverlay:Show()
+	end
+end
+
 --- Resolves visible glow state for a frame, guarding against forbidden access.
 -- @param frame The compact unit frame
 -- @return boolean true if the overAbsorb glow is visible
