@@ -17,6 +17,7 @@ Constants.lua
 Utilities.lua
 Core.lua
 UnitContext.lua
+Hibernate.lua
 ShieldState.lua
 AnchorStrategy.lua
 Options.lua
