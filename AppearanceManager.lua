@@ -307,16 +307,16 @@ function ns.ApplyAppearanceToFrame(frame, glowVisible, profile)
 
 	if not profile then return end
 
-	if IsNativeVisualOnlyShielded(frame, profile) then
+	if IsNativeVisualOnlyShielded(frame, glowVisible, profile) then
 		ns.HideCustomBars(frame, styleCache)
-		ns.ApplyAppearanceToNativeBar(frame.totalAbsorb, profile)
-		ns.ApplyAppearanceToNativeOverlay(frame.totalAbsorbOverlay, profile)
+		ns.ApplyAppearanceToNativeBar(frame.totalAbsorb, glowVisible, profile)
+		ns.ApplyAppearanceToNativeOverlay(frame.totalAbsorbOverlay, glowVisible, profile)
 		ns.ApplyAppearanceToNativeOverAbsorbGlow(frame.overAbsorbGlow, profile)
 		return
 	end
 
-	ns.ApplyAppearanceToBar(ns.absorbCache[frame], profile)
-	ns.ApplyAppearanceToOverlay(ns.overlayCache[frame], profile)
+	ns.ApplyAppearanceToBar(ns.absorbCache[frame], glowVisible, profile)
+	ns.ApplyAppearanceToOverlay(ns.overlayCache[frame], glowVisible, profile)
 	ns.ApplyAppearanceToNativeOverAbsorbGlow(frame.overAbsorbGlow, profile)
 end
 
@@ -324,7 +324,7 @@ end
 -- @param frame The compact unit frame to process
 -- @param profile The active db.profile table
 local function ProcessFrame(frame, profile)
-    if ns.FrameIsForbidden(frame) or not frame.displayedUnit then return end
+	if ns.FrameIsForbidden(frame) or not frame.displayedUnit then return end
 
 	if frame:IsShown() then
 		ns.QueueCompactUnitFrameUpdate(frame)
