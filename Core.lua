@@ -8,7 +8,6 @@ function OvershieldsReforged:OnInitialize()
 end
 
 function OvershieldsReforged:OnEnable()
-	-- Register chat commands via AceConsole.
 	self:RegisterChatCommand("overshieldsreforged", "HandleSlashCommand")
 	self:RegisterChatCommand("osr", "HandleSlashCommand")
 
