@@ -1,8 +1,9 @@
 local _, ns = ...
 
 function ns.FrameIsForbidden(frame)
-	if not frame then return true end
-	if frame.IsForbidden and frame:IsForbidden() then return true end
+	local frameType = type(frame)
+	if not frame or (frameType ~= "table" and frameType ~= "userdata") then return true end
+	if type(frame.IsForbidden) == "function" and frame:IsForbidden() then return true end
 	return false
 end
 
