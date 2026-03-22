@@ -54,6 +54,11 @@ StaticPopupDialogs["OVERSHIELDS_REFORGED_RELOAD_ANCHOR"] = {
 local pendingAppearanceRefreshToken = 0
 
 local function OnAppearanceChanged()
+	-- Re-evaluate hibernate when frame-scope toggles change.
+	if ns.EvaluateHibernation then
+		ns.EvaluateHibernation()
+	end
+
 	local delay = 0.01 -- >0 to prevent perf. tank while changing appearance in options
 	if not C_Timer or not C_Timer.After then
 		ns.UpdateAllFrameAppearances()
