@@ -1,12 +1,12 @@
 local _, ns = ...
 
 local anchorHandlers = {
-	health_left = function(bar, frame, healthBar, healthTexture)
+	health_left = function(bar, frame, _, healthTexture)
 		bar:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, 0)
 		bar:SetPoint("BOTTOMRIGHT", healthTexture, "BOTTOMRIGHT", 0, 0)
 		bar:SetReverseFill(true)
 	end,
-	health_right = function(bar, frame, healthBar, healthTexture)
+	health_right = function(bar, frame, _, healthTexture)
 		bar:SetPoint("TOPLEFT", healthTexture, "TOPRIGHT", 0, 0)
 		bar:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 0, 0)
 		bar:SetReverseFill(false)
@@ -21,7 +21,7 @@ local anchorHandlers = {
 		bar:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 0, 0)
 		bar:SetReverseFill(true)
 	end,
-	default = function(bar, frame, healthBar)
+	default = function(bar, _, healthBar)
 		bar:SetAllPoints(healthBar)
 		bar:SetReverseFill(true)
 	end,
