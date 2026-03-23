@@ -155,7 +155,7 @@ local function AddRow(parent, labelText, tooltipText)
 	row:SetFullWidth(true)
 
 	local label = AceGUI:Create("InteractiveLabel")
-	label:SetWidth(180)
+	label:SetWidth(175)
 	label:SetText("|cff888888" .. labelText .. "|r")
 	label:SetFontObject(GameFontHighlightSmall)
 	if tooltipText then
@@ -172,7 +172,7 @@ local function AddRow(parent, labelText, tooltipText)
 	row:AddChild(label)
 
 	local value = AceGUI:Create("Label")
-	value:SetWidth(200)
+	value:SetWidth(75)
 	value:SetText("")
 	value:SetFontObject(GameFontHighlightSmall)
 	row:AddChild(value)
@@ -191,7 +191,7 @@ end
 local function AddButton(parent, text, callback)
 	local btn = AceGUI:Create("Button")
 	btn:SetText(text)
-	btn:SetWidth(160)
+	btn:SetWidth(125)
 	btn:SetCallback("OnClick", callback)
 	parent:AddChild(btn)
 	return btn
@@ -203,9 +203,9 @@ local widgets = {}
 local function BuildWindow()
 	local frame = AceGUI:Create("Frame")
 	frame:SetTitle("Overshields Reforged — Debug")
-	frame:SetStatusText("Alpha build diagnostics")
-	frame:SetWidth(440)
-	frame:SetHeight(580)
+	frame:SetStatusText("Discord: KTYA8uDeYv")
+	frame:SetWidth(300)
+	frame:SetHeight(775)
 	frame:SetLayout("Fill")
 	frame:SetCallback("OnClose", function()
 		Debug:Close()
@@ -348,9 +348,9 @@ local function RefreshDisplay()
 	local hState = ns.hibernating and "|cffff8800On|r" or "|cff00ff00Off|r"
 	local hMode
 	if ns.hibernateOverride == true then
-		hMode = "manual"
+		hMode = "m: off"
 	elseif ns.hibernateOverride == false then
-		hMode = "manual override"
+		hMode = "m: on"
 	else
 		hMode = "auto"
 	end
