@@ -15,6 +15,11 @@ function OvershieldsReforged:OnEnable()
     hooksecurefunc("CompactUnitFrame_UpdateHealPrediction", function(frame)
 		if ns.hibernating then return end
 
+		if not OvershieldsReforged:IsFrameContextEnabled(frame) then
+			ns.ReleaseFrame(frame, ns.StyleCache)
+			return
+		end
+
 		local profile = OvershieldsReforged.db and OvershieldsReforged.db.profile
 		if profile and profile.anchorModeShielded == "health_right" then
 			ns.EnforceNativeAbsorbVisibility(frame, profile)
@@ -27,16 +32,27 @@ function OvershieldsReforged:OnEnable()
 	end)
 
 	-- Initial appearance pass to style any frames already visible when loading.
-	-- Defer to next frame to ensure frame containers are fully initialized.
+	-- Defer to allow frame containers to fully initialize.
+	-- Evaluate hibernation AFTER initial appearance pass to ensure proper state.
 	if C_Timer and C_Timer.After then
 		C_Timer.After(0, function()
-			ns.UpdateAllFrameAppearances()
+			-- First evaluate hibernation state
+			if ns.EvaluateHibernation then
+				ns.EvaluateHibernation()
+			end
+			-- If not hibernating, update frame appearances
+			if not ns.hibernating then
+				ns.UpdateAllFrameAppearances()
+			end
 		end)
-	end
-
-	-- Set initial hibernate state after all setup is complete.
-	if ns.EvaluateHibernation then
-		ns.EvaluateHibernation()
+	else
+		-- Fallback for clients without C_Timer
+		if ns.EvaluateHibernation then
+			ns.EvaluateHibernation()
+		end
+		if not ns.hibernating then
+			ns.UpdateAllFrameAppearances()
+		end
 	end
 
 	-- Re-apply appearance after Blizzard UI refreshes

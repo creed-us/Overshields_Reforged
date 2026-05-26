@@ -199,8 +199,7 @@ local function HandleCompactUnitFrameUpdate(frame, profile)
 	end
 
 	if not OvershieldsReforged:IsFrameContextEnabled(frame) then
-		ns.HideCustomBars(frame, ns.StyleCache)
-		ns.RestoreNativeAbsorbVisuals(frame)
+		ns.ReleaseFrame(frame, ns.StyleCache)
 		return true
 	end
 
@@ -332,8 +331,7 @@ function ns.QueueCompactUnitFrameUpdate(frame)
 	if not OvershieldsReforged:IsFrameContextEnabled(frame) then
 		updateQueue[frame] = nil
 		retryCount[frame] = nil
-		ns.HideCustomBars(frame, ns.StyleCache)
-		ns.RestoreNativeAbsorbVisuals(frame)
+		ns.ReleaseFrame(frame, ns.StyleCache)
 		--@alpha@
 		ns.Debug.Inc("queueSkipsDisabled")
 		--@end-alpha@
@@ -356,18 +354,25 @@ function ns.QueueCompactUnitFrameUpdate(frame)
 end
 
 --- Releases all custom bars, hiding them and clearing both container caches.
--- Called on profile change to ensure a clean slate.
+-- Also restores all previously managed frames to vanilla Blizzard behavior.
+-- Called on profile change or hibernation to ensure a clean slate.
 function ns.ReleaseAllBars()
-	for _, bar in ns.next, containers do
-		bar:Hide()
+	local frames = {}
+	for frame in ns.next, containers do
+		frames[frame] = true
 	end
+	for frame in ns.next, overlayContainers do
+		frames[frame] = true
+	end
+
+	for frame in ns.next, frames do
+		ns.HideCustomBars(frame, ns.StyleCache)
+		ns.RestoreNativeAbsorbVisuals(frame, ns.StyleCache)
+	end
+
+	-- Clear all caches
 	ns.wipe(containers)
-
-	for _, bar in ns.next, overlayContainers do
-		bar:Hide()
-	end
 	ns.wipe(overlayContainers)
-
 	ns.wipe(updateQueue)
 	ns.wipe(retryCount)
 	pendingRecoveryRefreshToken = pendingRecoveryRefreshToken + 1
@@ -375,18 +380,27 @@ function ns.ReleaseAllBars()
 end
 
 --- Removes cache entries for frames that no longer display a unit or are hidden.
+-- Restores frames to vanilla Blizzard behavior before removing from cache.
 -- Safe to call periodically to prevent stale entries from accumulating.
 function ns.CleanupStaleCacheEntries()
-	for frame, bar in ns.next, containers do
+	local framesToClean = {}
+	for frame in ns.next, containers do
 		if ns.FrameIsForbidden(frame) or not frame.displayedUnit or not frame:IsShown() then
-			bar:Hide()
-			containers[frame] = nil
+			framesToClean[frame] = true
+		end
+	end
+	for frame in ns.next, overlayContainers do
+		if ns.FrameIsForbidden(frame) or not frame.displayedUnit or not frame:IsShown() then
+			framesToClean[frame] = true
 		end
 	end
 
-	for frame, bar in ns.next, overlayContainers do
-		if ns.FrameIsForbidden(frame) or not frame.displayedUnit or not frame:IsShown() then
-			bar:Hide()
+	for frame in ns.next, framesToClean do
+		ns.ReleaseFrame(frame, ns.StyleCache)
+		if containers[frame] then
+			containers[frame] = nil
+		end
+		if overlayContainers[frame] then
 			overlayContainers[frame] = nil
 		end
 	end

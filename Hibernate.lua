@@ -9,6 +9,8 @@ ns.hibernateOverride = nil
 --- Computes whether the addon should auto-hibernate based on current context.
 -- Returns true when there is no useful work for the addon to do.
 local function ComputeAutoHibernateState()
+	-- Guard: if Core.lua failed to initialize (e.g. due to a missing library), treat as hibernate.
+	if not OvershieldsReforged then return true end
 	local profile = OvershieldsReforged.db and OvershieldsReforged.db.profile
 	if not profile then
 		return true
@@ -82,17 +84,25 @@ function ns.EvaluateHibernation()
 	ns.hibernating = effective
 
 	if effective then
-		-- Entering hibernation: release everything to save CPU and memory.
+		-- Entering hibernation: release all custom bars and restore their frames to vanilla.
+		-- ReleaseAllBars handles restoring all frames we've actually modified (cached).
+		-- We don't call RestoreAllFramesToVanilla - it would apply our defaults to frames
+		-- we never touched, potentially corrupting their native appearance.
 		if ns.ReleaseAllBars then
 			ns.ReleaseAllBars()
 		end
+
 		if ns.wipeStyleCache then
 			ns.wipeStyleCache()
 		end
+		--@alpha@
 		OvershieldsReforged:Print("Hibernate: |cffff8800On|r (" .. FormatHibernateSource() .. ")")
+		--@end-alpha@
 	else
 		-- Waking from hibernation: rebuild frame appearances.
+		--@alpha@
 		OvershieldsReforged:Print("Hibernate: |cff00ff00Off|r (" .. FormatHibernateSource() .. ")")
+		--@end-alpha@
 		if ns.UpdateAllFrameAppearances then
 			ns.UpdateAllFrameAppearances()
 		end

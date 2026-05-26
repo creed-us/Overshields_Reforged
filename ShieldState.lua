@@ -9,6 +9,9 @@ function ns.ResolveShieldState(frame, glowVisible)
 		return "overshielded"
 	end
 
+	-- Use native bar visibility to detect shield presence. UnitGetTotalAbsorbs() cannot
+	-- be compared in tainted execution contexts (our hooksecurefunc hook taints the call
+	-- stack), so we rely on Blizzard showing/hiding totalAbsorb as the signal instead.
 	local nativeAbsorb = frame and frame.totalAbsorb
 	if not ns.FrameIsForbidden(nativeAbsorb) and nativeAbsorb:IsShown() then
 		return "shielded"
