@@ -158,13 +158,17 @@ function ns.ApplyAppearanceToBar(bar, glowVisible, profile)
 end
 
 --- Applies appearance settings to a native Bliz-owned bar.
+-- Native bars can have their appearance reset by Blizzard at any time,
+-- so we clear cached state before applying to ensure our settings take effect.
 -- @param bar The status bar frame to style (may be Bliz-owned)
 -- @param glowVisible true when overAbsorb glow is active on the parent frame
 -- @param profile Optional db.profile table
 function ns.ApplyAppearanceToNativeBar(bar, glowVisible, profile)
-	if not bar or bar:IsForbidden() then
-		return
-	end
+    if not bar or bar:IsForbidden() then
+        return
+    end
+
+	styleCache[bar] = nil
 
 	if bar.SetStatusBarColor then
 		ns.ApplyAppearanceToBar(bar, glowVisible, profile)
@@ -182,6 +186,7 @@ function ns.ApplyAppearanceToNativeBar(bar, glowVisible, profile)
 
 	-- Some native absorb implementations expose the visual texture via .fill
 	if not ns.FrameIsForbidden(bar.fill) then
+		styleCache[bar.fill] = nil
 		local fillState = GetStyleState(bar.fill)
 		ApplyTextureRegionStyle(bar.fill, fillState, colorTable, textureFile, blendMode, false)
 	end
@@ -208,6 +213,8 @@ function ns.ApplyAppearanceToOverlay(overlay, glowVisible, profile)
 end
 
 --- Applies appearance settings to a native Bliz-owned overlay, guarded against forbidden frames.
+-- Native overlays can have their appearance reset by Blizzard at any time,
+-- so we clear cached state before applying to ensure our settings take effect.
 -- @param overlay The status bar frame to style (may be Bliz-owned)
 -- @param glowVisible true when overAbsorb glow is active on the parent frame
 -- @param profile Optional db.profile table
@@ -215,6 +222,8 @@ function ns.ApplyAppearanceToNativeOverlay(overlay, glowVisible, profile)
 	if ns.FrameIsForbidden(overlay) then
 		return
 	end
+
+	styleCache[overlay] = nil
 
 	if overlay.SetStatusBarColor then
 		ns.ApplyAppearanceToOverlay(overlay, glowVisible, profile)
@@ -272,10 +281,13 @@ function ns.ApplyAppearanceToOverAbsorbGlow(glow, profile)
 end
 
 --- Applies appearance settings to a native Bliz-owned glow, guarded against forbidden frames.
+-- Native glows can have their appearance reset by Blizzard at any time,
+-- so we clear cached state before applying to ensure our settings take effect.
 -- @param glow The Texture representing the overAbsorb glow (may be Bliz-owned)
 -- @param profile Optional db.profile table
 function ns.ApplyAppearanceToNativeOverAbsorbGlow(glow, profile)
 	if not ns.FrameIsForbidden(glow) then
+		styleCache[glow] = nil
 		ns.ApplyAppearanceToOverAbsorbGlow(glow, profile)
 	end
 end
@@ -298,7 +310,7 @@ end
 -- @param profile Optional db.profile table
 function ns.ApplyAppearanceToFrame(frame, glowVisible, profile)
 	if not OvershieldsReforged:IsFrameContextEnabled(frame) then
-		ns.HideCustomBars(frame, styleCache)
+		ns.ReleaseFrame(frame, styleCache)
 		--@alpha@
 		ns.Debug.Inc("contextDisabled")
 		--@end-alpha@
@@ -332,7 +344,7 @@ local function ProcessFrame(frame, profile)
 		ns.Debug.Inc("framesShown")
 		--@end-alpha@
 	else
-		ns.HideCustomBars(frame, styleCache)
+		ns.ReleaseFrame(frame, styleCache)
 		--@alpha@
 		ns.Debug.Inc("framesHidden")
 		--@end-alpha@
@@ -352,17 +364,20 @@ local function IsPetUnit(frame)
 end
 
 local function HideCachedBarsByPredicate(predicate)
+	local frames = {}
 	for frame in ns.pairs(ns.absorbCache) do
 		if predicate(frame) then
-			ns.HideCustomBars(frame, styleCache)
-			ns.RestoreNativeAbsorbVisuals(frame)
+			frames[frame] = true
 		end
 	end
-	for frame in ns.pairs(ns.overlayCache) do
-		if predicate(frame) and not ns.absorbCache[frame] then
-			ns.HideCustomBars(frame, styleCache)
-			ns.RestoreNativeAbsorbVisuals(frame)
-		end
+    for frame in ns.pairs(ns.overlayCache) do
+        if predicate(frame) then
+            frames[frame] = true
+        end
+    end
+
+	for frame in ns.pairs(frames) do
+		ns.ReleaseFrame(frame, styleCache)
 	end
 end
 
