@@ -445,6 +445,53 @@ function ns.UpdateAllFrameAppearances()
 	end
 end
 
+--- Restores a frame from a container to vanilla Blizzard behavior.
+-- @param frame The compact unit frame to restore
+local function RestoreFrameToVanilla(frame)
+	if ns.FrameIsForbidden(frame) or type(frame) ~= "table" then return end
+	if not frame.displayedUnit and not frame.healthBar then return end
+	ns.ReleaseFrame(frame, styleCache)
+end
+
+--- Iterates frames from a container and restores each to vanilla Blizzard behavior.
+-- @param container The frame container (e.g., CompactRaidFrameContainer)
+-- @param prefix Global name prefix for fallback (e.g., "CompactRaidFrame")
+-- @param maxCount Maximum frame index for fallback
+local function RestoreFramePoolToVanilla(container, prefix, maxCount)
+	-- Modern: iterate the container's active flow layout children (10.0+)
+	if container and container.flowFrames then
+		for _, frame in ns.ipairs(container.flowFrames) do
+			RestoreFrameToVanilla(frame)
+		end
+		return
+	end
+
+	-- Fallback
+	for i = 1, maxCount do
+		local frame = _G[prefix .. i]
+		RestoreFrameToVanilla(frame)
+	end
+end
+
+--- Restores all compact unit frames to vanilla Blizzard behavior.
+-- WARNING: This iterates ALL frame pools, not just cached frames.
+-- This applies VanillaDefaults to frames the addon may have never modified,
+-- which can corrupt their native appearance if Blizzard uses different defaults.
+-- PREFER using ReleaseAllBars() which only restores frames the addon has cached.
+-- This function should only be used in special cases where you KNOW all frames
+-- were modified and need restoration regardless of cache state.
+function ns.RestoreAllFramesToVanilla()
+	-- Restore party frames
+	RestoreFramePoolToVanilla(CompactPartyFrame, "CompactPartyFrameMember", 5)
+
+	-- Restore raid frames
+	RestoreFramePoolToVanilla(CompactRaidFrameContainer, "CompactRaidFrame", 40)
+
+	-- Restore pet frames
+	local petPrefix = ns.IsInRaid() and "CompactRaidFramePet" or "CompactPartyFramePet"
+	RestoreFramePoolToVanilla(CompactRaidFrameContainer, petPrefix, 40)
+end
+
 --- ns.wipes the style cache so all appearance values are re-applied on ns.next update.
 -- Called on profile change to prevent stale cached appearance from persisting.
 function ns.wipeStyleCache()
