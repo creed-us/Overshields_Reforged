@@ -18,32 +18,25 @@ local function ComputeAutoHibernateState()
 		return true
 	end
 
-	-- Stay active while in combat — shields matter most here.
-	if ns.InCombatLockdown() then
-		return false
+	if not ns.IsInGroup() then
+		-- No party or raid frames exist without a group.
+		return true
 	end
 
-	-- Stay active while War Mode is enabled (world PvP shields).
-	if C_PvP and C_PvP.IsWarModeActive and C_PvP.IsWarModeActive() then
-		return false
-	end
-
-	-- Stay active while inside an instance (dungeon, raid, arena, bg).
-	if ns.IsInInstance() then
-		return false
-	end
-
-	-- In a raid group: defer to the Raid frame toggle.
 	if ns.IsInRaid() then
-		return not ns.IsSettingEnabled(profile.enableRaid)
+		if ns.IsSettingEnabled(profile.enableRaid) then
+			return false
+		end
+	elseif ns.IsSettingEnabled(profile.enableParty) then
+		return false
 	end
 
-	-- In a non-raid group: defer to the Party frame toggle.
-	if ns.IsInGroup() then
-		return not ns.IsSettingEnabled(profile.enableParty)
+	-- Pet frames can accompany either group type.
+	if ns.IsSettingEnabled(profile.enablePets) then
+		return false
 	end
 
-	-- Solo, out of combat, no War Mode, not in an instance → hibernate.
+	-- Grouped, but every toggle relevant to our current group type is off.
 	return true
 end
 
