@@ -243,7 +243,7 @@ local function HandleCompactUnitFrameUpdate(frame, profile)
 		return true
 	end
 
-	local glowVisible = ns.IsGlowVisible(frame)
+	local glowVisible = glow:IsVisible()
 	if glowVisible then
 		ns.ApplyAppearanceToOverAbsorbGlow(glow, profile)
 	end
