@@ -336,7 +336,7 @@ end
 -- @param frame The compact unit frame to process
 -- @param profile The active db.profile table
 local function ProcessFrame(frame, profile)
-	if ns.FrameIsForbidden(frame) or not frame.displayedUnit then return end
+	if ns.FrameIsForbidden(frame) or not frame.displayedUnit or not ns.IsKnownCompactUnitFrame(frame) then return end
 
 	if frame:IsShown() then
 		ns.QueueCompactUnitFrameUpdate(frame)

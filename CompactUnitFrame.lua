@@ -103,8 +103,31 @@ local function SuppressNativeAbsorbVisuals(frame)
 	end
 end
 
-function ns.EnforceNativeAbsorbVisibility(frame, profile)
+function ns.IsKnownCompactUnitFrame(frame)
 	if ns.FrameIsForbidden(frame) then
+		return false
+	end
+
+	local frameName = frame.GetName and frame:GetName()
+	if frameName then
+		if ns.string_find(frameName, "CompactPartyFrameMember", 1, true) == 1
+			or ns.string_find(frameName, "CompactRaidFramePet", 1, true) == 1
+			or ns.string_find(frameName, "CompactPartyFramePet", 1, true) == 1
+			or ns.string_find(frameName, "CompactRaidFrame", 1, true) == 1 then
+			return true
+		end
+	end
+
+	local parent = frame.GetParent and frame:GetParent()
+	if parent == CompactPartyFrame or parent == CompactRaidFrameContainer then
+		return true
+	end
+
+	return false
+end
+
+function ns.EnforceNativeAbsorbVisibility(frame, profile)
+	if ns.FrameIsForbidden(frame) or not ns.IsKnownCompactUnitFrame(frame) then
 		return
 	end
 
@@ -320,7 +343,7 @@ end)
 function ns.QueueCompactUnitFrameUpdate(frame)
 	if ns.hibernating then return end
 
-	if ns.FrameIsForbidden(frame) then
+	if ns.FrameIsForbidden(frame) or not ns.IsKnownCompactUnitFrame(frame) then
 		return
 	end
 
