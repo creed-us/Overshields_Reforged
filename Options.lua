@@ -253,7 +253,7 @@ end]]
 
 local function MigrateProfile(profile)
 	-- Get current or update to 0 if nil/NaNs
-    local currentProfileVersion = profile.profileVersion or 0
+	local currentProfileVersion = profile.profileVersion or 0
 
 	if currentProfileVersion < 1 then
 		profile.anchorShieldToHealth = nil

@@ -154,9 +154,9 @@ end
 -- @param glowVisible true when overAbsorb glow is active on the parent frame
 -- @param profile Optional db.profile table
 function ns.ApplyAppearanceToNativeBar(bar, glowVisible, profile)
-    if not bar or bar:IsForbidden() then
-        return
-    end
+	if not bar or bar:IsForbidden() then
+		return
+	end
 
 	styleCache[bar] = nil
 
@@ -360,11 +360,11 @@ local function HideCachedBarsByPredicate(predicate)
 			frames[frame] = true
 		end
 	end
-    for frame in ns.pairs(ns.overlayCache) do
-        if predicate(frame) then
-            frames[frame] = true
-        end
-    end
+	for frame in ns.pairs(ns.overlayCache) do
+		if predicate(frame) then
+			frames[frame] = true
+		end
+	end
 
 	for frame in ns.pairs(frames) do
 		ns.ReleaseFrame(frame, styleCache)
