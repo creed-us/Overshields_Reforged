@@ -46,6 +46,11 @@ function ns.IsAtlasAsset(asset)
 	return isAtlas
 end
 
+--- Wipes the atlas-detection cache. Called alongside the style cache on profile change
+function ns.WipeAtlasCache()
+	ns.wipe(atlasCache)
+end
+
 --- Resets a custom bar to its default state.
 -- Clears anchor mode, resets anchor points, and hides the bar.
 -- @param bar The custom StatusBar to reset

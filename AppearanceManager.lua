@@ -501,7 +501,7 @@ end
 -- Called on profile change to prevent stale cached appearance from persisting.
 function ns.wipeStyleCache()
 	ns.wipe(styleCache)
-	ns.wipe(atlasCache)
+	ns.WipeAtlasCache()
 end
 
 --@alpha@
