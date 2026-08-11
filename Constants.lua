@@ -11,8 +11,6 @@ local pairs = pairs
 local ipairs = ipairs
 local IsInRaid = IsInRaid
 local IsInGroup = IsInGroup
-local IsInInstance = IsInInstance
-local InCombatLockdown = InCombatLockdown
 
 ns.string_find = string_find
 ns.CreateFrame = CreateFrame
@@ -25,5 +23,3 @@ ns.pairs = pairs
 ns.ipairs = ipairs
 ns.IsInRaid = IsInRaid
 ns.IsInGroup = IsInGroup
-ns.IsInInstance = IsInInstance
-ns.InCombatLockdown = InCombatLockdown
