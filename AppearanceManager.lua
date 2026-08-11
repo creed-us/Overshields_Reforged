@@ -245,7 +245,7 @@ end
 -- @param profile Optional db.profile table; when provided, skips the global lookup
 function ns.ApplyAppearanceToOverAbsorbGlow(glow, profile)
 	if ns.FrameIsForbidden(glow) or not glow:IsVisible() then return end
-	local db = profile or OvershieldsReforged.db.profile
+	local db = profile or OvershieldsReforged.db and OvershieldsReforged.db.profile
 	if not db then return end
 	local state = GetStyleState(glow)
 	local glowColor = db.overAbsorbGlowColor
