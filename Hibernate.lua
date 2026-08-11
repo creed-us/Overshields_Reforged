@@ -41,12 +41,12 @@ local function ComputeAutoHibernateState()
 end
 
 local function FormatHibernateSource()
-    if ns.hibernateOverride == true then
-        return "m: off"
-    elseif ns.hibernateOverride == false then
-        return "m: on"
-    end
-    return "auto"
+	if ns.hibernateOverride == true then
+		return "m: off"
+	elseif ns.hibernateOverride == false then
+		return "m: on"
+	end
+	return "auto"
 end
 
 --- Evaluates hibernate state and performs transitions when the effective state changes.
