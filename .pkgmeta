@@ -8,7 +8,10 @@ ignore:
     - .vscode/*
     - .prettierignore
     - README.md
-    - midnight_options.jpg
+    - Overshields.png
+    - Shields.png
+    - Behavior.png
+    - icon.jpg
 
 enable-nolib-creation: yes
 
