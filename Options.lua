@@ -122,7 +122,7 @@ local function NormalizeAnchorModeSettings(profile)
 	end
 end
 
---- Lazily builds the texture dropdown value table for bar/overlay selectors to catch late-registered LSM textures.
+--- Cached dropdown value tables; invalidated when LSM registers new media (see InvalidateDropdownCaches below).
 local cachedTextureValues = nil
 local cachedGlowTextureValues = nil
 
@@ -135,6 +135,7 @@ if LSM then
 	LSM.RegisterCallback("OvershieldsReforged", "LibSharedMedia_Registered", InvalidateDropdownCaches)
 end
 
+--- Lazy-builds the texture dropdown value table for bar/overlay selectors to catch late-registered LSM textures.
 local function TextureDropdownValues()
 	if cachedTextureValues then return cachedTextureValues end
 	local values = {
@@ -150,7 +151,7 @@ local function TextureDropdownValues()
 	return values
 end
 
---- Lazy builds the texture dropdown value table for the overAbsorb glow selector so that late-registered LSM spark/pip textures appear.
+--- Formats a single dropdown option label, using an atlas icon prefix (|A) or a texture icon prefix (|T) as appropriate.
 local function BuildGlowTextureOptionLabel(asset, displayName)
 	if ns.IsAtlasAsset(asset) then
 		return string.format("|A:%s:16:16|a %s", asset, displayName)
@@ -171,6 +172,7 @@ local function BuildGlowTextureValues(textureEntries)
 	return values
 end
 
+--- Lazy-builds the texture dropdown value table for the overAbsorb glow selector so that late-registered LSM spark/pip textures appear.
 local function OverAbsorbGlowTextureDropdownValues()
 	if cachedGlowTextureValues then return cachedGlowTextureValues end
 	local values = BuildGlowTextureValues({
@@ -246,11 +248,6 @@ end
 
 local CURRENT_DB_VERSION = 1
 
---[[local function MigrateDB(db)
-	-- Get current or update to 0 if nil/NaN
-	local currentVersion = db.version or 0
-end]]
-
 local function MigrateProfile(profile)
 	-- Get current or update to 0 if nil/NaNs
 	local currentProfileVersion = profile.profileVersion or 0
@@ -269,7 +266,6 @@ end
 
 function OvershieldsReforged:InitializeDatabase()
 	self.db = AceDB:New("OvershieldsReforgedDB", defaults, true)
-    --MigrateDB(self.db)
 	MigrateProfile(self.db.profile)
 	NormalizeAnchorModeSettings(self.db and self.db.profile)
 

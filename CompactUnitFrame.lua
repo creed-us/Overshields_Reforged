@@ -212,7 +212,8 @@ end
 --- Updates a compact unit frame with current absorb bar values and glow state.
 -- Synchronizes bar values with unit API and glow visibility.
 -- Appearance is managed exclusively by AppearanceManager.
--- Note: IsFrameContextEnabled check is done at queue time, not here.
+-- Note: re-checks IsFrameContextEnabled even though QueueCompactUnitFrameUpdate already
+-- checked it at queue time — a toggle can flip between queueing and batch processing.
 -- @param frame The compact unit frame to update
 -- @param profile The active db.profile table
 -- @return true if the frame was processed (or intentionally skipped), false if unready for retry

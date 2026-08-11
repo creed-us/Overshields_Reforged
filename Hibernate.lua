@@ -7,7 +7,9 @@ ns.hibernating = false
 ns.hibernateOverride = nil
 
 --- Computes whether the addon should auto-hibernate based on current context.
--- Returns true when there is no useful work for the addon to do.
+-- Returns true when there is no useful work for the addon to do — i.e. compact party/raid/pet
+-- frames only ever exist while grouped, so combat, War Mode, and being in an instance are
+-- never themselves a reason to stay active; only "grouped, with the matching toggle on" is.
 local function ComputeAutoHibernateState()
 	-- Guard: if Core.lua failed to initialize (e.g. due to a missing library), treat as hibernate.
 	if not OvershieldsReforged then return true end
@@ -117,6 +119,8 @@ function ns.SetHibernateOverride(value)
 end
 
 --- Event frame that triggers hibernate re-evaluation on context changes.
+-- Only group composition changes and world entry affect IsInGroup()/IsInRaid();
+-- combat, War Mode, and zone/instance transitions no longer factor into the decision.
 local hibernateEventFrame = ns.CreateFrame("Frame")
 hibernateEventFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
 hibernateEventFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
