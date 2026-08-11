@@ -3,8 +3,6 @@ local _, ns = ...
 local styleCache = setmetatable({}, { __mode = "k" })
 ns.StyleCache = styleCache
 
-local atlasCache = {}
-
 local function GetStyleState(target)
 	if not target then
 		return nil
@@ -20,19 +18,11 @@ local function GetStyleState(target)
 end
 
 local function SetTextureOrAtlas(textureRegion, asset)
-	local isAtlas = atlasCache[asset]
-	if isAtlas == nil then
-		isAtlas = C_Texture and C_Texture.GetAtlasInfo and C_Texture.GetAtlasInfo(asset) and true or false
-		atlasCache[asset] = isAtlas
-	end
-
-	if isAtlas then
+	if ns.IsAtlasAsset(asset) then
 		textureRegion:SetAtlas(asset, false, nil, true)
-		textureRegion:SetTexCoord(0, 1, 0, 1)
-		return
+	else
+		textureRegion:SetTexture(asset)
 	end
-
-	textureRegion:SetTexture(asset)
 	textureRegion:SetTexCoord(0, 1, 0, 1)
 end
 

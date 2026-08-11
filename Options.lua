@@ -152,7 +152,7 @@ end
 
 --- Lazy builds the texture dropdown value table for the overAbsorb glow selector so that late-registered LSM spark/pip textures appear.
 local function BuildGlowTextureOptionLabel(asset, displayName)
-	if C_Texture and C_Texture.GetAtlasInfo and C_Texture.GetAtlasInfo(asset) then
+	if ns.IsAtlasAsset(asset) then
 		return string.format("|A:%s:16:16|a %s", asset, displayName)
 	end
 

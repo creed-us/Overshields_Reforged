@@ -32,6 +32,20 @@ function ns.IsSettingEnabled(value)
 	return value ~= false
 end
 
+local atlasCache = {}
+
+--- Returns whether an asset name is a texture atlas (vs. a plain file path), caching the lookup.
+-- @param asset The texture path or atlas name to check
+-- @return boolean true if the asset is a known atlas
+function ns.IsAtlasAsset(asset)
+	local isAtlas = atlasCache[asset]
+	if isAtlas == nil then
+		isAtlas = C_Texture and C_Texture.GetAtlasInfo and C_Texture.GetAtlasInfo(asset) and true or false
+		atlasCache[asset] = isAtlas
+	end
+	return isAtlas
+end
+
 --- Resets a custom bar to its default state.
 -- Clears anchor mode, resets anchor points, and hides the bar.
 -- @param bar The custom StatusBar to reset
