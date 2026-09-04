@@ -123,6 +123,12 @@ function ns.IsKnownCompactUnitFrame(frame)
 		return true
 	end
 
+	-- Raid frames under the "Separate Groups" display modes are nested an extra level.
+	local grandparent = parent and parent.GetParent and parent:GetParent()
+	if grandparent == CompactRaidFrameContainer then
+		return true
+	end
+
 	return false
 end
 
