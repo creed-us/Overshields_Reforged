@@ -1,0 +1,27 @@
+name: Tests
+
+on:
+    push:
+    pull_request:
+
+jobs:
+    unit:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+
+            # 5.1 matches the Lua runtime embedded in the WoW client.
+            - uses: leafo/gh-actions-lua@v10
+              with:
+                  luaVersion: "5.1"
+
+            # The suite only parses files its specs load, which leaves most of the addon
+            # unchecked. This catches a syntax error in any file before it reaches a client.
+            - name: Syntax-check every Lua file
+              run: |
+                  for f in *.lua tests/*.lua tests/support/*.lua tests/lib/*.lua; do
+                      lua -e "assert(loadfile('$f'))" || exit 1
+                  done
+
+            - name: Run unit tests
+              run: lua tests/run_tests.lua

@@ -26,7 +26,7 @@ function OvershieldsReforged:OnEnable()
 		end
 
 		--@alpha@
-		ns.Debug.Inc("hookFires")
+		ns.Emit("hookFires")
 		--@end-alpha@
 		ns.QueueCompactUnitFrameUpdate(frame)
 	end)

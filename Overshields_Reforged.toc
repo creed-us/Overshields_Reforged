@@ -14,7 +14,9 @@ embeds.xml
 #@@end-no-lib-strip@@
 
 Constants.lua
+Instrumentation.lua
 Utilities.lua
+BarLifecycle.lua
 Core.lua
 UnitContext.lua
 Hibernate.lua
@@ -22,7 +24,10 @@ ShieldState.lua
 AnchorStrategy.lua
 Options.lua
 ChatCommands.lua
-CompactUnitFrame.lua
+FrameRegistry.lua
+UpdateQueue.lua
+FrameUpdate.lua
+FrameDiscovery.lua
 AppearanceManager.lua
 #@alpha@
 Debug.lua

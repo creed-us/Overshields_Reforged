@@ -65,7 +65,7 @@ function ns.EvaluateHibernation()
 	end
 
 	--@alpha@
-	ns.Debug.Inc("hibernateEvals")
+	ns.Emit("hibernateEvals")
 	--@end-alpha@
 
 	if effective == ns.hibernating then
@@ -73,7 +73,7 @@ function ns.EvaluateHibernation()
 	end
 
 	--@alpha@
-	ns.Debug.Inc("hibernateTransitions")
+	ns.Emit("hibernateTransitions")
 	--@end-alpha@
 
 	ns.hibernating = effective
