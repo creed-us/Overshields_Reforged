@@ -8,6 +8,8 @@ ignore:
     - .vscode/*
     - .prettierignore
     - README.md
+    - REFACTOR_PLAN.md
+    - tests/*
     - Overshields.png
     - Shields.png
     - Behavior.png

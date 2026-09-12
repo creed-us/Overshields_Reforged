@@ -15,6 +15,7 @@ embeds.xml
 
 Constants.lua
 Utilities.lua
+BarLifecycle.lua
 Core.lua
 UnitContext.lua
 Hibernate.lua
