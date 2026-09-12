@@ -27,7 +27,16 @@ function M.FlushTimers()
 	return #pending
 end
 
+local LEGACY_FRAME_PREFIXES = {
+	"CompactRaidFrame",
+	"CompactPartyFrameMember",
+	"CompactRaidFramePet",
+	"CompactPartyFramePet",
+}
+
 --- Resets the recorded state between tests without reinstalling the globals.
+-- The compact frame containers are rebuilt rather than reused: specs attach `flowFrames`
+-- and `displayPets` to them, and those would otherwise leak into the next test.
 function M.Reset()
 	M.createdFrames = {}
 	M.scheduledTimers = {}
@@ -36,6 +45,17 @@ function M.Reset()
 	M.now = 0
 	M.inRaid = false
 	M.inGroup = false
+
+	_G.UIParent = mock_frame.NewFrame({ name = "UIParent" })
+	_G.CompactPartyFrame = mock_frame.NewFrame({ name = "CompactPartyFrame" })
+	_G.CompactRaidFrameContainer = mock_frame.NewFrame({ name = "CompactRaidFrameContainer" })
+
+	-- Frames the legacy global-name walk would find.
+	for _, prefix in ipairs(LEGACY_FRAME_PREFIXES) do
+		for index = 1, 40 do
+			_G[prefix .. index] = nil
+		end
+	end
 end
 
 --- Atlas names that C_Texture.GetAtlasInfo should report as real atlases.
@@ -73,12 +93,21 @@ function M.Install()
 		return frame
 	end
 
+	-- UIParent and Blizzard's compact frame containers are (re)built in Reset(). They must
+	-- be real, distinct objects: the addon identifies its frames partly by comparing a
+	-- frame's parent against the containers, so leaving them nil would make every
+	-- unparented frame compare equal and be misread as a compact unit frame.
+
 	_G.UnitExists = function(unit) return unit ~= nil end
 	_G.UnitGetTotalAbsorbs = function() return 0 end
 	_G.GetTime = function() return M.now or 0 end
 	_G.IsInRaid = function() return M.inRaid == true end
 	_G.IsInGroup = function() return M.inGroup == true end
 	_G.hooksecurefunc = function() end
+
+	-- Enough LibStub for Debug.lua to load. Its AceGUI use is confined to building the
+	-- window, which specs never open.
+	_G.LibStub = function() return {} end
 
 	_G.C_Timer = {
 		After = function(delay, callback)
@@ -103,6 +132,46 @@ function M.Install()
 
 	M.Reset()
 	return M
+end
+
+--- Stand-in for the addon object Core.lua normally builds through AceAddon.
+-- The pipeline reads OvershieldsReforged.db.profile and asks it whether a frame's unit
+-- context is enabled; loading Core.lua for real would drag in the whole of Ace3.
+-- @param opts .profile (table), .contextEnabled (boolean, default true)
+function M.InstallAddonStub(opts)
+	opts = opts or {}
+
+	local addon = {
+		db = { profile = opts.profile or {} },
+		contextEnabled = opts.contextEnabled ~= false,
+		printed = {},
+	}
+
+	function addon:IsUnitContextEnabled()
+		return self.contextEnabled
+	end
+
+	function addon:IsFrameContextEnabled()
+		return self.contextEnabled
+	end
+
+	function addon:Print(message)
+		self.printed[#self.printed + 1] = message
+	end
+
+	_G.OvershieldsReforged = addon
+	return addon
+end
+
+--- Returns the frame carrying an OnUpdate script — the batch driver — so specs can run a
+-- cycle by hand instead of waiting on a real frame loop.
+function M.FindOnUpdateDriver()
+	for _, frame in ipairs(M.createdFrames) do
+		if frame.scripts and frame.scripts.OnUpdate then
+			return frame
+		end
+	end
+	return nil
 end
 
 return M

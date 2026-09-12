@@ -83,17 +83,38 @@ local function Max(key, value)
 end
 
 -------------------------------------------------------------------------------
--- Public increment API (called from instrumentation sites)
+-- Instrumentation sink
 -------------------------------------------------------------------------------
 
 local Debug = {}
 ns.Debug = Debug
 
-Debug.Inc = Inc
-Debug.Set = Set
-Debug.Max = Max
 Debug.counters = counters
 Debug.windowCounters = windowCounters
+
+--- How this sink records each event. Anything not listed accumulates.
+-- Don't infer these from the initial values in `counters`: poolFramesProcessed is a
+-- number but holds a snapshot of the last pool walk, not a running total.
+local EVENT_KIND = {
+	poolPath = "set",
+	poolFramesProcessed = "set",
+	lastRefreshTime = "set",
+	peakBatchSize = "max",
+}
+
+-- Pipeline code emits events without knowing about this file; attaching here is what
+-- turns them into counters. In non-alpha builds Debug.lua isn't loaded, nothing attaches,
+-- and ns.Emit stays a no-op.
+ns.SetInstrumentationHandler(function(name, amount)
+	local kind = EVENT_KIND[name]
+	if kind == "set" then
+		Set(name, amount)
+	elseif kind == "max" then
+		Max(name, amount)
+	else
+		Inc(name, amount)
+	end
+end)
 
 -------------------------------------------------------------------------------
 -- Snapshot helpers

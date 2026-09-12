@@ -12,6 +12,13 @@ local SPECS = {
 	"shieldstate_spec",
 	"anchorstrategy_spec",
 	"utilities_spec",
+	"instrumentation_spec",
+	"debug_sink_spec",
+	"frameregistry_spec",
+	"updatequeue_spec",
+	"frameupdate_spec",
+	"framediscovery_spec",
+	"pipeline_integration_spec",
 	"barlifecycle_spec",
 }
 

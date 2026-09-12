@@ -298,7 +298,7 @@ member (or yourself if solo-testable via a shield spell), confirm the custom bar
 renders and that toggling the frame-scope checkboxes off/on in Options still cleanly
 releases and restores it.
 
-#### Stage 1 status: CODE COMPLETE — G5 (in-game) still outstanding (2026-09-11)
+#### Stage 1 status: DONE — all of G1–G6 verified, G5 confirmed in-game (2026-09-11)
 
 `BarLifecycle.lua` (196 lines) now holds `VanillaDefaults`, `ResetCustomBar`,
 `HideCustomBars`, `RestoreRegionToVanilla`, `RestoreNativeAbsorbVisuals`, `ReleaseFrame`,
@@ -326,8 +326,7 @@ Three things worth knowing for later stages:
   duplicating.
 - Incidental fix: `BarLifecycle.lua` got a trailing newline that `Utilities.lua` never had.
 
-**G5 cannot be done from here** — it needs a WoW client. Someone must run the in-game
-check above before this stage counts as fully verified.
+G5 was run in the client by the maintainer and passed.
 
 ### Stage 2: Extract `FrameRegistry.lua` from `CompactUnitFrame.lua`
 
@@ -362,6 +361,43 @@ event frame registered for `PLAYER_ENTERING_WORLD`/`GROUP_ROSTER_UPDATE`.
 frames; leave the group (or toggle a scope off) and confirm `CleanupStaleCacheEntries`
 still runs on `GROUP_ROSTER_UPDATE` without errors.
 
+#### Stage 2 status: DONE — all of G1–G6 verified, G5 confirmed in-game (2026-09-11)
+
+`FrameRegistry.lua` (102 lines) now owns the `containers`/`overlayContainers` caches, the
+`ns.absorbCache`/`ns.overlayCache` exports, `ns.GetOrCreateBar`, `ns.ReleaseAllBars`,
+`ns.CleanupStaleCacheEntries`, and the cleanup event frame. `CompactUnitFrame.lua` is down
+from 450 to 347 lines. TOC updated. Suite is 93 passing.
+
+**The plan was wrong about one thing, and this matters for Stage 3.** `ReleaseAllBars`
+doesn't only touch registry state — it also wiped `updateQueue` and `retryCount`, bumped
+`pendingRecoveryRefreshToken`, and hid `batchFrame`, all of which are *queue* state that
+doesn't move until Stage 3. Moving the function as written would have orphaned those
+references.
+
+Resolved with the same indirection trick the plan already uses in Stage 3: the queue side
+now exposes `ns.ResetUpdateQueue()` (wipes the queue, wipes retry counts, bumps the
+recovery token, hides the batch frame) and `ReleaseAllBars` calls it. This was introduced
+as a *pre-move, behaviour-identical* edit — same statements, same order — so it could be
+tested before anything relocated. **Stage 3 must move `ns.ResetUpdateQueue` into
+`UpdateQueue.lua`; `FrameRegistry.lua` then needs no further edits.**
+
+Also done in this stage:
+- `GetOrCreate` was exported as `ns.GetOrCreateBar` *before* the move (as a temporary
+  alias), so the spec could reach it while it was still a file-local. The move turned the
+  alias into a real export and deleted the alias.
+- **Harness:** `load_addon.NewNamespace` now installs a recording `ns.Debug` stub
+  (`Inc`/`Set`/`Max`). The `--@alpha@` markers are only stripped at packaging time, so in
+  raw source those 36 instrumentation calls are live and every pipeline spec would error
+  without it. Specs can assert on the recorded counts — `frameregistry_spec` uses this to
+  prove the create-vs-reuse cache path.
+
+**Mutation-testing lesson worth repeating:** the first attempt used a `sed` pattern that
+also rewrote the function *declaration*, producing a file that didn't parse. Every test
+"failed", which looks like a great result and proves nothing — a non-parsing file can't
+distinguish a good assertion from a vacuous one. Re-run with precise, *parseable*
+mutations: 2 mutations produced exactly 2 targeted failures with the other 15 still
+passing. **Always confirm the mutant still compiles before believing the mutation test.**
+
 ### Stage 3: Extract `UpdateQueue.lua` from `CompactUnitFrame.lua`
 
 This is the trickiest stage in Phase 1 because the `OnUpdate` loop currently calls a local
@@ -389,6 +425,11 @@ the `batchFrame:SetScript("OnUpdate", ...)` loop, and — still in this file —
   implementation underneath the same name.
 
 **Move:**
+0. **Added by Stage 2:** `ns.ResetUpdateQueue` already exists in `CompactUnitFrame.lua`
+   and must move into `UpdateQueue.lua` along with the queue state it touches
+   (`updateQueue`, `retryCount`, `pendingRecoveryRefreshToken`, `batchFrame`).
+   `FrameRegistry.lua`'s `ReleaseAllBars` calls it through `ns.`, so it needs no edit —
+   but the Stage 2 spec asserts the delegation happens, so don't inline it away.
 1. Create `UpdateQueue.lua` containing everything listed in Preconditions above.
 2. Change the `OnUpdate` loop's call from the local `HandleCompactUnitFrameUpdate(frame,
    profile)` to `ns.ProcessQueuedFrame(frame, profile)`.
@@ -402,6 +443,40 @@ the `batchFrame:SetScript("OnUpdate", ...)` loop, and — still in this file —
 still produces a visible custom bar (proves the queue → alias → real handler chain still
 fires end to end). The retry/drop path is exercised by the unit test, not realistically
 forceable in-game — that's expected and fine.
+
+#### Stage 3 status: DONE — all of G1–G6 verified, G5 confirmed in-game (2026-09-11)
+
+`UpdateQueue.lua` (145 lines) now owns `batchFrame`, `updateQueue`, `retryCount`, the four
+timing/retry constants, `ScheduleRecoveryRefresh`, the `OnUpdate` batch loop,
+`ns.QueueCompactUnitFrameUpdate`, and `ns.ResetUpdateQueue`. `CompactUnitFrame.lua` is
+down to 208 lines and now holds *only* Stage 4's payload. Suite is 110 passing.
+
+The seam went in first as a behaviour-identical edit (the loop calling
+`ns.ProcessQueuedFrame(frame, profile)` with `ns.ProcessQueuedFrame =
+HandleCompactUnitFrameUpdate` aliased beside the local), so the queue could be tested
+against a contract before anything moved. The extraction itself was verbatim: the
+before/after line sets are identical, so this stage changed no behaviour at all.
+
+**Harness additions** (both will be needed by Stages 4–5):
+- `wow_stub.InstallAddonStub{ profile = …, contextEnabled = … }` — stands in for the
+  `OvershieldsReforged` object that `Core.lua` normally builds through AceAddon, which is
+  far too heavy to load in a unit test.
+- `wow_stub.FindOnUpdateDriver()` — returns the frame carrying the `OnUpdate` script so a
+  spec can run a batch cycle by hand instead of waiting on a real frame loop. This is how
+  every retry/drop/cleanup-interval test drives the queue deterministically.
+
+**Latent fragility found in `IsKnownCompactUnitFrame` — for Stage 4 to decide on.** The
+first run of the new spec failed because an unrelated frame was classified as a compact
+unit frame. Cause: the function compares `frame:GetParent()` against the globals
+`CompactPartyFrame` and `CompactRaidFrameContainer`, and the test environment hadn't
+defined them — so `nil == nil` matched and *every unparented frame* looked like one of
+ours. The stub now defines both as real distinct objects, which is faithful to the client.
+
+In the live client those globals always exist, so this is latent rather than an active
+bug. But the guard is one missing global away from claiming every frame in the UI, and
+Stage 4 owns this function — that's the moment to decide whether to harden it (an explicit
+`parent ~= nil` check) as an opportunistic fix under decision #3, or leave it and keep the
+stage a pure move.
 
 ### Stage 4: Extract `FrameUpdate.lua` — the last of `CompactUnitFrame.lua`
 
@@ -443,6 +518,41 @@ prompt still repositions bars correctly after reload; run `/osr hibernate off` t
 `/osr hibernate on` and confirm bars cleanly disappear/reappear; watch
 `/console scriptErrors 1` for the whole pass.
 
+#### Stage 4 status: DONE — all of G1–G6 verified, full in-game pass confirmed (2026-09-11)
+
+`CompactUnitFrame.lua` **no longer exists.** Its remaining contents are now
+`FrameUpdate.lua` (203 lines): `SuppressNativeAbsorbVisuals`,
+`ns.IsKnownCompactUnitFrame`, `ns.EnforceNativeAbsorbVisibility`,
+`ApplyNativeVisualOnlyShielded`, `UpdateBarAnchor`, `ApplyCustomBars`, and
+`ns.ProcessQueuedFrame` (the former local `HandleCompactUnitFrameUpdate`, renamed to its
+permanent exported name, with the Stage 3 alias deleted). TOC swapped. Suite is 139
+passing.
+
+The extraction diff contained exactly two changes beyond relocation — the rename and the
+removal of the Stage 3 seam comment/alias — verified line by line before the old file was
+deleted.
+
+**Phase 1's original monolith is now fully decomposed:** 450 lines of
+`CompactUnitFrame.lua` became `FrameRegistry.lua` (102), `UpdateQueue.lua` (145), and
+`FrameUpdate.lua` (203), each with one job.
+
+**Integration spec added** (`tests/pipeline_integration_spec.lua`, 3 tests), as this stage
+recommended. It matters more than it looks: `updatequeue_spec` fakes
+`ns.ProcessQueuedFrame` and `frameupdate_spec` fakes the appearance layer — both correct
+choices for unit tests, but between them *no spec ever ran the real queue against the real
+frame update against the real painting*. A broken seam could have hidden behind two green
+files. The integration spec drives one full cycle — queue a frame, run the batch driver,
+assert the bar exists, is scaled to the unit's absorb, and was actually painted by
+`AppearanceManager` — then releases everything and checks the frame is handed back to
+Blizzard's defaults.
+
+**`IsKnownCompactUnitFrame` hardening was deliberately NOT done here.** The nil-equality
+fragility recorded under Stage 3 is still open. Folding a behaviour change into the stage
+that deletes a file and rewrites the TOC would make any in-game regression ambiguous —
+"was it the move or the fix?" — so this stayed a pure move. It remains a good small
+follow-up: an explicit `parent ~= nil` guard, with a test proving an unparented frame is
+rejected even when the container globals are missing.
+
 ### Stage 5: Extract `FrameDiscovery.lua` from `AppearanceManager.lua`
 
 **Preconditions to verify:** re-read `AppearanceManager.lua` and confirm it still contains
@@ -471,6 +581,26 @@ prompt still repositions bars correctly after reload; run `/osr hibernate off` t
 frames in that scope release immediately; toggle back on and confirm they restyle
 immediately (this exercises `UpdateAllFrameAppearances` → `UpdateFramePool` →
 `ProcessFrame` → the queue → the real update handler, i.e. the whole pipeline end to end).
+
+#### Stage 5 status: CODE COMPLETE — G5 (in-game) still outstanding (2026-09-11)
+
+`FrameDiscovery.lua` (129 lines) now owns `ProcessFrame`, the party/raid/pet predicates,
+`HideCachedBarsByPredicate`, `UpdateFramePool`, and `ns.UpdateAllFrameAppearances`.
+`AppearanceManager.lua` is down from 466 to 338 lines and is finally just styling.
+Everything moving was one contiguous block, so this was a clean verbatim extraction —
+before/after line sets identical. Suite is 155 passing.
+
+The 16 new tests drive the public entry point (`ns.UpdateAllFrameAppearances`) rather than
+the file-local helpers underneath it, which is why they survived the move untouched apart
+from the FILES list. They cover both pool-walk paths (modern `flowFrames` vs. the legacy
+`_G[prefix..i]` fallback), the shown-vs-hidden branch, all three scope toggles, and the
+hibernate/no-profile guards.
+
+**Harness fix worth knowing about:** `wow_stub.Reset()` now rebuilds `UIParent`,
+`CompactPartyFrame`, and `CompactRaidFrameContainer` on every namespace, and clears the
+160 legacy `Compact*Frame<N>` globals. Previously the containers were created once at
+install time, so a spec attaching `flowFrames` or `displayPets` to one would leak that
+into every later test in the run — an ordering-dependent false pass waiting to happen.
 
 ### Stage 6: Instrumentation decoupling
 
@@ -552,6 +682,61 @@ open `/osr debug`, trigger a few shield events, and confirm every counter still
 increments — a typo'd event name is easy to make and silently drops a counter with no
 error, so eyeball the debug window against the mapping table above rather than trusting
 "no errors" alone.
+
+#### Stage 6 status: CODE COMPLETE — G5 (in-game) still outstanding (2026-09-11)
+
+`Instrumentation.lua` (26 lines) provides `ns.Emit(name, amount)` and
+`ns.SetInstrumentationHandler(fn)`. All 36 call sites across 7 files now call `ns.Emit`;
+no pipeline file references `ns.Debug` any more. `Debug.lua` attaches itself as the
+handler at load and owns the `EVENT_KIND` dispatch. The `--@alpha@` wrapping is unchanged,
+so non-alpha builds still strip the calls entirely and pay nothing. Suite is 167 passing.
+
+**Correction to this stage's own preconditions:** the count is **32** distinct event names
+(28 accumulating, 3 snapshot, 1 peak), not the 31 stated above. The re-verification step
+in §1.1 is what surfaced it.
+
+**The eyeball-the-debug-window check above is now largely automated.**
+`tests/debug_sink_spec.lua` loads the *real* `Debug.lua` (a one-line `LibStub` stub is
+enough — its AceGUI use is confined to building the window) and emits all 32 event names
+through the real sink. This catches the exact failure this stage risks: `Debug.Inc` does
+`counters[key] + amount`, so an event the sink doesn't know about is a nil-arithmetic
+*error* in alpha builds, and no other spec can catch it because they all record through
+the harness instead. Mutation-tested by deleting a counter and a kind entry: both were
+caught, with the offending event named. Still worth one pass of the manual check, but it's
+now a confirmation rather than the only line of defence.
+
+**A harness bug this spec exposed immediately:** `load_addon` attached its recorder *after*
+loading files, and `Debug.lua` replaces `ns.Debug` with its own table — so
+`ns.Debug.Record` was nil and the attach silently *detached* Debug's handler. Every
+counter read zero. The attach is now skipped when the real `Debug.lua` is loaded. Worth
+remembering: `SetInstrumentationHandler` is last-writer-wins by design, so anything
+attaching late wins, including a test helper.
+
+Small cleanup, called out per decision #3: `Debug.Inc` / `Debug.Set` / `Debug.Max` are no
+longer exported on the `Debug` table. Nothing referenced them once the call sites moved to
+`ns.Emit`, and leaving them would invite calls that bypass the new seam. The local
+functions remain — the handler uses them.
+
+---
+
+## Phase 1 complete
+
+`CompactUnitFrame.lua` (450 lines) and `AppearanceManager.lua` (466 lines) are now eight
+files, none over ~340 lines, each answering one question:
+
+| File | Lines | Question it answers |
+|---|---|---|
+| `FrameDiscovery.lua` | 129 | which frames are worth processing? |
+| `UpdateQueue.lua` | 145 | when does work actually run? |
+| `FrameUpdate.lua` | 203 | what does this frame need? |
+| `AppearanceManager.lua` | 338 | how is a bar painted? |
+| `FrameRegistry.lua` | 102 | what are we tracking? |
+| `BarLifecycle.lua` | 197 | how do we hand a frame back? |
+| `Instrumentation.lua` | 26 | who's listening? |
+| `Utilities.lua` | 31 | generic guards |
+
+Backed by 167 tests, every one of them mutation-tested before being trusted with a move.
+Open the Phase 1 PR per §1.3 before starting Phase 2.
 
 **End of Phase 1.** `CompactUnitFrame.lua` and the pre-refactor `AppearanceManager.lua` no
 longer exist as monoliths; the pipeline is now 7 files, each with one job. Open/merge the
