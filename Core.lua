@@ -34,26 +34,16 @@ function OvershieldsReforged:OnEnable()
 	-- Initial appearance pass to style any frames already visible when loading.
 	-- Defer to allow frame containers to fully initialize.
 	-- Evaluate hibernation AFTER initial appearance pass to ensure proper state.
-	if C_Timer and C_Timer.After then
-		C_Timer.After(0, function()
-			-- First evaluate hibernation state
-			if ns.EvaluateHibernation then
-				ns.EvaluateHibernation()
-			end
-			-- If not hibernating, update frame appearances
-			if not ns.hibernating then
-				ns.UpdateAllFrameAppearances()
-			end
-		end)
-	else
-		-- Fallback for clients without C_Timer
+	C_Timer.After(0, function()
+		-- First evaluate hibernation state
 		if ns.EvaluateHibernation then
 			ns.EvaluateHibernation()
 		end
+		-- If not hibernating, update frame appearances
 		if not ns.hibernating then
 			ns.UpdateAllFrameAppearances()
 		end
-	end
+	end)
 
 	-- Re-apply appearance after Blizzard UI refreshes
 	if not self._appearanceEventFrame then

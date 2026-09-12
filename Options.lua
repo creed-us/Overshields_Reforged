@@ -60,11 +60,6 @@ local function OnAppearanceChanged()
 	end
 
 	local delay = 0.01 -- >0 to prevent perf. tank while changing appearance in options
-	if not C_Timer or not C_Timer.After then
-		ns.UpdateAllFrameAppearances()
-		return
-	end
-
 	pendingAppearanceRefreshToken = pendingAppearanceRefreshToken + 1
 	local refreshToken = pendingAppearanceRefreshToken
 
@@ -102,11 +97,7 @@ local function NormalizeAnchorModeSettings(profile)
 	end
 
 	if profile.anchorModeShielded == nil then
-		if profile.anchorShieldToHealth then
-			profile.anchorModeShielded = "health_right"
-		else
-			profile.anchorModeShielded = defaults.profile.anchorModeShielded
-		end
+		profile.anchorModeShielded = defaults.profile.anchorModeShielded
 	end
 
 	if profile.anchorModeOvershielded == nil then

@@ -32,11 +32,6 @@ local function ScheduleRecoveryRefresh()
 		return
 	end
 
-	if not C_Timer or not C_Timer.After then
-		ns.UpdateAllFrameAppearances()
-		return
-	end
-
 	pendingRecoveryRefreshToken = pendingRecoveryRefreshToken + 1
 	local refreshToken = pendingRecoveryRefreshToken
 	C_Timer.After(FULL_REFRESH_RECOVERY_DELAY, function()

@@ -80,9 +80,8 @@ function ns.EvaluateHibernation()
 
 	if effective then
 		-- Entering hibernation: release all custom bars and restore their frames to vanilla.
-		-- ReleaseAllBars handles restoring all frames we've actually modified (cached).
-		-- We don't call RestoreAllFramesToVanilla - it would apply our defaults to frames
-		-- we never touched, potentially corrupting their native appearance.
+		-- ReleaseAllBars only restores frames we've actually modified (cached), so we never
+		-- apply our defaults to frames we never touched.
 		if ns.ReleaseAllBars then
 			ns.ReleaseAllBars()
 		end
