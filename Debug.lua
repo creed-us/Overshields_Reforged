@@ -34,7 +34,6 @@ local counters = {
 	textureSkipped      = 0,
 	blendApplied        = 0,
 	blendSkipped        = 0,
-	contextDisabled     = 0,
 	framesShown         = 0,
 	framesHidden        = 0,
 	fullRefreshes       = 0,
@@ -267,7 +266,6 @@ local function BuildWindow()
 	widgets.colorRatio          = AddRow(scroll, "Color Applied / Skipped",   "SetStatusBarColor calls (applied) vs. cache-hit skips. Lower ratio = better caching.")
 	widgets.textureRatio        = AddRow(scroll, "Texture Applied / Skipped", "SetStatusBarTexture calls (applied) vs. cache-hit skips.")
 	widgets.blendRatio          = AddRow(scroll, "Blend Applied / Skipped",   "SetBlendMode calls (applied) vs. cache-hit skips.")
-	widgets.contextDisabled     = AddRow(scroll, "Context Disabled",          "ApplyAppearanceToFrame early returns because IsFrameContextEnabled was false.")
 	widgets.anchorModeChanges   = AddRow(scroll, "Anchor Mode Changes",      "Bar _anchorMode transitions (default/health_left/health_right/frame_left/frame_right).")
 	widgets.nativeBarsSuppressed = AddRow(scroll, "Native Bars Suppressed",   "SuppressNativeAbsorbVisuals calls that hid Blizzard's native absorb bars.")
 	widgets.fullRefreshes       = AddRow(scroll, "Full Refreshes",           "UpdateAllFrameAppearances invocations (triggered by settings changes).")
@@ -351,7 +349,6 @@ local function RefreshDisplay()
 	widgets.colorRatio:SetText(FormatRatio(s.colorApplied, s.colorSkipped) .. "  (+" .. FormatRatio(w.colorApplied, w.colorSkipped) .. ")")
 	widgets.textureRatio:SetText(FormatRatio(s.textureApplied, s.textureSkipped) .. "  (+" .. FormatRatio(w.textureApplied, w.textureSkipped) .. ")")
 	widgets.blendRatio:SetText(FormatRatio(s.blendApplied, s.blendSkipped) .. "  (+" .. FormatRatio(w.blendApplied, w.blendSkipped) .. ")")
-	widgets.contextDisabled:SetText(FormatDual(s.contextDisabled, w.contextDisabled))
 	widgets.anchorModeChanges:SetText(FormatDual(s.anchorModeChanges, w.anchorModeChanges))
 	widgets.nativeBarsSuppressed:SetText(FormatDual(s.nativeBarsSuppressed, w.nativeBarsSuppressed))
 	widgets.fullRefreshes:SetText(FormatDual(s.fullRefreshes, w.fullRefreshes))
