@@ -17,7 +17,7 @@ local FILES = { "Constants.lua", "Instrumentation.lua", "Debug.lua" }
 local EMITTED_EVENTS = {
 	accumulating = {
 		"anchorModeChanges", "barCreates", "barReuses", "batchCycles", "batchFramesTotal",
-		"blendApplied", "blendSkipped", "colorApplied", "colorSkipped", "contextDisabled",
+		"blendApplied", "blendSkipped", "colorApplied", "colorSkipped",
 		"earlyExits", "frameUpdates", "framesHidden", "framesShown", "fullRefreshes",
 		"hibernateEvals", "hibernateTransitions", "hookFires", "nativeBarsSuppressed",
 		"queueAdds", "queueAttempts", "queueSkipsDisabled", "queueSkipsDuplicate",
