@@ -38,14 +38,17 @@ function ns.IsKnownCompactUnitFrame(frame)
 		end
 	end
 
+	-- If Blizzard's containers ever aren't loaded, comparing an
+	-- unparented frame against them would be nil == nil, and every
+	-- frame in the UI would look like one of ours.
 	local parent = frame.GetParent and frame:GetParent()
-	if parent == CompactPartyFrame or parent == CompactRaidFrameContainer then
+	if parent and (parent == CompactPartyFrame or parent == CompactRaidFrameContainer) then
 		return true
 	end
 
 	-- Raid frames under the "Separate Groups" display modes are nested an extra level.
 	local grandparent = parent and parent.GetParent and parent:GetParent()
-	if grandparent == CompactRaidFrameContainer then
+	if grandparent and grandparent == CompactRaidFrameContainer then
 		return true
 	end
 

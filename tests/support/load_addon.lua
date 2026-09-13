@@ -73,9 +73,25 @@ end
 
 --- Installs the WoW stubs, then loads `files` (in order) into a fresh namespace.
 -- @param files Array of repo-relative paths, e.g. { "Constants.lua", "ShieldState.lua" }
+-- @param opts Optional. `opts.libs` maps library names to stubs for LibStub to return —
+--             it has to be applied before the files load, because Options.lua asks for
+--             LibSharedMedia at load time.
 -- @return the namespace table, and the wow_stub module for convenience
-function M.NewNamespace(files)
+function M.NewNamespace(files, opts)
 	wow_stub.Install()
+
+	if opts and opts.libs then
+		for name, lib in pairs(opts.libs) do
+			wow_stub.libs[name] = lib
+		end
+	end
+
+	-- Options.lua defines methods directly on the global OvershieldsReforged at load time
+	-- (`function OvershieldsReforged:InitializeDatabase()`), so the addon object has to
+	-- exist before it loads — exactly as Core.lua guarantees in the real TOC order.
+	if opts and opts.addon then
+		wow_stub.InstallAddonStub(opts.addon == true and {} or opts.addon)
+	end
 
 	local ns = { Debug = NewDebugStub() }
 	for _, path in ipairs(files or {}) do

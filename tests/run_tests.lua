@@ -8,18 +8,23 @@
 -- isn't available in plain Lua. Add new spec files to SPECS below.
 
 local SPECS = {
+	"toc_spec",
 	"unitcontext_spec",
 	"shieldstate_spec",
 	"anchorstrategy_spec",
 	"utilities_spec",
 	"instrumentation_spec",
 	"debug_sink_spec",
+	"glowtexturecatalog_spec",
+	"profilemigration_spec",
+	"optionsdropdowns_spec",
 	"frameregistry_spec",
 	"updatequeue_spec",
 	"frameupdate_spec",
 	"framediscovery_spec",
 	"pipeline_integration_spec",
 	"barlifecycle_spec",
+	"appearancemanager_spec",
 }
 
 local script = ((type(arg) == "table" and arg[0]) or "tests/run_tests.lua"):gsub("\\", "/")
