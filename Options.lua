@@ -1,40 +1,7 @@
 local _, ns = ...
--- LibSharedMedia-3.0 optional
-local LSM = LibStub("LibSharedMedia-3.0", true)
 local AceConfig = LibStub("AceConfig-3.0")
 local AceConfigDialog = LibStub("AceConfigDialog-3.0")
 local AceDB = LibStub("AceDB-3.0")
-
--- Used by both AceDB and the per-group reset buttons in the options UI.
-local defaults = {
-	profile = {
-		-- Frames for modification
-		enableParty = true,
-		enableRaid = true,
-		enablePets = false,
-		-- Normal shield appearance (overAbsorbGlow not visible)
-		absorbColor = { r = 1, g = 1, b = 1, a = 0.75 },
-		absorbTexture = "Interface\\RaidFrame\\Shield-Fill",
-		absorbBlendMode = "ADD",
-		overlayColor = { r = 1, g = 1, b = 1, a = 0.5 },
-		overlayTexture = "Interface\\RaidFrame\\Shield-Overlay",
-		overlayBlendMode = "BLEND",
-		-- OverAbsorb shield appearance (overAbsorbGlow visible)
-		overAbsorbColor = { r = 1, g = 1, b = 1, a = 0.75 },
-		overAbsorbTexture = "Interface\\RaidFrame\\Shield-Fill",
-		overAbsorbBlendMode = "ADD",
-		overAbsorbOverlayColor = { r = 1, g = 1, b = 1, a = 0.5 },
-		overAbsorbOverlayTexture = "Interface\\RaidFrame\\Shield-Overlay",
-		overAbsorbOverlayBlendMode = "BLEND",
-		-- OverAbsorb glow appearance
-		overAbsorbGlowColor = { r = 1, g = 1, b = 1, a = 1 },
-		overAbsorbGlowTexture = "Interface\\RaidFrame\\Shield-Overshield",
-		overAbsorbGlowBlendMode = "ADD",
-		-- Conditional anchor behavior
-		anchorModeShielded = "health_right",
-		anchorModeOvershielded = "frame_right",
-	},
-}
 
 StaticPopupDialogs["OVERSHIELDS_REFORGED_RELOAD_ANCHOR"] = {
 	text = "It is recommended to reload the UI when changing anchoring behavior. Reload now?",
@@ -80,190 +47,15 @@ local BLEND_MODES = {
 	["MOD"] = "Mod",
 }
 
-local ANCHOR_MODES = {
-	["health_left"] = "Health Bar Left",
-	["health_right"] = "Health Bar Right (Vanilla Default)",
-	["frame_left"] = "Unit Frame Left",
-	["frame_right"] = "Unit Frame Right (Overshield Default)",
-}
-
-local function IsValidAnchorMode(value)
-	return ANCHOR_MODES[value] ~= nil
-end
-
-local function NormalizeAnchorModeSettings(profile)
-	if not profile then
-		return
-	end
-
-	if profile.anchorModeShielded == nil then
-		profile.anchorModeShielded = defaults.profile.anchorModeShielded
-	end
-
-	if profile.anchorModeOvershielded == nil then
-		profile.anchorModeOvershielded = defaults.profile.anchorModeOvershielded
-	end
-
-	if not IsValidAnchorMode(profile.anchorModeShielded) then
-		profile.anchorModeShielded = defaults.profile.anchorModeShielded
-	end
-
-	if not IsValidAnchorMode(profile.anchorModeOvershielded) then
-		profile.anchorModeOvershielded = defaults.profile.anchorModeOvershielded
-	end
-end
-
---- Cached dropdown value tables; invalidated when LSM registers new media (see InvalidateDropdownCaches below).
-local cachedTextureValues = nil
-local cachedGlowTextureValues = nil
-
-local function InvalidateDropdownCaches()
-	cachedTextureValues = nil
-	cachedGlowTextureValues = nil
-end
-
-if LSM then
-	LSM.RegisterCallback("OvershieldsReforged", "LibSharedMedia_Registered", InvalidateDropdownCaches)
-end
-
---- Lazy-builds the texture dropdown value table for bar/overlay selectors to catch late-registered LSM textures.
-local function TextureDropdownValues()
-	if cachedTextureValues then return cachedTextureValues end
-	local values = {
-		["Interface\\RaidFrame\\Shield-Overlay"] = "|TInterface\\RaidFrame\\Shield-Overlay:16:32|t Default Overlay",
-		["Interface\\RaidFrame\\Shield-Fill"] = "|TInterface\\RaidFrame\\Shield-Fill:16:32|t Default Fill",
-	}
-	if LSM then
-		for name, path in ns.pairs(LSM:HashTable("statusbar")) do
-			values[path] = string.format("|T%s:16:32|t %s", path, name)
-		end
-	end
-	cachedTextureValues = values
-	return values
-end
-
---- Formats a single dropdown option label, using an atlas icon prefix (|A) or a texture icon prefix (|T) as appropriate.
-local function BuildGlowTextureOptionLabel(asset, displayName)
-	if ns.IsAtlasAsset(asset) then
-		return string.format("|A:%s:16:16|a %s", asset, displayName)
-	end
-
-	return string.format("|T%s:16:16|t %s", asset, displayName)
-end
-
-local function BuildGlowTextureValues(textureEntries)
-	local values = {}
-	for _, textureEntry in ns.ipairs(textureEntries) do
-		local textureAsset = textureEntry[1]
-		local displayName = textureEntry[2]
-		if textureAsset ~= "__PLACEHOLDER" then
-			values[textureAsset] = BuildGlowTextureOptionLabel(textureAsset, displayName)
-		end
-	end
-	return values
-end
-
---- Lazy-builds the texture dropdown value table for the overAbsorb glow selector so that late-registered LSM spark/pip textures appear.
-local function OverAbsorbGlowTextureDropdownValues()
-	if cachedGlowTextureValues then return cachedGlowTextureValues end
-	local values = BuildGlowTextureValues({
-		{ "Interface\\RaidFrame\\Shield-Overshield", "Default Glow" },
-		{ "Interface\\CastingBar\\UI-CastingBar-Spark", "Cast Bar Spark" },
-		{ "Interface\\Cooldown\\star4", "Star4" },
-		{ "Interface\\Cooldown\\starburst", "Starburst" },
-		{ "Warlock-Shard-Spark", "Warlock Spark" },
-		{ "cosmic-bar-spark", "Cosmic Spark" },
-		{ "CovenantSanctum-Reservoir-Spark-Kyrian", "Kyrian Spark" },
-		{ "CovenantSanctum-Reservoir-Spark-Glow-Kyrian", "Kyrian Glow Spark" },
-		{ "CovenantSanctum-Reservoir-Spark-Necrolord", "Necrolord Spark" },
-		{ "CovenantSanctum-Reservoir-Spark-Glow-Necrolord", "Necrolord Glow Spark" },
-		{ "CovenantSanctum-Reservoir-Spark-Nightfae", "Night Fae Spark" },
-		{ "CovenantSanctum-Reservoir-Spark-Glow-Nightfae", "Night Fae Glow Spark" },
-		{ "CovenantSanctum-Reservoir-Spark-Venthyr", "Venthyr Spark" },
-		{ "CovenantSanctum-Reservoir-Spark-Glow-Venthyr", "Venthyr Glow Spark" },
-		{ "UI-Frame-DastardlyDuos-ProgressBar-Spark", "Dastardly Duos Spark" },
-		{ "Garr_MissionFX-Glow", "Mission Glow" },
-		{ "Garr_MissionFX-Lines", "Mission Lines" },
-		{ "GenericWidgetBar-Spark-Line", "Widget Spark Line" },
-		{ "gradientbar-marker-diamond", "Diamond Marker" },
-		{ "gradientbar-marker-plain", "Plain Marker" },
-		{ "gradientbar-Spark-arrows", "Spark Arrows" },
-		{ "islands-queue-progressbar-spark", "Islands Queue Spark" },
-		{ "Legionfall_BarSpark", "Legionfall Spark" },
-		{ "Mage-ArcaneCharge-Spark", "Arcane Charge Spark" },
-		{ "Mage-ArcaneCharge-SmallSpark", "Small Arcane Spark" },
-		{ "objectivewidget-bar-spark-left", "Objective Left Spark" },
-		{ "objectivewidget-bar-spark-neutral", "Objective Neutral Spark" },
-		{ "objectivewidget-bar-spark-right", "Objective Right Spark" },
-		{ "Insanity-Spark", "Insanity Spark" },
-		{ "honorsystem-bar-spark", "Honor Bar Spark" },
-		{ "UI-World-Quest-spark", "World Quest Spark" },
-		{ "stormcapture-spark-air", "Air Capture Spark" },
-		{ "stormcapture-spark-earth", "Earth Capture Spark" },
-		{ "stormcapture-spark-water", "Water Capture Spark" },
-		{ "ui-castingbar-pip-red", "Red Pip" },
-		{ "cast-empowered-pipflare", "Empowered Pip Flare" },
-		{ "UI-Frame-Bar-Spark", "Frame Bar Spark" },
-		{ "plunderstorm-stormbar-spark", "Plunderstorm Spark" },
-		{ "BastionAnima-Horizontal-Spark", "Bastion Anima Spark" },
-		{ "widgetstatusbar-spark", "Status Bar Spark" },
-		{ "machinebar-spark", "Machine Bar Spark" },
-		{ "worldstate-capturebar-spark-boss", "Boss Capture Spark" },
-		{ "worldstate-capturebar-spark-factions", "Faction Capture Spark" },
-		{ "worldstate-capturebar-spark-lfd", "LFD Capture Spark" },
-		{ "worldstate-capturebar-spark-target", "Target Capture Spark" },
-		{ "worldstate-capturebar-spark-white", "White Capture Spark" },
-		{ "worldstate-capturebar-spark-bastionarmor", "Bastion Armor Spark" },
-		{ "worldstate-capturebar-spark-neutral-bastionarmor", "Neutral Bastion Spark" },
-		{ "worldstate-capturebar-spark-casualformal-embercourt", "Ember Court Spark" },
-		{ "XPBarAnim-OrangeSpark", "Orange XP Spark" },
-	})
-	if LSM then
-		local mediaTypes = {
-			"statusbar",
-			"spark",
-			"pip",
-		}
-		for _, mediaType in ns.ipairs(mediaTypes) do
-			for name, path in ns.pairs(LSM:HashTable(mediaType) or {}) do
-				local lowerName = name:lower()
-				if lowerName:find("spark") or lowerName:find("pip") then
-					values[path] = BuildGlowTextureOptionLabel(path, name)
-				end
-			end
-		end
-	end
-	cachedGlowTextureValues = values
-	return values
-end
-
-local CURRENT_DB_VERSION = 1
-
-local function MigrateProfile(profile)
-	-- Get current or update to 0 if nil/NaNs
-	local currentProfileVersion = profile.profileVersion or 0
-
-	if currentProfileVersion < 1 then
-		profile.anchorShieldToHealth = nil
-		profile.anchorToHealthTexture = nil
-		profile.showAbsorbText = nil
-		profile.shieldedHealthAnchorOverlap = nil
-		profile.absorbTextFormat = nil
-	end
-
-	-- Version of the current profile
-	profile.profileVersion = CURRENT_DB_VERSION
-end
-
 function OvershieldsReforged:InitializeDatabase()
-	self.db = AceDB:New("OvershieldsReforgedDB", defaults, true)
-	MigrateProfile(self.db.profile)
-	NormalizeAnchorModeSettings(self.db and self.db.profile)
+	self.db = AceDB:New("OvershieldsReforgedDB", ns.ProfileDefaults, true)
+	ns.MigrateProfile(self.db.profile)
+	ns.NormalizeAnchorModeSettings(self.db and self.db.profile)
 
 	-- Clean up caches and re-apply appearance when the active profile changes.
 	local function OnProfileChanged()
-		MigrateProfile(self.db.profile)
-		NormalizeAnchorModeSettings(self.db and self.db.profile)
+		ns.MigrateProfile(self.db.profile)
+		ns.NormalizeAnchorModeSettings(self.db and self.db.profile)
 		if ns.ReleaseAllBars then
 			ns.ReleaseAllBars()
 		end
@@ -341,7 +133,7 @@ function OvershieldsReforged:SetupOptions()
 					order = -1,
 					width = 0.5,
 					func = function()
-						local p = defaults.profile
+						local p = ns.ProfileDefaults.profile
 						self.db.profile[colorKey]     = p[colorKey]
 						self.db.profile[textureKey]   = p[textureKey]
 						self.db.profile[blendModeKey] = p[blendModeKey]
@@ -364,8 +156,8 @@ function OvershieldsReforged:SetupOptions()
 				desc = "These settings are used while a unit's current health and combined shields *do not* exceed the unit's maximum health.",
 				order = 0,
 				args = {
-					absorbGroup  = MakeAppearanceGroup("Shield Bar",         1, "absorbColor",  "absorbTexture",  "absorbBlendMode",  TextureDropdownValues),
-					overlayGroup = MakeAppearanceGroup("Shield Bar Overlay", 2, "overlayColor", "overlayTexture", "overlayBlendMode", TextureDropdownValues),
+					absorbGroup  = MakeAppearanceGroup("Shield Bar",         1, "absorbColor",  "absorbTexture",  "absorbBlendMode",  ns.TextureDropdownValues),
+					overlayGroup = MakeAppearanceGroup("Shield Bar Overlay", 2, "overlayColor", "overlayTexture", "overlayBlendMode", ns.TextureDropdownValues),
 				},
 			},
 			-- OverAbsorb shield appearance (overAbsorbGlow visible)
@@ -375,9 +167,9 @@ function OvershieldsReforged:SetupOptions()
 				desc = "These settings are used while a unit's current health and combined shields exceed the unit's maximum health.",
 				order = 1,
 				args = {
-					overAbsorbGroup        = MakeAppearanceGroup("Overshield Bar",         0, "overAbsorbColor",        "overAbsorbTexture",        "overAbsorbBlendMode",        TextureDropdownValues),
-					overAbsorbOverlayGroup = MakeAppearanceGroup("Overshield Bar Overlay", 1, "overAbsorbOverlayColor", "overAbsorbOverlayTexture", "overAbsorbOverlayBlendMode", TextureDropdownValues),
-					overAbsorbGlowGroup    = MakeAppearanceGroup("Overshield Glow",        2, "overAbsorbGlowColor",    "overAbsorbGlowTexture",    "overAbsorbGlowBlendMode",    OverAbsorbGlowTextureDropdownValues),
+					overAbsorbGroup        = MakeAppearanceGroup("Overshield Bar",         0, "overAbsorbColor",        "overAbsorbTexture",        "overAbsorbBlendMode",        ns.TextureDropdownValues),
+					overAbsorbOverlayGroup = MakeAppearanceGroup("Overshield Bar Overlay", 1, "overAbsorbOverlayColor", "overAbsorbOverlayTexture", "overAbsorbOverlayBlendMode", ns.TextureDropdownValues),
+					overAbsorbGlowGroup    = MakeAppearanceGroup("Overshield Glow",        2, "overAbsorbGlowColor",    "overAbsorbGlowTexture",    "overAbsorbGlowBlendMode",    ns.OverAbsorbGlowTextureDropdownValues),
 				},
 			},
 			behavior = {
@@ -435,11 +227,11 @@ function OvershieldsReforged:SetupOptions()
 						descStyle = "inline",
 						order = 11,
 						width = "full",
-						values = ANCHOR_MODES,
+						values = ns.AnchorModeLabels,
 						get = function()
 							local value = self.db.profile.anchorModeShielded
-							if not IsValidAnchorMode(value) then
-								return defaults.profile.anchorModeShielded
+							if not ns.IsValidAnchorMode(value) then
+								return ns.ProfileDefaults.profile.anchorModeShielded
 							end
 							return value
 						end,
@@ -456,11 +248,11 @@ function OvershieldsReforged:SetupOptions()
 						descStyle = "inline",
 						order = 12,
 						width = "full",
-						values = ANCHOR_MODES,
+						values = ns.AnchorModeLabels,
 						get = function()
 							local value = self.db.profile.anchorModeOvershielded
-							if not IsValidAnchorMode(value) then
-								return defaults.profile.anchorModeOvershielded
+							if not ns.IsValidAnchorMode(value) then
+								return ns.ProfileDefaults.profile.anchorModeOvershielded
 							end
 							return value
 						end,

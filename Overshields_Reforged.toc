@@ -22,6 +22,10 @@ UnitContext.lua
 Hibernate.lua
 ShieldState.lua
 AnchorStrategy.lua
+ProfileDefaults.lua
+ProfileMigration.lua
+GlowTextureCatalog.lua
+OptionsDropdowns.lua
 Options.lua
 ChatCommands.lua
 FrameRegistry.lua

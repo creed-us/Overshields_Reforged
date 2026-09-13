@@ -45,6 +45,7 @@ function M.Reset()
 	M.now = 0
 	M.inRaid = false
 	M.inGroup = false
+	M.libs = {}
 
 	_G.UIParent = mock_frame.NewFrame({ name = "UIParent" })
 	_G.CompactPartyFrame = mock_frame.NewFrame({ name = "CompactPartyFrame" })
@@ -60,6 +61,10 @@ end
 
 --- Atlas names that C_Texture.GetAtlasInfo should report as real atlases.
 M.atlases = {}
+
+--- Libraries LibStub should hand back, keyed by name. Anything not listed falls back to
+-- the defaults in Install(). Populated per-test via NewNamespace's `libs` option.
+M.libs = {}
 
 --- Number of times C_Texture.GetAtlasInfo has been consulted — lets specs prove the
 -- addon's atlas cache is actually avoiding repeat lookups.
@@ -105,9 +110,26 @@ function M.Install()
 	_G.IsInGroup = function() return M.inGroup == true end
 	_G.hooksecurefunc = function() end
 
-	-- Enough LibStub for Debug.lua to load. Its AceGUI use is confined to building the
-	-- window, which specs never open.
-	_G.LibStub = function() return {} end
+	-- Enough LibStub for Debug.lua and Options.lua to load. The Ace libraries are only
+	-- *called* from inside functions (SetupOptions, InitializeDatabase), never at load
+	-- time, so an empty table suffices to get those files loaded.
+	--
+	-- LibSharedMedia is different: it's an optional dependency fetched with the silent
+	-- flag, so the honest default is nil (not installed). Returning a table for it would
+	-- make the addon think LSM is present and then fail on LSM.RegisterCallback. A spec
+	-- that wants the LSM branch passes a fake in via NewNamespace's `libs` option.
+	_G.LibStub = function(name)
+		if M.libs[name] ~= nil then
+			return M.libs[name]
+		end
+		if name == "LibSharedMedia-3.0" then
+			return nil
+		end
+		return {}
+	end
+
+	-- Options.lua registers a reload prompt into this at load time.
+	_G.StaticPopupDialogs = {}
 
 	_G.C_Timer = {
 		After = function(delay, callback)

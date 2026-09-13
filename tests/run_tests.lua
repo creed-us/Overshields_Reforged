@@ -8,12 +8,16 @@
 -- isn't available in plain Lua. Add new spec files to SPECS below.
 
 local SPECS = {
+	"toc_spec",
 	"unitcontext_spec",
 	"shieldstate_spec",
 	"anchorstrategy_spec",
 	"utilities_spec",
 	"instrumentation_spec",
 	"debug_sink_spec",
+	"glowtexturecatalog_spec",
+	"profilemigration_spec",
+	"optionsdropdowns_spec",
 	"frameregistry_spec",
 	"updatequeue_spec",
 	"frameupdate_spec",
