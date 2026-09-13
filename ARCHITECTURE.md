@@ -85,8 +85,18 @@ Diagnostics are wrapped in `--@alpha@` / `--@end-alpha@`. The packager comments 
 blocks out for non-alpha releases, so they cost nothing in a normal build — but it also
 means **a local declared inside such a block cannot be referenced outside it**. That would
 parse fine and then read as a nil global in release builds only. `Debug.lua` is likewise
-excluded from the TOC outside alpha, and `AceGUI-3.0` (which only `Debug.lua` uses) is
-gated the same way in `embeds.xml`.
+excluded from the TOC outside alpha.
+
+Note that keyword directives strip *lines*, never *files*: a file whose TOC entry is
+commented out still ships in the zip, it just never loads.
+
+**`AceGUI-3.0` must not be alpha-gated, despite `Debug.lua` being its only direct
+consumer.** `AceConfigDialog-3.0` — which builds the options panel — calls
+`LibStub("AceGUI-3.0")` at load time without the silent flag, and LibStub raises an error
+when the library isn't registered. For the same reason AceGUI must be included *before*
+AceConfig in `embeds.xml`. Loading it later appears to work only because LibStub is shared
+across addons and another Ace3 addon has usually registered AceGUI first; on a clean
+install with no other Ace3 addon, it errors. `tests/toc_spec.lua` asserts both rules.
 
 ### 3. Pipeline code never calls `Debug` directly
 

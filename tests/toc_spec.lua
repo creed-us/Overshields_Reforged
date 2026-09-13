@@ -69,6 +69,45 @@ function TestTocLoadOrder:testCoreLoadsBeforeItsDependants()
 		"ChatCommands.lua reads the global addon object at load time")
 end
 
+TestEmbedsLoadOrder = {}
+
+--- Returns the library includes of embeds.xml in load order, and the raw text.
+local function EmbedOrder()
+	local path = load_addon.root .. "/embeds.xml"
+	local file = assert(io.open(path), "could not open " .. path)
+	local text = file:read("*a")
+	file:close()
+
+	local order = {}
+	for lib in text:gmatch("Libs\\([%w%-%.]+)\\") do
+		order[#order + 1] = lib
+	end
+	return order, text
+end
+
+function TestEmbedsLoadOrder:testAceGuiLoadsBeforeAceConfig()
+	-- AceConfigDialog (pulled in by AceConfig) calls LibStub("AceGUI-3.0") at load time
+	-- without the silent flag, and LibStub errors on a missing library. Loading AceGUI
+	-- afterwards only works when another addon happened to register it first.
+	local order = EmbedOrder()
+	local gui, config = IndexOf(order, "AceGUI-3.0"), IndexOf(order, "AceConfig-3.0")
+
+	lu.assertNotNil(gui, "AceGUI-3.0 is missing from embeds.xml")
+	lu.assertNotNil(config, "AceConfig-3.0 is missing from embeds.xml")
+	lu.assertTrue(gui < config,
+		"AceGUI-3.0 must load before AceConfig-3.0, or AceConfigDialog errors on a clean install")
+end
+
+function TestEmbedsLoadOrder:testAceGuiIsNotAlphaGated()
+	-- It was, once. The options panel is built with AceConfigDialog, which *is* AceGUI, so
+	-- gating it to alpha builds breaks the options panel for every release user.
+	local _, text = EmbedOrder()
+
+	local alphaBlock = text:match("@alpha@.-AceGUI%-3%.0.-@end%-alpha@")
+	lu.assertNil(alphaBlock,
+		"AceGUI-3.0 must not be alpha-gated: AceConfigDialog needs it in every build")
+end
+
 TestTocCompleteness = {}
 
 function TestTocCompleteness:testEveryListedFileExists()
