@@ -128,4 +128,11 @@ See `tests/README.md` for running details. Two conventions matter when adding to
   suite doing its job, not a nuisance.
 - **Mutation-test new specs before trusting them.** Break the thing the spec is meant to
   protect, confirm it fails, and confirm the mutant still *parses* first — a file that
-  doesn't compile makes every test fail and proves nothing about the assertions.
+  doesn't compile makes every test fail and proves nothing about the assertions. Apply
+  mutations **one at a time**: two at once can cancel out, and a passing test then looks
+  like coverage when it's actually interference.
+- **Assert behaviour before counters.** Instrumentation is stripped from release builds, so
+  a `Debug.counts` assertion placed *before* a behavioural one hides it whenever the
+  stripped build is exercised. Put the counter check last, where it can't mask anything.
+- **Don't depend on alpha-only functions for load-bearing assertions.** `GetStyleCacheSize`
+  and friends don't exist in a stripped build; guard such checks with `if ns.Foo then`.
