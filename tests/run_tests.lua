@@ -24,6 +24,7 @@ local SPECS = {
 	"framediscovery_spec",
 	"pipeline_integration_spec",
 	"barlifecycle_spec",
+	"appearancemanager_spec",
 }
 
 local script = ((type(arg) == "table" and arg[0]) or "tests/run_tests.lua"):gsub("\\", "/")

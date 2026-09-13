@@ -89,6 +89,18 @@ function TestIsKnownCompactUnitFrame:testRejectsUnrelatedFrames()
 	lu.assertEquals(self.ns.IsKnownCompactUnitFrame(frame), false)
 end
 
+function TestIsKnownCompactUnitFrame:testRejectsUnparentedFramesWhenContainersAreMissing()
+	-- Guards a nil-equality trap: the parent check compares against Blizzard's container
+	-- globals, so if those were ever absent, an unparented frame would compare nil == nil
+	-- and every frame in the UI would be claimed as ours.
+	_G.CompactPartyFrame = nil
+	_G.CompactRaidFrameContainer = nil
+
+	local orphan = mock_frame.NewCompactFrame({ name = "SomeOtherAddonFrame1" })
+
+	lu.assertEquals(self.ns.IsKnownCompactUnitFrame(orphan), false)
+end
+
 function TestIsKnownCompactUnitFrame:testRejectsForbiddenAndNil()
 	local frame = mock_frame.NewCompactFrame({ name = "CompactRaidFrame1", forbidden = true })
 	lu.assertEquals(self.ns.IsKnownCompactUnitFrame(frame), false)
@@ -123,8 +135,8 @@ function TestProcessQueuedFrameEarlyExits:testMissingUnitExitsEarly()
 
 	lu.assertEquals(self.ns.ProcessQueuedFrame(self.frame, self.addon.db.profile), true)
 
-	lu.assertEquals(self.ns.Debug.counts.earlyExits, 1)
 	lu.assertNil(self.painted.bar)
+	lu.assertEquals(self.ns.Debug.counts.earlyExits, 1)
 end
 
 function TestProcessQueuedFrameEarlyExits:testNonExistentUnitExitsEarly()

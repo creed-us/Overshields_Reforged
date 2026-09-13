@@ -75,10 +75,10 @@ function TestQueueCompactUnitFrameUpdate:testQueuingTwiceProcessesOnce()
 	self.ns.QueueCompactUnitFrameUpdate(self.frame)
 	self.ns.QueueCompactUnitFrameUpdate(self.frame)
 
-	lu.assertEquals(self.ns.Debug.counts.queueSkipsDuplicate, 1)
-
 	RunBatchCycle(self.stub)
 	lu.assertEquals(#self.processed, 1)
+
+	lu.assertEquals(self.ns.Debug.counts.queueSkipsDuplicate, 1)
 end
 
 function TestQueueCompactUnitFrameUpdate:testSkipsWhileHibernating()
@@ -112,11 +112,12 @@ function TestQueueCompactUnitFrameUpdate:testDisabledContextReleasesInsteadOfQue
 
 	self.ns.QueueCompactUnitFrameUpdate(self.frame)
 
-	lu.assertEquals(self.ns.Debug.counts.queueSkipsDisabled, 1)
 	lu.assertEquals(bar.shown, false, "a disabled frame should be released, not queued")
 
 	RunBatchCycle(self.stub)
 	lu.assertEquals(#self.processed, 0)
+
+	lu.assertEquals(self.ns.Debug.counts.queueSkipsDisabled, 1)
 end
 
 TestBatchCycle = {}
@@ -157,10 +158,11 @@ function TestBatchCycle:testRetriesAFrameThatIsNotReady()
 
 	RunBatchCycle(stub)
 	lu.assertEquals(#processed, 1)
-	lu.assertEquals(ns.Debug.counts.retryAttempts, 1)
 
 	RunBatchCycle(stub)
 	lu.assertEquals(#processed, 2, "an unready frame must be retried on the next cycle")
+
+	lu.assertEquals(ns.Debug.counts.retryAttempts, 1)
 end
 
 function TestBatchCycle:testDropsAFrameAfterMaxRetries()
